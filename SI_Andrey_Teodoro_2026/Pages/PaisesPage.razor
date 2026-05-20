@@ -1,0 +1,229 @@
+﻿@page "/paises"
+@rendermode InteractiveServer
+
+<PageTitle>Países</PageTitle>
+
+<LoadingSpinner Visivel="_carregando" />
+
+<div class="d-flex align-center mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.Flag" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+    <MudText Typo="Typo.h5" Style="font-weight:700;">Países</MudText>
+</div>
+
+<MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
+    <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:600;">
+        @(_dto.IdOriginal == 0 ? "Novo País" : "Editar País")
+    </MudText>
+
+    <MudForm @ref="_form" @bind-IsValid="_formValido">
+        <MudGrid Spacing="2">
+
+            @if (_dto.IdOriginal != 0)
+            {
+                <MudItem xs="4" sm="2" md="1">
+                    <MudTextField @bind-Value="_dto.Id" Label="ID"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  FullWidth="true" />
+                </MudItem>
+            }
+            <MudItem xs="12" sm="6" md="3">
+                <MudTextField @bind-Value="_dto.NomePais"
+                              Label="País *"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="60" FullWidth="true"
+                              Validation="@((string v) => ValidarNome(v, "País"))"
+                              OnBlur="@(() => _dto.NomePais = CapitalizarPrimeira(_dto.NomePais))" />
+            </MudItem>
+            <MudItem xs="6" sm="3" md="2">
+                <MudTextField @bind-Value="_dto.Sigla"
+                              Label="Sigla *"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="3" FullWidth="true"
+                              Validation="@((string v) => ValidarSigla(v))"
+                              Immediate="true"
+                              @oninput="@(e => _dto.Sigla = (e.Value?.ToString() ?? "").ToUpper())" />
+            </MudItem>
+            <MudItem xs="6" sm="3" md="2">
+                <MudTextField @bind-Value="_dto.Ddi"
+                              Label="DDI *"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="3" FullWidth="true"
+                              Validation="@((string v) => ValidarDdi(v))"
+                              Immediate="true"
+                              @oninput="@(e => _dto.Ddi = FiltrarNumeros(e.Value?.ToString()))" />
+            </MudItem>
+            <MudItem xs="6" sm="3" md="2">
+                <MudTextField @bind-Value="_dto.Moeda"
+                              Label="Moeda *"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="30" FullWidth="true"
+                              Validation="@((string v) => ValidarMoeda(v))"
+                              OnBlur="@(() => _dto.Moeda = CapitalizarPrimeira(_dto.Moeda))" />
+            </MudItem>
+            <MudItem xs="6" sm="3" md="1">
+                <MudTextField @bind-Value="_dto.SimboleMoeda"
+                              Label="Símbolo *"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="5" FullWidth="true"
+                              OnBlur="@(() => _dto.SimboleMoeda = (_dto.SimboleMoeda ?? "").ToUpper())" />
+            </MudItem>
+
+            <MudItem xs="12" sm="12" md="@(_dto.IdOriginal != 0 ? 1 : 2)" Class="d-flex align-end gap-2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           OnClick="Salvar" Disabled="_salvando"
+                           FullWidth="true" Style="height:40px;font-weight:700;">
+                    @(_salvando ? "Salvando..." : "SALVAR")
+                </MudButton>
+                @if (_dto.IdOriginal != 0)
+                {
+                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
+                               Style="height:40px;min-width:40px;" title="Cancelar edição">
+                        <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
+                    </MudButton>
+                }
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+<MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="5" md="5">
+            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
+                          FullWidth="true" />
+        </MudItem>
+        <MudItem xs="6" sm="3" md="2">
+            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro"
+                       Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                <MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem>
+                <MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem>
+                <MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" sm="3" md="2">
+            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor"
+                       Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                <MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem>
+                <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
+                <MudSelectItem T="string" Value="@("data")">Data</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros"
+                       Style="height:40px;min-width:40px;" title="Limpar">
+                <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
+    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Striped="false"
+              Loading="_carregando" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh Style="font-weight:600;">ID</MudTh>
+            <MudTh Style="font-weight:600;">País</MudTh>
+            <MudTh Style="font-weight:600;">Sigla</MudTh>
+            <MudTh Style="font-weight:600;">DDI</MudTh>
+            <MudTh Style="font-weight:600;">Moeda</MudTh>
+            <MudTh Style="font-weight:600;">Símbolo</MudTh>
+            <MudTh Style="font-weight:600;">Status</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="ID" Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
+            <MudTd DataLabel="País"><strong>@context.NomePais</strong></MudTd>
+            <MudTd DataLabel="Sigla">@context.Sigla</MudTd>
+            <MudTd DataLabel="DDI">+@context.Ddi</MudTd>
+            <MudTd DataLabel="Moeda">@context.Moeda</MudTd>
+            <MudTd DataLabel="Símbolo">@context.SimboleMoeda</MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(context.Ativo ? Color.Success : Color.Error)">
+                    @(context.Ativo ? "Ativo" : "Inativo")
+                </MudChip>
+            </MudTd>
+            <MudTd Style="text-align:center;">
+                <MudTooltip Text="Editar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(() => Editar(context.Id))" />
+                </MudTooltip>
+                <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
+                    <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
+                                   Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
+                                   OnClick="@(() => AlterarStatus(context.Id, context.NomePais, context.Ativo))" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
+                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
+                <MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText>
+            </div>
+        </NoRecordsContent>
+    </MudTable>
+    @if (_resultado != null)
+    {
+        <div class="pa-2" style="border-top:1px solid #f0f0f0;">
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina"
+                                TotalPaginas="@_resultado.TotalPaginas"
+                                TotalItens="@_resultado.TotalItens"
+                                OnPaginaMudou="MudarPagina" />
+        </div>
+    }
+</MudPaper>
+
+@code {
+    private string? ValidarNome(string? v, string campo)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$"))
+            return $"{campo} deve conter apenas letras";
+        if (!char.IsUpper(v.TrimStart()[0]))
+            return $"{campo} deve começar com letra maiúscula";
+        return null;
+    }
+
+    private string? ValidarSigla(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[A-Z]{1,3}$"))
+            return "Sigla: 1 a 3 letras maiúsculas (ex: BR, EUA)";
+        return null;
+    }
+
+    private string? ValidarDdi(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        if (!int.TryParse(v, out int num) || num < 1 || num > 999)
+            return "DDI deve ser um número entre 1 e 999";
+        return null;
+    }
+
+    private string? ValidarMoeda(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$"))
+            return "Moeda deve conter apenas letras";
+        if (!char.IsUpper(v.TrimStart()[0]))
+            return "Moeda deve começar com letra maiúscula (ex: Real)";
+        return null;
+    }
+    private string CapitalizarPrimeira(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return v ?? "";
+        v = v.Trim();
+        return char.ToUpper(v[0]) + v[1..];
+    }
+    private string FiltrarNumeros(string? v)
+        => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsDigit).ToArray());
+}
