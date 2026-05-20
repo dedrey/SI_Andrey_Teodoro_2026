@@ -1,0 +1,87 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="2" Color="Color.Primary" Dense="false">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@(() => _drawerOpen = !_drawerOpen)" />
+        <MudText Typo="Typo.h6" Class="ml-2" Style="font-weight:700;letter-spacing:0.5px;">
+            Sistema
+        </MudText>
+        <MudSpacer />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="1"
+               Variant="@DrawerVariant.Responsive"
+               ClipMode="DrawerClipMode.Always">
+
+        <MudDrawerHeader>
+            <MudText Typo="Typo.subtitle2" Style="font-weight:600;color:#555;">Menu</MudText>
+        </MudDrawerHeader>
+
+        <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
+
+            <MudNavLink Href="/"
+                        Icon="@Icons.Material.Filled.Home"
+                        Match="NavLinkMatch.All">
+                Início
+            </MudNavLink>
+
+            <MudNavGroup Title="Localização"
+                         Icon="@Icons.Material.Filled.LocationOn"
+                         Expanded="true">
+                <MudNavLink Href="/paises"
+                            Icon="@Icons.Material.Filled.Flag">
+                    Países
+                </MudNavLink>
+                <MudNavLink Href="/estados"
+                            Icon="@Icons.Material.Filled.Map">
+                    Estados
+                </MudNavLink>
+                <MudNavLink Href="/cidades"
+                            Icon="@Icons.Material.Filled.LocationCity">
+                    Cidades
+                </MudNavLink>
+            </MudNavGroup>
+
+            <MudNavLink Href="/fornecedores"
+                        Icon="@Icons.Material.Filled.LocalShipping">
+                Fornecedores
+            </MudNavLink>
+
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pa-0">
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+
+@code {
+    private bool _drawerOpen = true;
+
+    private MudTheme _theme = new MudTheme
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#5C6BC0",
+            Secondary = "#7E57C2",
+            AppbarBackground = "#5C6BC0",
+            Background = "#F5F6FA",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#FFFFFF",
+            DrawerText = "#424242",
+            TextPrimary = "#212121",
+        }
+    };
+}

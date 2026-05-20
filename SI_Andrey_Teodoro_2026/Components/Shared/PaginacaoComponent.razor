@@ -1,0 +1,55 @@
+﻿@if (TotalPaginas > 1)
+{
+    <div class="d-flex justify-center align-center gap-2 mt-4 flex-wrap">
+        <MudIconButton Icon="@Icons.Material.Filled.FirstPage"
+                       Disabled="@(PaginaAtual <= 1)"
+                       OnClick="@(() => MudarPagina(1))" />
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                       Disabled="@(PaginaAtual <= 1)"
+                       OnClick="@(() => MudarPagina(PaginaAtual - 1))" />
+
+        @foreach (var pagina in PaginasVisiveis)
+        {
+            <MudButton Variant="@(pagina == PaginaAtual ? Variant.Filled : Variant.Outlined)"
+                       Color="Color.Primary"
+                       Size="Size.Small"
+                       OnClick="@(() => MudarPagina(pagina))">
+                @pagina
+            </MudButton>
+        }
+
+        <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                       Disabled="@(PaginaAtual >= TotalPaginas)"
+                       OnClick="@(() => MudarPagina(PaginaAtual + 1))" />
+        <MudIconButton Icon="@Icons.Material.Filled.LastPage"
+                       Disabled="@(PaginaAtual >= TotalPaginas)"
+                       OnClick="@(() => MudarPagina(TotalPaginas))" />
+
+        <MudText Typo="Typo.body2" Class="align-self-center ml-2">
+            Página @PaginaAtual de @TotalPaginas | Total: @TotalItens registros
+        </MudText>
+    </div>
+}
+
+@code {
+    [Parameter] public int PaginaAtual   { get; set; }
+    [Parameter] public int TotalPaginas  { get; set; }
+    [Parameter] public int TotalItens    { get; set; }
+    [Parameter] public EventCallback<int> OnPaginaMudou { get; set; }
+
+    private IEnumerable<int> PaginasVisiveis
+    {
+        get
+        {
+            var inicio = Math.Max(1, PaginaAtual - 2);
+            var fim    = Math.Min(TotalPaginas, PaginaAtual + 2);
+            return Enumerable.Range(inicio, fim - inicio + 1);
+        }
+    }
+
+    private async Task MudarPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= TotalPaginas && pagina != PaginaAtual)
+            await OnPaginaMudou.InvokeAsync(pagina);
+    }
+}
