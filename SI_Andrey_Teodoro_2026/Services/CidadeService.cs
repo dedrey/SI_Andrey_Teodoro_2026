@@ -13,6 +13,9 @@ public class CidadeService : ICidadeService
     public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
 
+    public Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
+        => _repo.ObterPorEstadoAsync(estadoId);
+
     public async Task<CidadeDto?> ObterPorIdAsync(int id)
     {
         var c = await _repo.ObterPorIdAsync(id);
@@ -60,8 +63,7 @@ public class CidadeService : ICidadeService
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            var acao = ativar ? "ativada" : "desativada";
-            return (true, $"Cidade {acao} com sucesso!");
+            return (true, $"Cidade {(ativar ? "ativada" : "desativada")} com sucesso!");
         }
         catch (Exception ex)
         {
