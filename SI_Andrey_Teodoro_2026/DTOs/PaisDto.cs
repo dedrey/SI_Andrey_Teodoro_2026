@@ -8,26 +8,27 @@ public class PaisDto
     public int IdOriginal { get; set; }
 
     [Required(ErrorMessage = "DDI é obrigatório")]
-    [MaxLength(5, ErrorMessage = "DDI deve ter no máximo 5 caracteres")]
+    [MaxLength(5)]
     public string Ddi { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Sigla é obrigatória")]
-    [MinLength(1, ErrorMessage = "Sigla deve ter pelo menos 1 caractere")]
-    [MaxLength(3, ErrorMessage = "Sigla deve ter no máximo 3 caracteres")]
+    [MinLength(1)]
+    [MaxLength(3)]
     public string Sigla { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Moeda é obrigatória")]
-    [MaxLength(30, ErrorMessage = "Moeda deve ter no máximo 30 caracteres")]
+    [MaxLength(30)]
     public string Moeda { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Símbolo da moeda é obrigatório")]
-    [MaxLength(5, ErrorMessage = "Símbolo deve ter no máximo 5 caracteres")]
+    [Required(ErrorMessage = "Símbolo é obrigatório")]
+    [MaxLength(5)]
     public string SimboleMoeda { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Nome do país é obrigatório")]
-    [MinLength(2, ErrorMessage = "Nome deve ter pelo menos 2 caracteres")]
-    [MaxLength(60, ErrorMessage = "Nome deve ter no máximo 60 caracteres")]
+    [MinLength(2)]
+    [MaxLength(60)]
     public string NomePais { get; set; } = string.Empty;
 
     public bool Ativo { get; set; } = true;
+    public DateTime? AtualizadoEm { get; set; }
 }

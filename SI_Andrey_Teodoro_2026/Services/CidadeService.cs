@@ -7,14 +7,10 @@ namespace SI_Andrey_Teodoro_2026.Services;
 public class CidadeService : ICidadeService
 {
     private readonly ICidadeRepository _repo;
-
     public CidadeService(ICidadeRepository repo) => _repo = repo;
 
-    public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
-        => _repo.ObterTodosAsync(filtro);
-
-    public Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
-        => _repo.ObterPorEstadoAsync(estadoId);
+    public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro) => _repo.ObterTodosAsync(filtro);
+    public Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId) => _repo.ObterPorEstadoAsync(estadoId);
 
     public async Task<CidadeDto?> ObterPorIdAsync(int id)
     {
@@ -27,7 +23,8 @@ public class CidadeService : ICidadeService
             NomeCidade = c.NomeCidade,
             Ddd = c.Ddd,
             EstadoId = c.EstadoId,
-            Ativo = c.Ativo
+            Ativo = c.Ativo,
+            AtualizadoEm = c.AtualizadoEm   // ← mapeado
         };
     }
 
@@ -46,16 +43,10 @@ public class CidadeService : ICidadeService
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Cidade cadastrada com sucesso!", novoId);
             }
-            else
-            {
-                await _repo.AtualizarAsync(dto);
-                return (true, "Cidade atualizada com sucesso!", dto.Id);
-            }
+            await _repo.AtualizarAsync(dto);
+            return (true, "Cidade atualizada com sucesso!", dto.Id);
         }
-        catch (Exception ex)
-        {
-            return (false, $"Erro ao salvar cidade: {ex.Message}", 0);
-        }
+        catch (Exception ex) { return (false, $"Erro ao salvar cidade: {ex.Message}", 0); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
@@ -65,9 +56,6 @@ public class CidadeService : ICidadeService
             await _repo.AlterarStatusAsync(id, ativar);
             return (true, $"Cidade {(ativar ? "ativada" : "desativada")} com sucesso!");
         }
-        catch (Exception ex)
-        {
-            return (false, $"Erro ao alterar status: {ex.Message}");
-        }
+        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
     }
 }

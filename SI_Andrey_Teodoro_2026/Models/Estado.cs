@@ -8,5 +8,6 @@ public class Estado
     public string Uf { get; set; } = string.Empty;
     public bool Ativo { get; set; } = true;
     public DateTime CriadoEm { get; set; } = DateTime.Now;
+    public DateTime? AtualizadoEm { get; set; }
     public string? NomePais { get; set; }
 }

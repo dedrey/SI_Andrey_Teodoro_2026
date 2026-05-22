@@ -9,14 +9,11 @@ namespace SI_Andrey_Teodoro_2026.Repositories;
 public class EstadoRepository : IEstadoRepository
 {
     private readonly DbConnectionFactory _factory;
-
-    public EstadoRepository(DbConnectionFactory factory)
-        => _factory = factory;
+    public EstadoRepository(DbConnectionFactory factory) => _factory = factory;
 
     public async Task<PaginacaoDto<EstadoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
-
         var where = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
@@ -30,7 +27,6 @@ public class EstadoRepository : IEstadoRepository
         });
 
         var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
-
         var orderBy = filtro.OrdenarPor switch
         {
             "id" => "e.id",
@@ -38,17 +34,13 @@ public class EstadoRepository : IEstadoRepository
             _ => "e.estado"
         };
 
-        var sqlCount = $@"SELECT COUNT(*) FROM estados e
-                          INNER JOIN paises p ON p.id = e.pais_id
-                          {whereClause}";
-
+        var sqlCount = $"SELECT COUNT(*) FROM estados e INNER JOIN paises p ON p.id = e.pais_id {whereClause}";
         var sqlData = $@"SELECT e.id, e.pais_id AS PaisId, e.estado AS NomeEstado, e.uf,
-                                p.pais AS NomePais, e.ativo, e.criado_em AS CriadoEm
-                         FROM estados e
-                         INNER JOIN paises p ON p.id = e.pais_id
-                         {whereClause}
-                         ORDER BY {orderBy}
-                         LIMIT @Limit OFFSET @Offset";
+                                 p.pais AS NomePais, e.ativo,
+                                 e.criado_em AS CriadoEm, e.atualizado_em AS AtualizadoEm
+                          FROM estados e INNER JOIN paises p ON p.id = e.pais_id
+                          {whereClause} ORDER BY {orderBy}
+                          LIMIT @Limit OFFSET @Offset";
 
         var param = new
         {
@@ -60,7 +52,6 @@ public class EstadoRepository : IEstadoRepository
 
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<EstadoListDto>(sqlData, param);
-
         return new PaginacaoDto<EstadoListDto>
         {
             Itens = itens.ToList(),
@@ -73,51 +64,47 @@ public class EstadoRepository : IEstadoRepository
     public async Task<IEnumerable<EstadoListDto>> ObterPorPaisAsync(int paisId)
     {
         using var conn = _factory.CreateConnection();
-        var sql = @"SELECT e.id, e.estado AS NomeEstado, e.uf, e.pais_id AS PaisId
-                    FROM estados e
-                    WHERE e.pais_id = @paisId AND e.ativo = TRUE
-                    ORDER BY e.estado";
-        return await conn.QueryAsync<EstadoListDto>(sql, new { paisId });
+        return await conn.QueryAsync<EstadoListDto>(
+            @"SELECT e.id, e.estado AS NomeEstado, e.uf, e.pais_id AS PaisId
+              FROM estados e WHERE e.pais_id = @paisId AND e.ativo = TRUE ORDER BY e.estado",
+            new { paisId });
     }
 
     public async Task<Estado?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();
-        var sql = @"SELECT e.id, e.pais_id AS PaisId, e.estado AS NomeEstado, e.uf,
-                           p.pais AS NomePais, e.ativo, e.criado_em AS CriadoEm
-                    FROM estados e
-                    INNER JOIN paises p ON p.id = e.pais_id
-                    WHERE e.id = @id";
-        return await conn.QueryFirstOrDefaultAsync<Estado>(sql, new { id });
+        return await conn.QueryFirstOrDefaultAsync<Estado>(
+            @"SELECT e.id, e.pais_id AS PaisId, e.estado AS NomeEstado, e.uf,
+                     p.pais AS NomePais, e.ativo,
+                     e.criado_em AS CriadoEm, e.atualizado_em AS AtualizadoEm
+              FROM estados e INNER JOIN paises p ON p.id = e.pais_id WHERE e.id = @id",
+            new { id });
     }
 
     public async Task<int> InserirAsync(EstadoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var sql = @"INSERT INTO estados (pais_id, estado, uf, ativo)
-                    VALUES (@PaisId, @NomeEstado, @Uf, @Ativo);
-                    SELECT LAST_INSERT_ID();";
-        return await conn.ExecuteScalarAsync<int>(sql, dto);
+        return await conn.ExecuteScalarAsync<int>(
+            @"INSERT INTO estados (pais_id, estado, uf, ativo) VALUES (@PaisId, @NomeEstado, @Uf, @Ativo);
+              SELECT LAST_INSERT_ID();", dto);
     }
 
     public async Task AtualizarAsync(EstadoDto dto)
     {
         using var conn = _factory.CreateConnection();
-
-        var sql = @"UPDATE estados
-                    SET id       = @Id,
-                        pais_id  = @PaisId,
-                        estado   = @NomeEstado,
-                        uf       = @Uf
-                    WHERE id = @IdOriginal";
-        await conn.ExecuteAsync(sql, dto);
+        await conn.ExecuteAsync(
+            @"UPDATE estados SET id = @Id, pais_id = @PaisId, estado = @NomeEstado, uf = @Uf,
+                                 atualizado_em = NOW()
+              WHERE id = @IdOriginal", dto);
         await conn.ExecuteAsync("ALTER TABLE estados AUTO_INCREMENT = 1");
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE estados SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE estados SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteUfNoPaisAsync(string uf, int paisId, int? idOriginalIgnorar = null)
@@ -126,7 +113,6 @@ public class EstadoRepository : IEstadoRepository
         var sql = idOriginalIgnorar.HasValue
             ? "SELECT COUNT(*) FROM estados WHERE uf = @uf AND pais_id = @paisId AND id <> @idOriginalIgnorar"
             : "SELECT COUNT(*) FROM estados WHERE uf = @uf AND pais_id = @paisId";
-        var count = await conn.ExecuteScalarAsync<int>(sql, new { uf, paisId, idOriginalIgnorar });
-        return count > 0;
+        return await conn.ExecuteScalarAsync<int>(sql, new { uf, paisId, idOriginalIgnorar }) > 0;
     }
 }
