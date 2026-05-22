@@ -33,11 +33,13 @@ builder.Services.AddSingleton<DbConnectionFactory>();
 builder.Services.AddScoped<IPaisRepository, PaisRepository>();
 builder.Services.AddScoped<IEstadoRepository, EstadoRepository>();
 builder.Services.AddScoped<ICidadeRepository, CidadeRepository>();
+builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────
 builder.Services.AddScoped<IPaisService, PaisService>();
 builder.Services.AddScoped<IEstadoService, EstadoService>();
 builder.Services.AddScoped<ICidadeService, CidadeService>();
+builder.Services.AddScoped<IFornecedorService, FornecedorService>();
 
 var app = builder.Build();
 
@@ -51,7 +53,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-// ✅ .NET 9 — MapRazorComponents em vez de MapBlazorHub + MapFallbackToPage
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
 

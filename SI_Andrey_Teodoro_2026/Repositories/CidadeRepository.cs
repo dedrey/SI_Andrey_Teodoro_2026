@@ -43,7 +43,9 @@ public class CidadeRepository : ICidadeRepository
                           INNER JOIN estados e ON e.id = c.estado_id
                           INNER JOIN paises  p ON p.id = e.pais_id
                           {whereClause}";
+
         var sqlData = $@"SELECT c.id, c.cidade AS NomeCidade, c.ddd, c.estado_id AS EstadoId,
+                                e.pais_id AS PaisId,
                                 e.estado AS NomeEstado, e.uf, p.pais AS NomePais,
                                 p.ddi AS Ddi,
                                 c.ativo, c.criado_em AS CriadoEm
@@ -72,6 +74,22 @@ public class CidadeRepository : ICidadeRepository
             Pagina = filtro.Pagina,
             TamanhoPagina = filtro.TamanhoPagina
         };
+    }
+    public async Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
+    {
+        using var conn = _factory.CreateConnection();
+        var sql = @"SELECT c.id, c.cidade AS NomeCidade, c.ddd,
+                           c.estado_id AS EstadoId,
+                           e.pais_id   AS PaisId,
+                           e.estado    AS NomeEstado,
+                           e.uf,
+                           p.pais AS NomePais
+                    FROM cidades c
+                    INNER JOIN estados e ON e.id = c.estado_id
+                    INNER JOIN paises  p ON p.id = e.pais_id
+                    WHERE c.estado_id = @estadoId AND c.ativo = TRUE
+                    ORDER BY c.cidade";
+        return await conn.QueryAsync<CidadeListDto>(sql, new { estadoId });
     }
 
     public async Task<Cidade?> ObterPorIdAsync(int id)
