@@ -7,14 +7,10 @@ namespace SI_Andrey_Teodoro_2026.Services;
 public class EstadoService : IEstadoService
 {
     private readonly IEstadoRepository _repo;
-
     public EstadoService(IEstadoRepository repo) => _repo = repo;
 
-    public Task<PaginacaoDto<EstadoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
-        => _repo.ObterTodosAsync(filtro);
-
-    public Task<IEnumerable<EstadoListDto>> ObterPorPaisAsync(int paisId)
-        => _repo.ObterPorPaisAsync(paisId);
+    public Task<PaginacaoDto<EstadoListDto>> ObterTodosAsync(FiltroConsultaDto filtro) => _repo.ObterTodosAsync(filtro);
+    public Task<IEnumerable<EstadoListDto>> ObterPorPaisAsync(int paisId) => _repo.ObterPorPaisAsync(paisId);
 
     public async Task<EstadoDto?> ObterPorIdAsync(int id)
     {
@@ -27,7 +23,8 @@ public class EstadoService : IEstadoService
             PaisId = e.PaisId,
             NomeEstado = e.NomeEstado,
             Uf = e.Uf,
-            Ativo = e.Ativo
+            Ativo = e.Ativo,
+            AtualizadoEm = e.AtualizadoEm   // ← mapeado
         };
     }
 
@@ -47,16 +44,10 @@ public class EstadoService : IEstadoService
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Estado cadastrado com sucesso!", novoId);
             }
-            else
-            {
-                await _repo.AtualizarAsync(dto);
-                return (true, "Estado atualizado com sucesso!", dto.Id);
-            }
+            await _repo.AtualizarAsync(dto);
+            return (true, "Estado atualizado com sucesso!", dto.Id);
         }
-        catch (Exception ex)
-        {
-            return (false, $"Erro ao salvar estado: {ex.Message}", 0);
-        }
+        catch (Exception ex) { return (false, $"Erro ao salvar estado: {ex.Message}", 0); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
@@ -64,12 +55,8 @@ public class EstadoService : IEstadoService
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            var acao = ativar ? "ativado" : "desativado";
-            return (true, $"Estado {acao} com sucesso!");
+            return (true, $"Estado {(ativar ? "ativado" : "desativado")} com sucesso!");
         }
-        catch (Exception ex)
-        {
-            return (false, $"Erro ao alterar status: {ex.Message}");
-        }
+        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
     }
 }

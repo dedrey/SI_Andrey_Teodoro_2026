@@ -9,14 +9,11 @@ namespace SI_Andrey_Teodoro_2026.Repositories;
 public class PaisRepository : IPaisRepository
 {
     private readonly DbConnectionFactory _factory;
-
-    public PaisRepository(DbConnectionFactory factory)
-        => _factory = factory;
+    public PaisRepository(DbConnectionFactory factory) => _factory = factory;
 
     public async Task<PaginacaoDto<PaisListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
-
         var where = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
@@ -30,7 +27,6 @@ public class PaisRepository : IPaisRepository
         });
 
         var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
-
         var orderBy = filtro.OrdenarPor switch
         {
             "id" => "p.id",
@@ -39,13 +35,14 @@ public class PaisRepository : IPaisRepository
         };
 
         var sqlCount = $"SELECT COUNT(*) FROM paises p {whereClause}";
-        var sqlData = $@"
-            SELECT p.id, p.ddi, p.sigla, p.moeda, p.simbolo_moeda AS SimboleMoeda,
-                   p.pais AS NomePais, p.ativo, p.criado_em AS CriadoEm
-            FROM paises p
-            {whereClause}
-            ORDER BY {orderBy}
-            LIMIT @Limit OFFSET @Offset";
+        var sqlData = $@"SELECT p.id, p.ddi, p.sigla, p.moeda,
+                                 p.simbolo_moeda AS SimboleMoeda,
+                                 p.pais AS NomePais, p.ativo,
+                                 p.criado_em AS CriadoEm,
+                                 p.atualizado_em AS AtualizadoEm
+                          FROM paises p {whereClause}
+                          ORDER BY {orderBy}
+                          LIMIT @Limit OFFSET @Offset";
 
         var param = new
         {
@@ -57,7 +54,6 @@ public class PaisRepository : IPaisRepository
 
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<PaisListDto>(sqlData, param);
-
         return new PaginacaoDto<PaisListDto>
         {
             Itens = itens.ToList(),
@@ -70,47 +66,46 @@ public class PaisRepository : IPaisRepository
     public async Task<IEnumerable<PaisListDto>> ObterTodosAtivosSemPaginacaoAsync()
     {
         using var conn = _factory.CreateConnection();
-        var sql = "SELECT id, pais AS NomePais, sigla, ddi FROM paises WHERE ativo = TRUE ORDER BY pais";
-        return await conn.QueryAsync<PaisListDto>(sql);
+        return await conn.QueryAsync<PaisListDto>(
+            "SELECT id, pais AS NomePais, sigla, ddi FROM paises WHERE ativo = TRUE ORDER BY pais");
     }
 
     public async Task<Pais?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();
-        var sql = @"SELECT id, ddi, sigla, moeda, simbolo_moeda AS SimboleMoeda,
-                           pais AS NomePais, ativo, criado_em AS CriadoEm
-                    FROM paises WHERE id = @id";
-        return await conn.QueryFirstOrDefaultAsync<Pais>(sql, new { id });
+        return await conn.QueryFirstOrDefaultAsync<Pais>(
+            @"SELECT id, ddi, sigla, moeda, simbolo_moeda AS SimboleMoeda,
+                     pais AS NomePais, ativo,
+                     criado_em AS CriadoEm, atualizado_em AS AtualizadoEm
+              FROM paises WHERE id = @id", new { id });
     }
 
     public async Task<int> InserirAsync(PaisDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var sql = @"INSERT INTO paises (ddi, sigla, moeda, simbolo_moeda, pais, ativo)
-                    VALUES (@Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo);
-                    SELECT LAST_INSERT_ID();";
-        return await conn.ExecuteScalarAsync<int>(sql, dto);
+        return await conn.ExecuteScalarAsync<int>(
+            @"INSERT INTO paises (ddi, sigla, moeda, simbolo_moeda, pais, ativo)
+              VALUES (@Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo);
+              SELECT LAST_INSERT_ID();", dto);
     }
 
     public async Task AtualizarAsync(PaisDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var sql = @"UPDATE paises
-                    SET id            = @Id,
-                        ddi           = @Ddi,
-                        sigla         = @Sigla,
-                        moeda         = @Moeda,
-                        simbolo_moeda = @SimboleMoeda,
-                        pais          = @NomePais
-                    WHERE id = @IdOriginal";
-        await conn.ExecuteAsync(sql, dto);
+        await conn.ExecuteAsync(
+            @"UPDATE paises SET id = @Id, ddi = @Ddi, sigla = @Sigla, moeda = @Moeda,
+                                simbolo_moeda = @SimboleMoeda, pais = @NomePais,
+                                atualizado_em = NOW()
+              WHERE id = @IdOriginal", dto);
         await conn.ExecuteAsync("ALTER TABLE paises AUTO_INCREMENT = 1");
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE paises SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE paises SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteSiglaAsync(string sigla, int? idOriginalIgnorar = null)
@@ -130,6 +125,7 @@ public class PaisRepository : IPaisRepository
             : "SELECT COUNT(*) FROM paises WHERE pais = @nome";
         return await conn.ExecuteScalarAsync<int>(sql, new { nome, idOriginalIgnorar }) > 0;
     }
+
     public async Task<bool> ExisteDdiAsync(string ddi, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();

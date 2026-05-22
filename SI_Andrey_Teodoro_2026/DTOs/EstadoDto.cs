@@ -12,14 +12,15 @@ public class EstadoDto
     public int PaisId { get; set; }
 
     [Required(ErrorMessage = "Nome do estado é obrigatório")]
-    [MinLength(2, ErrorMessage = "Nome deve ter pelo menos 2 caracteres")]
-    [MaxLength(50, ErrorMessage = "Nome deve ter no máximo 50 caracteres")]
+    [MinLength(2)]
+    [MaxLength(50)]
     public string NomeEstado { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "UF é obrigatória")]
-    [MinLength(2, ErrorMessage = "UF deve ter 2 caracteres")]
-    [MaxLength(2, ErrorMessage = "UF deve ter 2 caracteres")]
+    [MinLength(2)]
+    [MaxLength(2)]
     public string Uf { get; set; } = string.Empty;
 
     public bool Ativo { get; set; } = true;
+    public DateTime? AtualizadoEm { get; set; }   // ← novo
 }
