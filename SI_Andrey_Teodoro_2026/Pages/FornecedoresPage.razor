@@ -2,7 +2,6 @@
 @rendermode InteractiveServer
 
 <PageTitle>Fornecedores</PageTitle>
-
 <LoadingSpinner Visivel="_carregando" />
 
 <div class="d-flex align-center mb-4">
@@ -27,40 +26,43 @@
     </div>
 
     <MudForm @ref="_form" @bind-IsValid="_formValido">
+
+        <!-- ── Seção 1: Dados principais ── -->
         <MudGrid Spacing="2">
 
             @if (_dto.IdOriginal != 0)
             {
                 <MudItem xs="4" sm="2" md="1">
                     <MudTextField @bind-Value="_dto.Id" Label="ID"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  FullWidth="true" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
                 </MudItem>
             }
 
             <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 5)">
                 <MudTextField Value="@_dto.RazaoSocial"
                               ValueChanged="@((string v) => _dto.RazaoSocial = CapitalizarPrimeira(v))"
-                              Label="Razão Social *"
-                              Placeholder="Ex: Têxtil Brasil Ltda"
+                              Label="Razão Social"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
-                              MaxLength="255" FullWidth="true" Immediate="true" />
+                              MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.NomeFantasia"
                               ValueChanged="@((string v) => _dto.NomeFantasia = CapitalizarPrimeira(v))"
                               Label="Nome Fantasia"
-                              Placeholder="Ex: Têxtil Brasil"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="255" FullWidth="true" Immediate="true" />
+                              MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
+
+            <!--
+                CNPJ: máscara XX.XXX.XXX/XXXX-XX aplicada via Value+ValueChanged.
+                Filtra letras automaticamente — só aceita dígitos.
+            -->
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Cnpj"
                               ValueChanged="@((string v) => _dto.Cnpj = AplicarMascaraCnpj(v))"
-                              Label="CNPJ *"
-                              Placeholder="00.000.000/0001-00"
+                              Label="CNPJ"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
                               MaxLength="18" FullWidth="true" Immediate="true"
@@ -68,6 +70,8 @@
             </MudItem>
 
         </MudGrid>
+
+        <!-- ── Seção 2: Localização com cascade País → Estado → Cidade ── -->
         <MudDivider Class="my-3" />
         <MudText Typo="Typo.caption" Class="mb-2"
                  Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
@@ -75,12 +79,10 @@
         </MudText>
 
         <MudGrid Spacing="2">
+
             <MudItem xs="12" sm="4" md="2">
-                <MudSelect T="int?"
-                           Value="@_dto.PaisId"
-                           ValueChanged="OnPaisAlterado"
-                           Label="País"
-                           Variant="Variant.Outlined" Margin="Margin.Dense"
+                <MudSelect T="int?" Value="@_dto.PaisId" ValueChanged="OnPaisAlterado"
+                           Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
                            FullWidth="true" Clearable="true">
                     <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
                     @foreach (var p in _paises)
@@ -91,13 +93,9 @@
             </MudItem>
 
             <MudItem xs="12" sm="4" md="2">
-                <MudSelect T="int?"
-                           Value="@_dto.EstadoId"
-                           ValueChanged="OnEstadoAlterado"
-                           Label="Estado"
-                           Variant="Variant.Outlined" Margin="Margin.Dense"
-                           FullWidth="true" Clearable="true"
-                           Disabled="@(_dto.PaisId == null)">
+                <MudSelect T="int?" Value="@_dto.EstadoId" ValueChanged="OnEstadoAlterado"
+                           Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           FullWidth="true" Clearable="true" Disabled="@(_dto.PaisId == null)">
                     <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
                     @foreach (var e in _estados)
                     {
@@ -108,10 +106,8 @@
 
             <MudItem xs="12" sm="4" md="2">
                 <MudSelect T="int?" @bind-Value="_dto.CidadeId"
-                           Label="Cidade"
-                           Variant="Variant.Outlined" Margin="Margin.Dense"
-                           FullWidth="true" Clearable="true"
-                           Disabled="@(_dto.EstadoId == null)">
+                           Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           FullWidth="true" Clearable="true" Disabled="@(_dto.EstadoId == null)">
                     <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
                     @foreach (var c in _cidadesFiltradas)
                     {
@@ -121,40 +117,41 @@
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Endereco"
-                              Label="Endereço"
-                              Placeholder="Ex: Rua das Flores, 123"
+                <MudTextField @bind-Value="_dto.Endereco" Label="Endereço"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="255" FullWidth="true" />
+                              MaxLength="100" FullWidth="true" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Bairro"
-                              Label="Bairro"
-                              Placeholder="Ex: Centro"
+                <MudTextField @bind-Value="_dto.Bairro" Label="Bairro"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="120" FullWidth="true" />
+                              MaxLength="60" FullWidth="true" />
             </MudItem>
 
         </MudGrid>
 
         <MudGrid Spacing="2" Class="mt-1">
 
+            <!--
+                Telefone com máscara automática e validação de formato.
+                Fixo:   (XX) XXXX-XXXX   → 10 dígitos → ex: (45) 3577-7177
+                Celular:(XX) XXXXX-XXXX  → 11 dígitos → ex: (45) 99950-1199
+                Não aceita mais que 11 dígitos.
+                Não aceita menos que 10 dígitos.
+            -->
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Telefone"
                               ValueChanged="@((string v) => _dto.Telefone = AplicarMascaraTelefone(v))"
                               Label="Telefone"
-                              Placeholder="(45) 99999-0000"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="45" FullWidth="true" Immediate="true" />
+                              MaxLength="15" FullWidth="true" Immediate="true"
+                              Validation="@((string? v) => ValidarTelefone(v))" />
             </MudItem>
 
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Email"
-                              Label="E-mail"
-                              Placeholder="contato@empresa.com.br"
+                <MudTextField @bind-Value="_dto.Email" Label="E-mail"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="320" FullWidth="true"
+                              MaxLength="100" FullWidth="true"
                               Validation="@((string? v) => ValidarEmail(v))"
                               InputType="InputType.Email" />
             </MudItem>
@@ -167,9 +164,8 @@
                         Cancelar
                     </MudButton>
                 }
-                <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                           OnClick="Salvar" Disabled="_salvando"
-                           Style="height:40px;font-weight:700;min-width:120px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                           Disabled="_salvando" Style="height:40px;font-weight:700;min-width:120px;">
                     @(_salvando ? "Salvando..." : "SALVAR")
                 </MudButton>
             </MudItem>
@@ -178,6 +174,8 @@
 
     </MudForm>
 </MudPaper>
+
+<!-- FILTROS -->
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
@@ -185,37 +183,38 @@
                           Variant="Variant.Outlined" Margin="Margin.Dense"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                           Immediate="true"
-                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
-                          FullWidth="true" />
+                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro"
-                       Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem>
                 <MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem>
                 <MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor"
-                       Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem>
                 <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
                 <MudSelectItem T="string" Value="@("data")">Data</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
+                       FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros"
-                       Style="height:40px;min-width:40px;" title="Limpar filtros">
+                       Style="height:40px;min-width:40px;" title="Limpar">
                 <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
             </MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
+
+<!-- TABELA -->
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
-    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Striped="false"
+    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
               Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
@@ -229,22 +228,18 @@
             <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
-            <MudTd DataLabel="ID" Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
-            <MudTd DataLabel="Razão Social"><strong>@context.RazaoSocial</strong></MudTd>
-            <MudTd DataLabel="Nome Fantasia">
-                @(string.IsNullOrWhiteSpace(context.NomeFantasia) ? "—" : context.NomeFantasia)
-            </MudTd>
-            <MudTd DataLabel="CNPJ" Style="text-align:center;">
+            <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
+            <MudTd><strong>@context.RazaoSocial</strong></MudTd>
+            <MudTd>@(string.IsNullOrWhiteSpace(context.NomeFantasia) ? "—" : context.NomeFantasia)</MudTd>
+            <MudTd Style="text-align:center;">
                 <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">
                     @FormatarCnpjExibicao(context.Cnpj)
                 </MudChip>
             </MudTd>
-            <MudTd DataLabel="Endereço">
-                @(string.IsNullOrWhiteSpace(context.Endereco) ? "—" : context.Endereco)
-            </MudTd>
-            <MudTd DataLabel="Telefone">@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
-            <MudTd DataLabel="E-mail">@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
-            <MudTd DataLabel="Status">
+            <MudTd>@(string.IsNullOrWhiteSpace(context.Endereco) ? "—" : context.Endereco)</MudTd>
+            <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
+            <MudTd>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
+            <MudTd>
                 <MudChip T="string" Size="Size.Small"
                          Color="@(context.Ativo ? Color.Success : Color.Error)">
                     @(context.Ativo ? "Ativo" : "Inativo")
@@ -272,21 +267,40 @@
     @if (_resultado != null)
     {
         <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina"
-                                TotalPaginas="@_resultado.TotalPaginas"
-                                TotalItens="@_resultado.TotalItens"
-                                OnPaginaMudou="MudarPagina" />
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas"
+                                TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
         </div>
     }
 </MudPaper>
 
 @code {
+    // ── Validações ─────────────────────────────────────────────────────────────
+
     private string? ValidarCnpjCampo(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        var digits = new string(v.Where(char.IsDigit).ToArray());
-        if (digits.Length != 14) return "CNPJ deve ter 14 dígitos";
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        if (d.Length != 14) return "CNPJ deve ter 14 dígitos";
         return null;
+    }
+
+    /// <summary>
+    /// Telefone: somente fixo (10 dígitos) ou celular (11 dígitos).
+    /// Fixo:    (XX) XXXX-XXXX  → ex: (45) 3577-7177
+    /// Celular: (XX) XXXXX-XXXX → ex: (45) 99950-1199
+    /// Campo opcional — só valida se preenchido.
+    /// </summary>
+    private string? ValidarTelefone(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return null;  // opcional
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        return d.Length switch
+        {
+            10 => null,   // fixo OK
+            11 => null,   // celular OK
+            < 10 => "Telefone incompleto — fixo: (XX) XXXX-XXXX ou celular: (XX) XXXXX-XXXX",
+            _ => "Telefone inválido — máximo 11 dígitos"
+        };
     }
 
     private string? ValidarEmail(string? v)
@@ -294,11 +308,19 @@
         if (string.IsNullOrWhiteSpace(v)) return null;
         return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido";
     }
+
+    // ── Formatação ─────────────────────────────────────────────────────────────
+
     private string CapitalizarPrimeira(string? v)
     {
         if (string.IsNullOrEmpty(v)) return v ?? "";
         return char.ToUpper(v[0]) + v[1..];
     }
+
+    /// <summary>
+    /// Aplica máscara XX.XXX.XXX/XXXX-XX dígito a dígito.
+    /// Letras e outros caracteres são descartados automaticamente.
+    /// </summary>
     private string AplicarMascaraCnpj(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
@@ -315,17 +337,28 @@
         };
     }
 
+    /// <summary>
+    /// Aplica máscara de telefone em tempo real.
+    /// Até 10 dígitos → fixo:    (XX) XXXX-XXXX
+    /// 11 dígitos     → celular: (XX) XXXXX-XXXX
+    /// Bloqueia entrada além de 11 dígitos.
+    /// </summary>
     private string AplicarMascaraTelefone(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
         var d = new string(v.Where(char.IsDigit).ToArray());
+
+        // Bloqueia além de 11 dígitos
         if (d.Length > 11) d = d[..11];
+
         return d.Length switch
         {
             0 => "",
             <= 2 => $"({d}",
             <= 6 => $"({d[..2]}) {d[2..]}",
+            // Fixo: (XX) XXXX-XXXX
             <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}",
+            // Celular: (XX) XXXXX-XXXX
             _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"
         };
     }

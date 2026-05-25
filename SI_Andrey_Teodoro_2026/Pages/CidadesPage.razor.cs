@@ -22,8 +22,10 @@ public partial class CidadesPage : ComponentBase
     private bool _formValido;
     private bool _carregando;
     private bool _salvando;
+
     private List<PaisListDto> _paises = new();
     private List<EstadoListDto> _estados = new();
+
     private bool _paisNaoSelecionado;
     private bool _estadoNaoSelecionado;
 
@@ -34,10 +36,7 @@ public partial class CidadesPage : ComponentBase
             await CarregarPaises();
             await CarregarDados();
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error);
-        }
+        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
     private async Task CarregarPaises()
@@ -61,31 +60,19 @@ public partial class CidadesPage : ComponentBase
         catch (Exception ex)
         {
             Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
-            _resultado = new PaginacaoDto<CidadeListDto>();
+            _resultado = new();
         }
-        finally
-        {
-            _carregando = false;
-        }
+        finally { _carregando = false; }
     }
 
-    private async Task Pesquisar()
-    {
-        _filtro.Pagina = 1;
-        await CarregarDados();
-    }
-
-    private async Task LimparFiltros()
-    {
-        _filtro = new FiltroConsultaDto();
-        await CarregarDados();
-    }
-
+    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
+    private async Task LimparFiltros() { _filtro = new(); await CarregarDados(); }
     private async Task MudarPagina(int p) { _filtro.Pagina = p; await CarregarDados(); }
 
     private void LimparFormulario()
     {
-        _dto = new CidadeDto();
+        _dto = new();
+        _dddTexto = "";          // ← limpa o campo de texto do DDD
         _estados = new();
         _paisNaoSelecionado = false;
         _estadoNaoSelecionado = false;
@@ -97,9 +84,13 @@ public partial class CidadesPage : ComponentBase
         var c = await CidadeService.ObterPorIdAsync(id);
         if (c == null) { Snackbar.Add("Cidade não encontrada.", Severity.Warning); return; }
         _dto = c;
-        _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList();
+        _dddTexto = c.Ddd > 0 ? c.Ddd.ToString() : "";   // ← sincroniza o campo texto
         _paisNaoSelecionado = false;
         _estadoNaoSelecionado = false;
+
+        if (_dto.PaisId > 0)
+            _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList();
+
         StateHasChanged();
     }
 
@@ -112,6 +103,7 @@ public partial class CidadesPage : ComponentBase
             return;
         }
         _paisNaoSelecionado = false;
+
         if (_dto.EstadoId == 0)
         {
             _estadoNaoSelecionado = true;
@@ -128,12 +120,7 @@ public partial class CidadesPage : ComponentBase
         _salvando = false;
 
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-
-        if (sucesso)
-        {
-            LimparFormulario();
-            await CarregarDados();
-        }
+        if (sucesso) { LimparFormulario(); await CarregarDados(); }
     }
 
     private async Task AbrirModalPais()
@@ -141,14 +128,10 @@ public partial class CidadesPage : ComponentBase
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", options);
         var result = await dialog.Result;
-
         if (result is { Canceled: false })
         {
             await CarregarPaises();
-            if (result.Data is int novoId)
-            {
-                await OnPaisAlterado(novoId);
-            }
+            if (result.Data is int novoId) await OnPaisAlterado(novoId);
         }
     }
 
@@ -158,29 +141,25 @@ public partial class CidadesPage : ComponentBase
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", param, options);
         var result = await dialog.Result;
-
         if (result is { Canceled: false, Data: not null })
         {
             _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList();
-            if (result.Data is int novoEstadoId)
-                _dto.EstadoId = novoEstadoId;
+            if (result.Data is int novoEstadoId) _dto.EstadoId = novoEstadoId;
         }
     }
 
     private async Task AlterarStatus(int id, string nome, bool ativoAtual)
     {
-        var acao = ativoAtual ? "desativar" : "ativar";
         var param = new DialogParameters<ConfirmDialog>
         {
-            { x => x.Titulo,     $"Confirmar {acao}" },
-            { x => x.Mensagem,   $"Deseja realmente {acao} a cidade \"{nome}\"?" },
+            { x => x.Titulo,     $"Confirmar {(ativoAtual ? "desativar" : "ativar")}" },
+            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} a cidade \"{nome}\"?" },
             { x => x.TextoBotao, ativoAtual ? "Desativar" : "Ativar" },
             { x => x.CorBotao,   ativoAtual ? Color.Error : Color.Success }
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
         var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar", param, options);
         var result = await dialog.Result;
-
         if (result is { Canceled: false })
         {
             var (sucesso, mensagem) = await CidadeService.AlterarStatusAsync(id, !ativoAtual);
