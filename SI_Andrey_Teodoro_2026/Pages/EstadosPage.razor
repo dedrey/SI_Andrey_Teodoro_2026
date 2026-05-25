@@ -60,14 +60,14 @@
             <MudItem xs="12" sm="5" md="4">
                 <MudTextField Value="@_dto.NomeEstado"
                               ValueChanged="@((string v) => _dto.NomeEstado = CapitalizarPrimeira(v))"
-                              Label="Nome do Estado *" Placeholder="Ex: São Paulo"
+                              Label="Nome do Estado"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarSoLetras(v, "Estado"))" />
             </MudItem>
             <MudItem xs="4" sm="2" md="1">
                 <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = FiltrarLetrasUpper(v))"
-                              Label="UF *" Placeholder="SP"
+                              Label="UF"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarUf(v))" />

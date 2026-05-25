@@ -20,9 +20,9 @@ public class FornecedorRepository : IFornecedorRepository
         var where = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add(@"(f.nome_razaosocial LIKE @Busca
+            where.Add(@"(f.razaosocial         LIKE @Busca
                       OR f.apelido_nomefantasia LIKE @Busca
-                      OR f.cpf_cnpj LIKE @Busca
+                      OR f.cnpj                LIKE @Busca
                       OR CAST(f.id AS CHAR) = @BuscaExata)");
 
         where.Add(filtro.StatusFiltro switch
@@ -38,14 +38,14 @@ public class FornecedorRepository : IFornecedorRepository
         {
             "id" => "f.id",
             "data" => "f.criado_em",
-            _ => "f.nome_razaosocial"
+            _ => "f.razaosocial"
         };
 
         var sqlCount = $"SELECT COUNT(*) FROM fornecedores f {whereClause}";
 
         var sqlData = $@"SELECT f.id,
-                                f.nome_razaosocial     AS RazaoSocial,
-                                f.cpf_cnpj             AS Cnpj,
+                                f.razaosocial          AS RazaoSocial,
+                                f.cnpj                 AS Cnpj,
                                 f.apelido_nomefantasia AS NomeFantasia,
                                 f.cidade_id            AS CidadeId,
                                 c.cidade               AS NomeCidade,
@@ -85,8 +85,8 @@ public class FornecedorRepository : IFornecedorRepository
     {
         using var conn = _factory.CreateConnection();
         var sql = @"SELECT f.id,
-                           f.nome_razaosocial     AS RazaoSocial,
-                           f.cpf_cnpj             AS Cnpj,
+                           f.razaosocial          AS RazaoSocial,
+                           f.cnpj                 AS Cnpj,
                            f.apelido_nomefantasia AS NomeFantasia,
                            f.cidade_id            AS CidadeId,
                            c.cidade               AS NomeCidade,
@@ -94,7 +94,7 @@ public class FornecedorRepository : IFornecedorRepository
                            e.pais_id              AS PaisId,
                            f.endereco, f.bairro, f.telefone, f.email,
                            f.ativo,
-                           f.criado_em    AS CriadoEm,
+                           f.criado_em     AS CriadoEm,
                            f.atualizado_em AS AtualizadoEm
                     FROM fornecedores f
                     LEFT JOIN cidades c ON c.id = f.cidade_id
@@ -107,7 +107,7 @@ public class FornecedorRepository : IFornecedorRepository
     {
         using var conn = _factory.CreateConnection();
         var sql = @"INSERT INTO fornecedores
-                        (nome_razaosocial, cpf_cnpj, apelido_nomefantasia,
+                        (razaosocial, cnpj, apelido_nomefantasia,
                          cidade_id, endereco, bairro, telefone, email, ativo)
                     VALUES
                         (@RazaoSocial, @Cnpj, @NomeFantasia,
@@ -121,8 +121,8 @@ public class FornecedorRepository : IFornecedorRepository
         using var conn = _factory.CreateConnection();
         var sql = @"UPDATE fornecedores
                     SET id                   = @Id,
-                        nome_razaosocial     = @RazaoSocial,
-                        cpf_cnpj             = @Cnpj,
+                        razaosocial          = @RazaoSocial,
+                        cnpj                 = @Cnpj,
                         apelido_nomefantasia = @NomeFantasia,
                         cidade_id            = @CidadeId,
                         endereco             = @Endereco,
@@ -147,8 +147,8 @@ public class FornecedorRepository : IFornecedorRepository
     {
         using var conn = _factory.CreateConnection();
         var sql = idOriginalIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM fornecedores WHERE cpf_cnpj = @cnpj AND id <> @idOriginalIgnorar"
-            : "SELECT COUNT(*) FROM fornecedores WHERE cpf_cnpj = @cnpj";
+            ? "SELECT COUNT(*) FROM fornecedores WHERE cnpj = @cnpj AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM fornecedores WHERE cnpj = @cnpj";
         return await conn.ExecuteScalarAsync<int>(sql, new { cnpj, idOriginalIgnorar }) > 0;
     }
 
@@ -156,8 +156,8 @@ public class FornecedorRepository : IFornecedorRepository
     {
         using var conn = _factory.CreateConnection();
         var sql = idOriginalIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM fornecedores WHERE nome_razaosocial = @razaoSocial AND id <> @idOriginalIgnorar"
-            : "SELECT COUNT(*) FROM fornecedores WHERE nome_razaosocial = @razaoSocial";
+            ? "SELECT COUNT(*) FROM fornecedores WHERE razaosocial = @razaoSocial AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM fornecedores WHERE razaosocial = @razaoSocial";
         return await conn.ExecuteScalarAsync<int>(sql, new { razaoSocial, idOriginalIgnorar }) > 0;
     }
 
