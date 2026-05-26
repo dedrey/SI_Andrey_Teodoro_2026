@@ -9,11 +9,9 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Blazor Server .NET 9 ─────────────────────────────────────
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// ── MudBlazor ────────────────────────────────────────────────
 builder.Services.AddMudServices(config =>
 {
     config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
@@ -26,20 +24,21 @@ builder.Services.AddMudServices(config =>
     config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
 
-// ── Conexão com banco ────────────────────────────────────────
 builder.Services.AddSingleton<DbConnectionFactory>();
 
-// ── Repositórios ─────────────────────────────────────────────
+// ── Repositórios ──────────────────────────────────────────────
 builder.Services.AddScoped<IPaisRepository, PaisRepository>();
 builder.Services.AddScoped<IEstadoRepository, EstadoRepository>();
 builder.Services.AddScoped<ICidadeRepository, CidadeRepository>();
 builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────
 builder.Services.AddScoped<IPaisService, PaisService>();
 builder.Services.AddScoped<IEstadoService, EstadoService>();
 builder.Services.AddScoped<ICidadeService, CidadeService>();
 builder.Services.AddScoped<IFornecedorService, FornecedorService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 var app = builder.Build();
 

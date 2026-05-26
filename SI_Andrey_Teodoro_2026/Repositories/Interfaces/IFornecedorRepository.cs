@@ -10,8 +10,6 @@ public interface IFornecedorRepository
     Task<int> InserirAsync(FornecedorDto dto);
     Task AtualizarAsync(FornecedorDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
-
-    // Unicidade
     Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null);
     Task<bool> ExisteRazaoSocialAsync(string razaoSocial, int? idOriginalIgnorar = null);
     Task<bool> ExisteNomeFantasiaAsync(string nomeFantasia, int? idOriginalIgnorar = null);

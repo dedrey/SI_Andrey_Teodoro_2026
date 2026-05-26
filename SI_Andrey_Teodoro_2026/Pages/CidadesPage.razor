@@ -19,7 +19,7 @@
         {
             <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
                      Icon="@Icons.Material.Filled.Edit">
-                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @ChipTexto(_dto.AtualizadoEm, _dto.NomeAtualizadoPor)
             </MudChip>
         }
     </div>
@@ -58,8 +58,6 @@
                                    Size="Size.Medium" OnClick="AbrirModalPais" />
                 </MudTooltip>
             </MudItem>
-
-            <!-- Estado -->
             <MudItem xs="10" sm="5" md="3">
                 <MudSelect T="int" @bind-Value="_dto.EstadoId"
                            Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
@@ -86,8 +84,6 @@
                                    OnClick="AbrirModalEstado" />
                 </MudTooltip>
             </MudItem>
-
-            <!-- Nome da Cidade -->
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.NomeCidade"
                               ValueChanged="@((string v) => _dto.NomeCidade = CapitalizarPrimeira(v))"
@@ -97,12 +93,6 @@
                               MaxLength="50" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarSoLetras(v, "Cidade"))" />
             </MudItem>
-
-            <!--
-                DDD: campo de texto livre (não spinner).
-                Aceita 1 a 3 dígitos numéricos (ex: 45, 11, 407).
-                Filtra automaticamente letras e caracteres especiais.
-            -->
             <MudItem xs="4" sm="2" md="1">
                 <MudTextField Value="@_dddTexto"
                               ValueChanged="@((string v) => { OnDddAlterado(v); })"
@@ -112,8 +102,6 @@
                               MaxLength="3" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarDdd(v))" />
             </MudItem>
-
-            <!-- Botões -->
             <MudItem xs="12" sm="12" md="@(_dto.IdOriginal != 0 ? 1 : 2)" Class="d-flex align-end gap-2">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
                            Disabled="_salvando" FullWidth="true" Style="height:40px;font-weight:700;">
@@ -130,8 +118,6 @@
         </MudGrid>
     </MudForm>
 </MudPaper>
-
-<!-- FILTROS -->
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
@@ -167,8 +153,6 @@
         </MudItem>
     </MudGrid>
 </MudPaper>
-
-<!-- TABELA -->
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
               Loading="_carregando" LoadingProgressColor="Color.Primary">
@@ -225,30 +209,27 @@
 </MudPaper>
 
 @code {
-    // ── Controle do campo DDD como texto ─────────────────────────────────────
-    // _dddTexto é o valor exibido no campo (string).
-    // _dto.Ddd é o short salvo no DTO.
-    // Ao editar, OnAfterRenderAsync sincroniza _dddTexto com _dto.Ddd.
 
     private string _dddTexto = "";
 
     protected override void OnParametersSet()
     {
-        // Sincroniza texto ao carregar o DTO na edição
         if (_dto.Ddd > 0)
             _dddTexto = _dto.Ddd.ToString();
     }
 
-    private void OnDddAlterado(string v)
+    private void OnDddAlterado(string? v)
     {
-        // Filtra qualquer caractere que não seja dígito
+        if (string.IsNullOrEmpty(v))
+        {
+            _dddTexto = "";
+            _dto.Ddd = 0;
+            return;
+        }
+
         var soDigitos = new string(v.Where(char.IsDigit).ToArray());
         _dddTexto = soDigitos;
-
-        if (short.TryParse(soDigitos, out short num))
-            _dto.Ddd = num;
-        else
-            _dto.Ddd = 0;
+        _dto.Ddd = short.TryParse(soDigitos, out short num) ? num : (short)0;
     }
 
     private string? ValidarDdd(string? v)
@@ -273,5 +254,12 @@
     {
         if (string.IsNullOrEmpty(v)) return v ?? "";
         return char.ToUpper(v[0]) + v[1..];
+    }
+    private static string ChipTexto(DateTime? dt, string? nome)
+    {
+        if (!dt.HasValue) return "";
+        var s = "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
+        if (!string.IsNullOrWhiteSpace(nome)) s += " por " + nome;
+        return s;
     }
 }

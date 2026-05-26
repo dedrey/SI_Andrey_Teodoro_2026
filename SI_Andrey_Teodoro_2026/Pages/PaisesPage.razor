@@ -10,8 +10,6 @@
 </div>
 
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
-
-    <!-- Cabeçalho com "Atualizado em" -->
     <div class="d-flex align-center justify-space-between mb-3">
         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
             @(_dto.IdOriginal == 0 ? "Novo País" : "Editar País")
@@ -20,7 +18,7 @@
         {
             <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
                      Icon="@Icons.Material.Filled.Edit">
-                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @ChipTexto(_dto.AtualizadoEm, _dto.NomeAtualizadoPor)
             </MudChip>
         }
     </div>
@@ -213,4 +211,10 @@
         => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
     private string FiltrarNumeros(string? v)
         => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsDigit).ToArray());
+    private static string ChipTexto(DateTime? dt, string? nome){
+       if (!dt.HasValue) return "";
+        var s = "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
+       if (!string.IsNullOrWhiteSpace(nome)) s += " por " + nome;
+        return s;
+    }
 }

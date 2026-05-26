@@ -24,7 +24,8 @@ public class CidadeService : ICidadeService
             Ddd = c.Ddd,
             EstadoId = c.EstadoId,
             Ativo = c.Ativo,
-            AtualizadoEm = c.AtualizadoEm   // ← mapeado
+            AtualizadoEm = c.AtualizadoEm,
+            NomeAtualizadoPor = c.NomeAtualizadoPor
         };
     }
 
@@ -34,10 +35,8 @@ public class CidadeService : ICidadeService
         {
             dto.NomeCidade = dto.NomeCidade.Trim();
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
-
             if (await _repo.ExisteNomeNoEstadoAsync(dto.NomeCidade, dto.EstadoId, ignorar))
                 return (false, $"Já existe uma cidade '{dto.NomeCidade}' neste estado.", 0);
-
             if (dto.IdOriginal == 0)
             {
                 var novoId = await _repo.InserirAsync(dto);
@@ -51,11 +50,7 @@ public class CidadeService : ICidadeService
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
     {
-        try
-        {
-            await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Cidade {(ativar ? "ativada" : "desativada")} com sucesso!");
-        }
+        try { await _repo.AlterarStatusAsync(id, ativar); return (true, $"Cidade {(ativar ? "ativada" : "desativada")} com sucesso!"); }
         catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
     }
 }

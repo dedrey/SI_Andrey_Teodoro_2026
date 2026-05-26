@@ -9,7 +9,6 @@
     <MudText Typo="Typo.h5" Style="font-weight:700;">Fornecedores</MudText>
 </div>
 
-<!-- FORMULÁRIO -->
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
 
     <div class="d-flex align-center justify-space-between mb-3">
@@ -20,14 +19,12 @@
         {
             <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
                      Icon="@Icons.Material.Filled.Edit">
-                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @ChipTexto(_dto.AtualizadoEm, _dto.NomeAtualizadoPor)
             </MudChip>
         }
     </div>
 
     <MudForm @ref="_form" @bind-IsValid="_formValido">
-
-        <!-- ── Seção 1: Dados principais ── -->
         <MudGrid Spacing="2">
 
             @if (_dto.IdOriginal != 0)
@@ -46,19 +43,15 @@
                               Required="true" RequiredError="Obrigatório"
                               MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
-
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.NomeFantasia"
                               ValueChanged="@((string v) => _dto.NomeFantasia = CapitalizarPrimeira(v))"
                               Label="Nome Fantasia"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
                               MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
 
-            <!--
-                CNPJ: máscara XX.XXX.XXX/XXXX-XX aplicada via Value+ValueChanged.
-                Filtra letras automaticamente — só aceita dígitos.
-            -->
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Cnpj"
                               ValueChanged="@((string v) => _dto.Cnpj = AplicarMascaraCnpj(v))"
@@ -70,12 +63,10 @@
             </MudItem>
 
         </MudGrid>
-
-        <!-- ── Seção 2: Localização com cascade País → Estado → Cidade ── -->
         <MudDivider Class="my-3" />
         <MudText Typo="Typo.caption" Class="mb-2"
                  Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
-            Contato e Localização (opcional)
+            Contato e Localização
         </MudText>
 
         <MudGrid Spacing="2">
@@ -115,44 +106,42 @@
                     }
                 </MudSelect>
             </MudItem>
-
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Endereco" Label="Endereço"
+                <MudTextField Value="@_dto.Endereco"
+                              ValueChanged="@((string v) => _dto.Endereco = CapitalizarPrimeira(v))"
+                              Label="Endereço"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="100" FullWidth="true" />
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
-
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Bairro" Label="Bairro"
+                <MudTextField Value="@_dto.Bairro"
+                              ValueChanged="@((string v) => _dto.Bairro = CapitalizarPrimeira(v))"
+                              Label="Bairro"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="60" FullWidth="true" />
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="60" FullWidth="true" Immediate="true" />
             </MudItem>
 
         </MudGrid>
 
         <MudGrid Spacing="2" Class="mt-1">
-
-            <!--
-                Telefone com máscara automática e validação de formato.
-                Fixo:   (XX) XXXX-XXXX   → 10 dígitos → ex: (45) 3577-7177
-                Celular:(XX) XXXXX-XXXX  → 11 dígitos → ex: (45) 99950-1199
-                Não aceita mais que 11 dígitos.
-                Não aceita menos que 10 dígitos.
-            -->
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Telefone"
                               ValueChanged="@((string v) => _dto.Telefone = AplicarMascaraTelefone(v))"
                               Label="Telefone"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
                               MaxLength="15" FullWidth="true" Immediate="true"
-                              Validation="@((string? v) => ValidarTelefone(v))" />
+                              Validation="@((string v) => ValidarTelefone(v))" />
             </MudItem>
-
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Email" Label="E-mail"
+                <MudTextField @bind-Value="_dto.Email"
+                              Label="E-mail"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
                               MaxLength="100" FullWidth="true"
-                              Validation="@((string? v) => ValidarEmail(v))"
+                              Validation="@((string v) => ValidarEmail(v))"
                               InputType="InputType.Email" />
             </MudItem>
 
@@ -171,11 +160,8 @@
             </MudItem>
 
         </MudGrid>
-
     </MudForm>
 </MudPaper>
-
-<!-- FILTROS -->
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
@@ -205,14 +191,12 @@
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
                        FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros"
-                       Style="height:40px;min-width:40px;" title="Limpar">
+                       Style="height:40px;min-width:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
             </MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
-
-<!-- TABELA -->
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
               Loading="_carregando" LoadingProgressColor="Color.Primary">
@@ -274,8 +258,6 @@
 </MudPaper>
 
 @code {
-    // ── Validações ─────────────────────────────────────────────────────────────
-
     private string? ValidarCnpjCampo(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
@@ -284,20 +266,14 @@
         return null;
     }
 
-    /// <summary>
-    /// Telefone: somente fixo (10 dígitos) ou celular (11 dígitos).
-    /// Fixo:    (XX) XXXX-XXXX  → ex: (45) 3577-7177
-    /// Celular: (XX) XXXXX-XXXX → ex: (45) 99950-1199
-    /// Campo opcional — só valida se preenchido.
-    /// </summary>
     private string? ValidarTelefone(string? v)
     {
-        if (string.IsNullOrWhiteSpace(v)) return null;  // opcional
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         var d = new string(v.Where(char.IsDigit).ToArray());
         return d.Length switch
         {
-            10 => null,   // fixo OK
-            11 => null,   // celular OK
+            10 => null,
+            11 => null,
             < 10 => "Telefone incompleto — fixo: (XX) XXXX-XXXX ou celular: (XX) XXXXX-XXXX",
             _ => "Telefone inválido — máximo 11 dígitos"
         };
@@ -305,11 +281,9 @@
 
     private string? ValidarEmail(string? v)
     {
-        if (string.IsNullOrWhiteSpace(v)) return null;
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido";
     }
-
-    // ── Formatação ─────────────────────────────────────────────────────────────
 
     private string CapitalizarPrimeira(string? v)
     {
@@ -317,10 +291,6 @@
         return char.ToUpper(v[0]) + v[1..];
     }
 
-    /// <summary>
-    /// Aplica máscara XX.XXX.XXX/XXXX-XX dígito a dígito.
-    /// Letras e outros caracteres são descartados automaticamente.
-    /// </summary>
     private string AplicarMascaraCnpj(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
@@ -337,28 +307,17 @@
         };
     }
 
-    /// <summary>
-    /// Aplica máscara de telefone em tempo real.
-    /// Até 10 dígitos → fixo:    (XX) XXXX-XXXX
-    /// 11 dígitos     → celular: (XX) XXXXX-XXXX
-    /// Bloqueia entrada além de 11 dígitos.
-    /// </summary>
     private string AplicarMascaraTelefone(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
         var d = new string(v.Where(char.IsDigit).ToArray());
-
-        // Bloqueia além de 11 dígitos
         if (d.Length > 11) d = d[..11];
-
         return d.Length switch
         {
             0 => "",
             <= 2 => $"({d}",
             <= 6 => $"({d[..2]}) {d[2..]}",
-            // Fixo: (XX) XXXX-XXXX
             <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}",
-            // Celular: (XX) XXXXX-XXXX
             _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"
         };
     }
@@ -369,5 +328,13 @@
         return d.Length == 14
             ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}"
             : cnpj;
+    }
+
+    private static string ChipTexto(DateTime? dt, string? nome)
+    {
+        if (!dt.HasValue) return "";
+        var s = "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
+        if (!string.IsNullOrWhiteSpace(nome)) s += " por " + nome;
+        return s;
     }
 }

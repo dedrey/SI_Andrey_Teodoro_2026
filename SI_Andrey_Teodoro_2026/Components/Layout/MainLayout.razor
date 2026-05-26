@@ -8,8 +8,7 @@
 <MudLayout>
     <MudAppBar Elevation="2" Color="Color.Primary" Dense="false">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Color="Color.Inherit"
-                       Edge="Edge.Start"
+                       Color="Color.Inherit" Edge="Edge.Start"
                        OnClick="@(() => _drawerOpen = !_drawerOpen)" />
         <MudText Typo="Typo.h6" Class="ml-2" Style="font-weight:700;letter-spacing:0.5px;">
             Sistema
@@ -17,8 +16,7 @@
         <MudSpacer />
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen"
-               Elevation="1"
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1"
                Variant="@DrawerVariant.Responsive"
                ClipMode="DrawerClipMode.Always">
 
@@ -28,32 +26,21 @@
 
         <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
 
-            <MudNavLink Href="/"
-                        Icon="@Icons.Material.Filled.Home"
-                        Match="NavLinkMatch.All">
+            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">
                 Início
             </MudNavLink>
 
-            <MudNavGroup Title="Localização"
-                         Icon="@Icons.Material.Filled.LocationOn"
-                         Expanded="true">
-                <MudNavLink Href="/paises"
-                            Icon="@Icons.Material.Filled.Flag">
-                    Países
-                </MudNavLink>
-                <MudNavLink Href="/estados"
-                            Icon="@Icons.Material.Filled.Map">
-                    Estados
-                </MudNavLink>
-                <MudNavLink Href="/cidades"
-                            Icon="@Icons.Material.Filled.LocationCity">
-                    Cidades
-                </MudNavLink>
+            <MudNavGroup Title="Localização" Icon="@Icons.Material.Filled.LocationOn" Expanded="true">
+                <MudNavLink Href="/paises" Icon="@Icons.Material.Filled.Flag">Países</MudNavLink>
+                <MudNavLink Href="/estados" Icon="@Icons.Material.Filled.Map">Estados</MudNavLink>
+                <MudNavLink Href="/cidades" Icon="@Icons.Material.Filled.LocationCity">Cidades</MudNavLink>
             </MudNavGroup>
 
-            <MudNavLink Href="/fornecedores"
-                        Icon="@Icons.Material.Filled.LocalShipping">
+            <MudNavLink Href="/fornecedores" Icon="@Icons.Material.Filled.LocalShipping">
                 Fornecedores
+            </MudNavLink>
+            <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.People">
+                Usuários
             </MudNavLink>
 
         </MudNavMenu>
@@ -65,7 +52,6 @@
         </MudContainer>
     </MudMainContent>
 </MudLayout>
-
 
 @code {
     private bool _drawerOpen = true;

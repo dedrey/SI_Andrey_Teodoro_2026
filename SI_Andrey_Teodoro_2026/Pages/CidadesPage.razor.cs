@@ -72,7 +72,7 @@ public partial class CidadesPage : ComponentBase
     private void LimparFormulario()
     {
         _dto = new();
-        _dddTexto = "";          // ← limpa o campo de texto do DDD
+        _dddTexto = "";
         _estados = new();
         _paisNaoSelecionado = false;
         _estadoNaoSelecionado = false;
@@ -84,7 +84,7 @@ public partial class CidadesPage : ComponentBase
         var c = await CidadeService.ObterPorIdAsync(id);
         if (c == null) { Snackbar.Add("Cidade não encontrada.", Severity.Warning); return; }
         _dto = c;
-        _dddTexto = c.Ddd > 0 ? c.Ddd.ToString() : "";   // ← sincroniza o campo texto
+        _dddTexto = c.Ddd > 0 ? c.Ddd.ToString() : "";
         _paisNaoSelecionado = false;
         _estadoNaoSelecionado = false;
 

@@ -1,5 +1,4 @@
 ﻿namespace SI_Andrey_Teodoro_2026.Models;
-
 public class Estado
 {
     public int Id { get; set; }
@@ -10,4 +9,5 @@ public class Estado
     public DateTime CriadoEm { get; set; } = DateTime.Now;
     public DateTime? AtualizadoEm { get; set; }
     public string? NomePais { get; set; }
+    public string? NomeAtualizadoPor { get; set; }
 }

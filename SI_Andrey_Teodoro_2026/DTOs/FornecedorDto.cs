@@ -6,28 +6,42 @@ public class FornecedorDto
 {
     public int Id { get; set; }
     public int IdOriginal { get; set; }
+
     [Required(ErrorMessage = "Razão Social é obrigatória")]
     [MinLength(2, ErrorMessage = "Razão Social deve ter pelo menos 2 caracteres")]
-    [MaxLength(255, ErrorMessage = "Razão Social deve ter no máximo 255 caracteres")]
+    [MaxLength(100)]
     public string RazaoSocial { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "CNPJ é obrigatório")]
-    [MaxLength(18, ErrorMessage = "CNPJ deve ter 14 dígitos")]
+    [MaxLength(18)]
     public string Cnpj { get; set; } = string.Empty;
-    [MaxLength(255, ErrorMessage = "Nome Fantasia deve ter no máximo 255 caracteres")]
-    public string? NomeFantasia { get; set; }
+    [Required(ErrorMessage = "Nome Fantasia é obrigatório")]
+    [MinLength(2, ErrorMessage = "Nome Fantasia deve ter pelo menos 2 caracteres")]
+    [MaxLength(100)]
+    public string NomeFantasia { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Endereço é obrigatório")]
+    [MinLength(5, ErrorMessage = "Endereço deve ter pelo menos 5 caracteres")]
+    [MaxLength(100)]
+    public string Endereco { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Bairro é obrigatório")]
+    [MinLength(2, ErrorMessage = "Bairro deve ter pelo menos 2 caracteres")]
+    [MaxLength(60)]
+    public string Bairro { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Telefone é obrigatório")]
+    [MaxLength(15)]
+    public string Telefone { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "E-mail é obrigatório")]
+    [MaxLength(100)]
+    [EmailAddress(ErrorMessage = "E-mail inválido")]
+    public string Email { get; set; } = string.Empty;
     public int? PaisId { get; set; }
     public int? EstadoId { get; set; }
     public int? CidadeId { get; set; }
-    [MaxLength(255, ErrorMessage = "Endereço deve ter no máximo 255 caracteres")]
-    public string? Endereco { get; set; }
-    [MaxLength(120, ErrorMessage = "Bairro deve ter no máximo 120 caracteres")]
-    public string? Bairro { get; set; }
-    [MaxLength(45, ErrorMessage = "Telefone deve ter no máximo 45 caracteres")]
-    public string? Telefone { get; set; }
-    [MaxLength(320, ErrorMessage = "E-mail deve ter no máximo 320 caracteres")]
-    [EmailAddress(ErrorMessage = "E-mail inválido")]
-    public string? Email { get; set; }
-
     public bool Ativo { get; set; } = true;
     public DateTime? AtualizadoEm { get; set; }
+    public string? NomeAtualizadoPor { get; set; }
 }

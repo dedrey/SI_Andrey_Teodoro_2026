@@ -26,7 +26,8 @@ public class PaisService : IPaisService
             SimboleMoeda = p.SimboleMoeda,
             NomePais = p.NomePais,
             Ativo = p.Ativo,
-            AtualizadoEm = p.AtualizadoEm   // ← mapeado
+            AtualizadoEm = p.AtualizadoEm,
+            NomeAtualizadoPor = p.NomeAtualizadoPor
         };
     }
 
@@ -38,16 +39,13 @@ public class PaisService : IPaisService
             dto.NomePais = dto.NomePais.Trim();
             dto.Ddi = dto.Ddi.Trim();
             dto.SimboleMoeda = dto.SimboleMoeda.ToUpper().Trim();
-
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
-
             if (await _repo.ExisteSiglaAsync(dto.Sigla, ignorar))
                 return (false, $"Já existe um país com a sigla '{dto.Sigla}'.", 0);
             if (await _repo.ExisteNomeAsync(dto.NomePais, ignorar))
                 return (false, $"Já existe um país com o nome '{dto.NomePais}'.", 0);
             if (await _repo.ExisteDdiAsync(dto.Ddi, ignorar))
                 return (false, $"Já existe um país com o DDI '{dto.Ddi}'.", 0);
-
             if (dto.IdOriginal == 0)
             {
                 var novoId = await _repo.InserirAsync(dto);
