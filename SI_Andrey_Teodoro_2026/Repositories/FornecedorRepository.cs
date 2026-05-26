@@ -43,7 +43,13 @@ public class FornecedorRepository : IFornecedorRepository
         };
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<FornecedorListDto>(sqlData, param);
-        return new PaginacaoDto<FornecedorListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+        return new PaginacaoDto<FornecedorListDto>
+        {
+            Itens = itens.ToList(),
+            TotalItens = total,
+            Pagina = filtro.Pagina,
+            TamanhoPagina = filtro.TamanhoPagina
+        };
     }
 
     public async Task<Fornecedor?> ObterPorIdAsync(int id)
@@ -69,28 +75,59 @@ public class FornecedorRepository : IFornecedorRepository
     public async Task<int> InserirAsync(FornecedorDto dto)
     {
         using var conn = _factory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
-            @"INSERT INTO fornecedores (razaosocial, cnpj, apelido_nomefantasia, cidade_id, endereco, bairro, telefone, email, ativo)
-              VALUES (@RazaoSocial, @Cnpj, @NomeFantasia, @CidadeId, @Endereco, @Bairro, @Telefone, @Email, @Ativo);
-              SELECT LAST_INSERT_ID();", dto);
+        var proximoId = await conn.ExecuteScalarAsync<int>(
+            @"SELECT MIN(seq)
+              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM fornecedores) t
+              WHERE seq NOT IN (SELECT id FROM fornecedores)");
+
+        await conn.ExecuteAsync(
+            @"INSERT INTO fornecedores
+                (id, razaosocial, cnpj, apelido_nomefantasia,
+                 cidade_id, endereco, bairro, telefone, email, ativo)
+              VALUES
+                (@ProximoId, @RazaoSocial, @Cnpj, @NomeFantasia,
+                 @CidadeId, @Endereco, @Bairro, @Telefone, @Email, @Ativo)",
+            new
+            {
+                ProximoId = proximoId,
+                dto.RazaoSocial,
+                dto.Cnpj,
+                dto.NomeFantasia,
+                dto.CidadeId,
+                dto.Endereco,
+                dto.Bairro,
+                dto.Telefone,
+                dto.Email,
+                dto.Ativo
+            });
+
+        return proximoId;
     }
 
     public async Task AtualizarAsync(FornecedorDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            @"UPDATE fornecedores SET id = @Id, razaosocial = @RazaoSocial, cnpj = @Cnpj,
-                                     apelido_nomefantasia = @NomeFantasia, cidade_id = @CidadeId,
-                                     endereco = @Endereco, bairro = @Bairro,
-                                     telefone = @Telefone, email = @Email
+            @"UPDATE fornecedores
+              SET id                   = @Id,
+                  razaosocial          = @RazaoSocial,
+                  cnpj                 = @Cnpj,
+                  apelido_nomefantasia = @NomeFantasia,
+                  cidade_id            = @CidadeId,
+                  endereco             = @Endereco,
+                  bairro               = @Bairro,
+                  telefone             = @Telefone,
+                  email                = @Email,
+                  atualizado_em        = NOW()
               WHERE id = @IdOriginal", dto);
-        await conn.ExecuteAsync("ALTER TABLE fornecedores AUTO_INCREMENT = 1");
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE fornecedores SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE fornecedores SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null)

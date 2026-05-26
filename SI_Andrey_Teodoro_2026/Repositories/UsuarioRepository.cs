@@ -36,7 +36,13 @@ public class UsuarioRepository : IUsuarioRepository
         };
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<UsuarioListDto>(sqlData, param);
-        return new PaginacaoDto<UsuarioListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+        return new PaginacaoDto<UsuarioListDto>
+        {
+            Itens = itens.ToList(),
+            TotalItens = total,
+            Pagina = filtro.Pagina,
+            TamanhoPagina = filtro.TamanhoPagina
+        };
     }
 
     public async Task<IEnumerable<UsuarioListDto>> ObterTodosAtivosAsync()
@@ -61,26 +67,39 @@ public class UsuarioRepository : IUsuarioRepository
     public async Task<int> InserirAsync(UsuarioDto dto)
     {
         using var conn = _factory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
-            @"INSERT INTO usuarios (nome, email, cpf, telefone, ativo)
-              VALUES (@Nome, @Email, @Cpf, @Telefone, @Ativo);
-              SELECT LAST_INSERT_ID();", dto);
+        var proximoId = await conn.ExecuteScalarAsync<int>(
+            @"SELECT MIN(seq)
+              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM usuarios) t
+              WHERE seq NOT IN (SELECT id FROM usuarios)");
+
+        await conn.ExecuteAsync(
+            @"INSERT INTO usuarios (id, nome, email, cpf, telefone, ativo)
+              VALUES (@ProximoId, @Nome, @Email, @Cpf, @Telefone, @Ativo)",
+            new { ProximoId = proximoId, dto.Nome, dto.Email, dto.Cpf, dto.Telefone, dto.Ativo });
+
+        return proximoId;
     }
 
     public async Task AtualizarAsync(UsuarioDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            @"UPDATE usuarios SET id = @Id, nome = @Nome, email = @Email,
-                                  cpf = @Cpf, telefone = @Telefone
+            @"UPDATE usuarios
+              SET id            = @Id,
+                  nome          = @Nome,
+                  email         = @Email,
+                  cpf           = @Cpf,
+                  telefone      = @Telefone,
+                  atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
-        await conn.ExecuteAsync("ALTER TABLE usuarios AUTO_INCREMENT = 1");
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE usuarios SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE usuarios SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteCpfAsync(string cpf, int? idOriginalIgnorar = null)
