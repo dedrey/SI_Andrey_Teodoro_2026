@@ -42,7 +42,13 @@ public class CidadeRepository : ICidadeRepository
         };
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<CidadeListDto>(sqlData, param);
-        return new PaginacaoDto<CidadeListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+        return new PaginacaoDto<CidadeListDto>
+        {
+            Itens = itens.ToList(),
+            TotalItens = total,
+            Pagina = filtro.Pagina,
+            TamanhoPagina = filtro.TamanhoPagina
+        };
     }
 
     public async Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
@@ -76,22 +82,38 @@ public class CidadeRepository : ICidadeRepository
     public async Task<int> InserirAsync(CidadeDto dto)
     {
         using var conn = _factory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
-            "INSERT INTO cidades (cidade, ddd, estado_id, ativo) VALUES (@NomeCidade, @Ddd, @EstadoId, @Ativo); SELECT LAST_INSERT_ID();", dto);
+        var proximoId = await conn.ExecuteScalarAsync<int>(
+            @"SELECT MIN(seq)
+              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM cidades) t
+              WHERE seq NOT IN (SELECT id FROM cidades)");
+
+        await conn.ExecuteAsync(
+            @"INSERT INTO cidades (id, cidade, ddd, estado_id, ativo)
+              VALUES (@ProximoId, @NomeCidade, @Ddd, @EstadoId, @Ativo)",
+            new { ProximoId = proximoId, dto.NomeCidade, dto.Ddd, dto.EstadoId, dto.Ativo });
+
+        return proximoId;
     }
 
     public async Task AtualizarAsync(CidadeDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            "UPDATE cidades SET id = @Id, cidade = @NomeCidade, ddd = @Ddd, estado_id = @EstadoId WHERE id = @IdOriginal", dto);
-        await conn.ExecuteAsync("ALTER TABLE cidades AUTO_INCREMENT = 1");
+            @"UPDATE cidades
+              SET id            = @Id,
+                  cidade        = @NomeCidade,
+                  ddd           = @Ddd,
+                  estado_id     = @EstadoId,
+                  atualizado_em = NOW()
+              WHERE id = @IdOriginal", dto);
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE cidades SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE cidades SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteNomeNoEstadoAsync(string nome, int estadoId, int? idOriginalIgnorar = null)

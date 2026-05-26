@@ -38,7 +38,13 @@ public class PaisRepository : IPaisRepository
         };
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<PaisListDto>(sqlData, param);
-        return new PaginacaoDto<PaisListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+        return new PaginacaoDto<PaisListDto>
+        {
+            Itens = itens.ToList(),
+            TotalItens = total,
+            Pagina = filtro.Pagina,
+            TamanhoPagina = filtro.TamanhoPagina
+        };
     }
 
     public async Task<IEnumerable<PaisListDto>> ObterTodosAtivosSemPaginacaoAsync()
@@ -66,26 +72,49 @@ public class PaisRepository : IPaisRepository
     public async Task<int> InserirAsync(PaisDto dto)
     {
         using var conn = _factory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
-            @"INSERT INTO paises (ddi, sigla, moeda, simbolo_moeda, pais, ativo)
-              VALUES (@Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo);
-              SELECT LAST_INSERT_ID();", dto);
+        var proximoId = await conn.ExecuteScalarAsync<int>(
+            @"SELECT MIN(seq)
+              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM paises) t
+              WHERE seq NOT IN (SELECT id FROM paises)");
+
+        await conn.ExecuteAsync(
+            @"INSERT INTO paises (id, ddi, sigla, moeda, simbolo_moeda, pais, ativo)
+              VALUES (@ProximoId, @Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo)",
+            new
+            {
+                ProximoId = proximoId,
+                dto.Ddi,
+                dto.Sigla,
+                dto.Moeda,
+                dto.SimboleMoeda,
+                dto.NomePais,
+                dto.Ativo
+            });
+
+        return proximoId;
     }
 
     public async Task AtualizarAsync(PaisDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            @"UPDATE paises SET id = @Id, ddi = @Ddi, sigla = @Sigla, moeda = @Moeda,
-                                simbolo_moeda = @SimboleMoeda, pais = @NomePais
+            @"UPDATE paises
+              SET id            = @Id,
+                  ddi           = @Ddi,
+                  sigla         = @Sigla,
+                  moeda         = @Moeda,
+                  simbolo_moeda = @SimboleMoeda,
+                  pais          = @NomePais,
+                  atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
-        await conn.ExecuteAsync("ALTER TABLE paises AUTO_INCREMENT = 1");
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE paises SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE paises SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteSiglaAsync(string sigla, int? idOriginalIgnorar = null)

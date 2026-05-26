@@ -36,7 +36,13 @@ public class EstadoRepository : IEstadoRepository
         };
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<EstadoListDto>(sqlData, param);
-        return new PaginacaoDto<EstadoListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+        return new PaginacaoDto<EstadoListDto>
+        {
+            Itens = itens.ToList(),
+            TotalItens = total,
+            Pagina = filtro.Pagina,
+            TamanhoPagina = filtro.TamanhoPagina
+        };
     }
 
     public async Task<IEnumerable<EstadoListDto>> ObterPorPaisAsync(int paisId)
@@ -64,22 +70,38 @@ public class EstadoRepository : IEstadoRepository
     public async Task<int> InserirAsync(EstadoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        return await conn.ExecuteScalarAsync<int>(
-            "INSERT INTO estados (pais_id, estado, uf, ativo) VALUES (@PaisId, @NomeEstado, @Uf, @Ativo); SELECT LAST_INSERT_ID();", dto);
+        var proximoId = await conn.ExecuteScalarAsync<int>(
+            @"SELECT MIN(seq)
+              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM estados) t
+              WHERE seq NOT IN (SELECT id FROM estados)");
+
+        await conn.ExecuteAsync(
+            @"INSERT INTO estados (id, pais_id, estado, uf, ativo)
+              VALUES (@ProximoId, @PaisId, @NomeEstado, @Uf, @Ativo)",
+            new { ProximoId = proximoId, dto.PaisId, dto.NomeEstado, dto.Uf, dto.Ativo });
+
+        return proximoId;
     }
 
     public async Task AtualizarAsync(EstadoDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            "UPDATE estados SET id = @Id, pais_id = @PaisId, estado = @NomeEstado, uf = @Uf WHERE id = @IdOriginal", dto);
-        await conn.ExecuteAsync("ALTER TABLE estados AUTO_INCREMENT = 1");
+            @"UPDATE estados
+              SET id            = @Id,
+                  pais_id       = @PaisId,
+                  estado        = @NomeEstado,
+                  uf            = @Uf,
+                  atualizado_em = NOW()
+              WHERE id = @IdOriginal", dto);
     }
 
     public async Task AlterarStatusAsync(int id, bool ativo)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync("UPDATE estados SET ativo = @ativo WHERE id = @id", new { ativo, id });
+        await conn.ExecuteAsync(
+            "UPDATE estados SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
+            new { ativo, id });
     }
 
     public async Task<bool> ExisteUfNoPaisAsync(string uf, int paisId, int? idOriginalIgnorar = null)
