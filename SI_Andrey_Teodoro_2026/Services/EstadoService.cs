@@ -24,7 +24,8 @@ public class EstadoService : IEstadoService
             NomeEstado = e.NomeEstado,
             Uf = e.Uf,
             Ativo = e.Ativo,
-            AtualizadoEm = e.AtualizadoEm   // ← mapeado
+            AtualizadoEm = e.AtualizadoEm,
+            NomeAtualizadoPor = e.NomeAtualizadoPor
         };
     }
 
@@ -35,10 +36,8 @@ public class EstadoService : IEstadoService
             dto.Uf = dto.Uf.ToUpper().Trim();
             dto.NomeEstado = dto.NomeEstado.Trim();
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
-
             if (await _repo.ExisteUfNoPaisAsync(dto.Uf, dto.PaisId, ignorar))
                 return (false, $"Já existe um estado com a UF '{dto.Uf}' neste país.", 0);
-
             if (dto.IdOriginal == 0)
             {
                 var novoId = await _repo.InserirAsync(dto);
@@ -52,11 +51,7 @@ public class EstadoService : IEstadoService
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
     {
-        try
-        {
-            await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Estado {(ativar ? "ativado" : "desativado")} com sucesso!");
-        }
+        try { await _repo.AlterarStatusAsync(id, ativar); return (true, $"Estado {(ativar ? "ativado" : "desativado")} com sucesso!"); }
         catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
     }
 }

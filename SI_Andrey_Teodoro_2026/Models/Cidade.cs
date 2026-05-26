@@ -1,5 +1,4 @@
 ﻿namespace SI_Andrey_Teodoro_2026.Models;
-
 public class Cidade
 {
     public int Id { get; set; }
@@ -12,4 +11,5 @@ public class Cidade
     public string? NomeEstado { get; set; }
     public string? NomePais { get; set; }
     public string? Uf { get; set; }
+    public string? NomeAtualizadoPor { get; set; }
 }
