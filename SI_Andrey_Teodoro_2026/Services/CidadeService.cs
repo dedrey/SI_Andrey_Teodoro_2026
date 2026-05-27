@@ -9,8 +9,14 @@ public class CidadeService : ICidadeService
     private readonly ICidadeRepository _repo;
     public CidadeService(ICidadeRepository repo) => _repo = repo;
 
-    public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro) => _repo.ObterTodosAsync(filtro);
-    public Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId) => _repo.ObterPorEstadoAsync(estadoId);
+    public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
+        => _repo.ObterTodosAsync(filtro);
+
+    public Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
+        => _repo.ObterPorEstadoAsync(estadoId);
+
+    public Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync()
+        => _repo.ObterTodosAtivosSemPaginacaoAsync();
 
     public async Task<CidadeDto?> ObterPorIdAsync(int id)
     {
@@ -37,11 +43,7 @@ public class CidadeService : ICidadeService
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
             if (await _repo.ExisteNomeNoEstadoAsync(dto.NomeCidade, dto.EstadoId, ignorar))
                 return (false, $"Já existe uma cidade '{dto.NomeCidade}' neste estado.", 0);
-            if (dto.IdOriginal == 0)
-            {
-                var novoId = await _repo.InserirAsync(dto);
-                return (true, "Cidade cadastrada com sucesso!", novoId);
-            }
+            if (dto.IdOriginal == 0) { var novoId = await _repo.InserirAsync(dto); return (true, "Cidade cadastrada com sucesso!", novoId); }
             await _repo.AtualizarAsync(dto);
             return (true, "Cidade atualizada com sucesso!", dto.Id);
         }

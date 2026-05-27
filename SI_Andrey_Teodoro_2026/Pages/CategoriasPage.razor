@@ -9,55 +9,40 @@
     <MudText Typo="Typo.h5" Style="font-weight:700;">Categorias</MudText>
 </div>
 
-<!-- FORMULÁRIO -->
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
-
     <div class="d-flex align-center justify-space-between mb-3">
         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
             @(_dto.IdOriginal == 0 ? "Nova Categoria" : "Editar Categoria")
         </MudText>
         @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
         {
-            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
-                     Icon="@Icons.Material.Filled.Edit">
-                @ChipTexto(_dto.AtualizadoEm, _dto.NomeAtualizadoPor)
+            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Edit">
+                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
             </MudChip>
         }
     </div>
 
     <MudForm @ref="_form" @bind-IsValid="_formValido">
         <MudGrid Spacing="2">
-
             @if (_dto.IdOriginal != 0)
             {
                 <MudItem xs="4" sm="2" md="1">
-                    <MudTextField @bind-Value="_dto.Id" Label="ID"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                    <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
                 </MudItem>
             }
-
-            <!--
-                Nome da Categoria: letras, números e espaços permitidos.
-                Ex: "Camisetas", "Calças Jeans", "Acessórios P/M/G"
-                Capitaliza automaticamente a primeira letra ao sair do campo.
-            -->
-            <MudItem xs="12" sm="8" md="@(_dto.IdOriginal != 0 ? 8 : 9)">
+            <MudItem xs="12" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
                 <MudTextField Value="@_dto.NomeCategoria"
                               ValueChanged="@((string v) => _dto.NomeCategoria = CapitalizarPrimeira(v))"
-                              Label="Categoria *"
-                              Placeholder="Ex: Camisetas, Calças, Acessórios..."
+                              Label="Categoria *" Placeholder="Ex: Camisetas, Calças, Acessórios..."
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="50" FullWidth="true" Immediate="true"
+                              Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarNome(v))" />
             </MudItem>
+        </MudGrid>
 
-            <!-- Botões -->
-            <MudItem xs="12" sm="4" md="@(_dto.IdOriginal != 0 ? 2 : 3)" Class="d-flex align-end gap-2">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                           Disabled="_salvando" FullWidth="true" Style="height:40px;font-weight:700;">
-                    @(_salvando ? "Salvando..." : "SALVAR")
-                </MudButton>
+        <!-- Botões sempre em linha própria, alinhados à direita -->
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
                 {
                     <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
@@ -65,54 +50,47 @@
                         <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
                     </MudButton>
                 }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                           Disabled="_salvando" Style="height:40px;font-weight:700;min-width:130px;">
+                    @(_salvando ? "Salvando..." : "SALVAR")
+                </MudButton>
             </MudItem>
-
         </MudGrid>
     </MudForm>
 </MudPaper>
 
-<!-- FILTROS -->
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
-            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
-                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true"
-                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
-                          FullWidth="true" />
+            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
+                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem>
                 <MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem>
                 <MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem>
                 <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
                 <MudSelectItem T="string" Value="@("data")">Data</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
-                       FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros"
-                       Style="height:40px;min-width:40px;" title="Limpar filtros">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
             </MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
 
-<!-- TABELA -->
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
-    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
-              Loading="_carregando" LoadingProgressColor="Color.Primary">
+    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
             <MudTh Style="font-weight:600;">Categoria</MudTh>
@@ -122,17 +100,9 @@
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
             <MudTd><strong>@context.NomeCategoria</strong></MudTd>
-            <MudTd>
-                <MudChip T="string" Size="Size.Small"
-                         Color="@(context.Ativo ? Color.Success : Color.Error)">
-                    @(context.Ativo ? "Ativa" : "Inativa")
-                </MudChip>
-            </MudTd>
+            <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativa" : "Inativa")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
-                <MudTooltip Text="Editar">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                   OnClick="@(() => Editar(context.Id))" />
-                </MudTooltip>
+                <MudTooltip Text="Editar"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" /></MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
                                    Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
@@ -150,39 +120,18 @@
     @if (_resultado != null)
     {
         <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina"
-                                TotalPaginas="@_resultado.TotalPaginas"
-                                TotalItens="@_resultado.TotalItens"
-                                OnPaginaMudou="MudarPagina" />
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
         </div>
     }
 </MudPaper>
 
 @code {
-    // ── Validação ──────────────────────────────────────────────────────────────
     private string? ValidarNome(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         if (v.Trim().Length < 2) return "Deve ter pelo menos 2 caracteres";
-        // Permite letras, números, espaços e caracteres como / - . '
-        // Ex: "Calças P/M/G", "Camisetas Polo", "Acessórios"
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ0-9\s\-\/\.\'\(\)]+$"))
-            return "Categoria contém caracteres inválidos";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ0-9\s\-\/\.\'\(\)]+$")) return "Categoria contém caracteres inválidos";
         return null;
     }
-
-    private string CapitalizarPrimeira(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return v ?? "";
-        return char.ToUpper(v[0]) + v[1..];
-    }
-
-    // ── Chip de auditoria ──────────────────────────────────────────────────────
-    private static string ChipTexto(DateTime? dt, string? nome)
-    {
-        if (!dt.HasValue) return "";
-        var s = "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
-        if (!string.IsNullOrWhiteSpace(nome)) s += " por " + nome;
-        return s;
-    }
+    private string CapitalizarPrimeira(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }
 }

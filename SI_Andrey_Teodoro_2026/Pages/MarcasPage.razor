@@ -1,18 +1,18 @@
-﻿@page "/cidades"
+﻿@page "/marcas"
 @rendermode InteractiveServer
 
-<PageTitle>Cidades</PageTitle>
+<PageTitle>Marcas</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
 <div class="d-flex align-center mb-4">
-    <MudIcon Icon="@Icons.Material.Filled.LocationCity" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
-    <MudText Typo="Typo.h5" Style="font-weight:700;">Cidades</MudText>
+    <MudIcon Icon="@Icons.Material.Filled.Style" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+    <MudText Typo="Typo.h5" Style="font-weight:700;">Marcas</MudText>
 </div>
 
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
     <div class="d-flex align-center justify-space-between mb-3">
         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
-            @(_dto.IdOriginal == 0 ? "Nova Cidade" : "Editar Cidade")
+            @(_dto.IdOriginal == 0 ? "Nova Marca" : "Editar Marca")
         </MudText>
         @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
         {
@@ -30,83 +30,17 @@
                     <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
                 </MudItem>
             }
-
-            <!-- País -->
-            <MudItem xs="10" sm="5" md="3">
-                <MudSelect T="int" Value="_dto.PaisId" ValueChanged="OnPaisAlterado"
-                           Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
-                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                           Class="@(_paisNaoSelecionado ? "mud-input-error" : "")">
-                    <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                    @foreach (var pais in _paises)
-                    {
-                        <MudSelectItem T="int" Value="@pais.Id">@pais.NomePais</MudSelectItem>
-                    }
-                </MudSelect>
-                @if (_paisNaoSelecionado)
-                {
-                    <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um país antes de salvar</MudText>
-                }
-            </MudItem>
-            <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                <MudTooltip Text="Novo País">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalPais" />
-                </MudTooltip>
-            </MudItem>
-
-            <!-- Estado -->
-            <MudItem xs="10" sm="5" md="3">
-                <MudSelect T="int" @bind-Value="_dto.EstadoId"
-                           Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
-                           Variant="Variant.Outlined" Margin="Margin.Dense"
-                           Disabled="@(_dto.PaisId == 0)" FullWidth="true"
-                           Class="@(_estadoNaoSelecionado ? "mud-input-error" : "")">
-                    <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                    @foreach (var estado in _estados)
-                    {
-                        <MudSelectItem T="int" Value="@estado.Id">@estado.NomeEstado (@estado.Uf)</MudSelectItem>
-                    }
-                </MudSelect>
-                @if (_estadoNaoSelecionado)
-                {
-                    <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um estado antes de salvar</MudText>
-                }
-            </MudItem>
-            <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                <MudTooltip Text="Novo Estado">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                   Disabled="@(_dto.PaisId == 0)" OnClick="AbrirModalEstado" />
-                </MudTooltip>
-            </MudItem>
-
-            <!-- Nome da Cidade -->
-            <MudItem xs="12" sm="6" md="4">
-                <MudTextField Value="@_dto.NomeCidade"
-                              ValueChanged="@((string v) => _dto.NomeCidade = CapitalizarPrimeira(v))"
-                              Label="Nome da Cidade *" Placeholder="Ex: Campinas"
+            <MudItem xs="12" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
+                <MudTextField Value="@_dto.NomeMarca"
+                              ValueChanged="@((string v) => _dto.NomeMarca = CapitalizarPrimeira(v))"
+                              Label="Marca *" Placeholder="Ex: Nike, Adidas, Farm Rio, C&A..."
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="50" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarSoLetras(v, "Cidade"))" />
-            </MudItem>
-
-            <!-- DDD -->
-            <MudItem xs="4" sm="2" md="1">
-                <MudTextField Value="@_dddTexto"
-                              ValueChanged="@((string v) => { OnDddAlterado(v); })"
-                              Label="DDD *" Placeholder="45"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="3" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarDdd(v))" />
+                              Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
+                              Validation="@((string v) => ValidarNome(v))" />
             </MudItem>
         </MudGrid>
 
-        <!--
-            Botão SALVAR em linha própria, sempre alinhado à DIREITA.
-            xs="12" garante linha nova; justify-end empurra os botões para a direita.
-            Isso resolve o problema independente de quantas colunas a linha anterior ocupa.
-        -->
+        <!-- Botões sempre em linha própria, alinhados à direita -->
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
@@ -159,30 +93,20 @@
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
-            <MudTh Style="font-weight:600;">Cidade</MudTh>
-            <MudTh Style="font-weight:600;">DDD</MudTh>
-            <MudTh Style="font-weight:600;">Estado</MudTh>
-            <MudTh Style="font-weight:600;">UF</MudTh>
-            <MudTh Style="font-weight:600;">País</MudTh>
-            <MudTh Style="font-weight:600;">DDI</MudTh>
+            <MudTh Style="font-weight:600;">Marca</MudTh>
             <MudTh Style="font-weight:600;">Status</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
-            <MudTd><strong>@context.NomeCidade</strong></MudTd>
-            <MudTd>(@context.Ddd)</MudTd>
-            <MudTd>@context.NomeEstado</MudTd>
-            <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Info">@context.Uf</MudChip></MudTd>
-            <MudTd>@context.NomePais</MudTd>
-            <MudTd>+@context.Ddi</MudTd>
+            <MudTd><strong>@context.NomeMarca</strong></MudTd>
             <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativa" : "Inativa")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Editar"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" /></MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
                                    Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
-                                   OnClick="@(() => AlterarStatus(context.Id, context.NomeCidade, context.Ativo))" />
+                                   OnClick="@(() => AlterarStatus(context.Id, context.NomeMarca, context.Ativo))" />
                 </MudTooltip>
             </MudTd>
         </RowTemplate>
@@ -202,26 +126,11 @@
 </MudPaper>
 
 @code {
-    private string _dddTexto = "";
-
-    private void OnDddAlterado(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) { _dddTexto = ""; _dto.Ddd = 0; return; }
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        _dddTexto = d;
-        _dto.Ddd = short.TryParse(d, out short num) ? num : (short)0;
-    }
-    private string? ValidarDdd(string? v)
+    private string? ValidarNome(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        if (!short.TryParse(d, out short num) || num < 1 || num > 999) return "DDD deve ser entre 1 e 999";
-        return null;
-    }
-    private string? ValidarSoLetras(string? v, string campo)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$")) return $"{campo} deve conter apenas letras";
+        if (v.Trim().Length < 2) return "Deve ter pelo menos 2 caracteres";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ0-9\s\&\-\.\'\/]+$")) return "Marca contém caracteres inválidos";
         return null;
     }
     private string CapitalizarPrimeira(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }

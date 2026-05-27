@@ -19,14 +19,15 @@
         {
             <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
                      Icon="@Icons.Material.Filled.Edit">
-                @ChipTexto(_dto.AtualizadoEm, _dto.NomeAtualizadoPor)
+                @ChipTexto(_dto.AtualizadoEm)
             </MudChip>
         }
     </div>
 
     <MudForm @ref="_form" @bind-IsValid="_formValido">
-        <MudGrid Spacing="2">
 
+        <!-- ── Seção 1: Dados principais ── -->
+        <MudGrid Spacing="2">
             @if (_dto.IdOriginal != 0)
             {
                 <MudItem xs="4" sm="2" md="1">
@@ -34,35 +35,28 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
                 </MudItem>
             }
-
             <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 5)">
                 <MudTextField Value="@_dto.RazaoSocial"
                               ValueChanged="@((string v) => _dto.RazaoSocial = CapitalizarPrimeira(v))"
-                              Label="Razão Social"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="100" FullWidth="true" Immediate="true" />
+                              Label="Razão Social *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.NomeFantasia"
                               ValueChanged="@((string v) => _dto.NomeFantasia = CapitalizarPrimeira(v))"
-                              Label="Nome Fantasia"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="100" FullWidth="true" Immediate="true" />
+                              Label="Nome Fantasia *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
-
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Cnpj"
                               ValueChanged="@((string v) => _dto.Cnpj = AplicarMascaraCnpj(v))"
-                              Label="CNPJ"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="18" FullWidth="true" Immediate="true"
+                              Label="CNPJ *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarCnpjCampo(v))" />
             </MudItem>
-
         </MudGrid>
+
+        <!-- ── Seção 2: Localização ── -->
         <MudDivider Class="my-3" />
         <MudText Typo="Typo.caption" Class="mb-2"
                  Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
@@ -70,82 +64,57 @@
         </MudText>
 
         <MudGrid Spacing="2">
-
-            <MudItem xs="12" sm="4" md="2">
-                <MudSelect T="int?" Value="@_dto.PaisId" ValueChanged="OnPaisAlterado"
-                           Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           FullWidth="true" Clearable="true">
-                    <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
-                    @foreach (var p in _paises)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)p.Id)">@p.NomePais</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-
-            <MudItem xs="12" sm="4" md="2">
-                <MudSelect T="int?" Value="@_dto.EstadoId" ValueChanged="OnEstadoAlterado"
-                           Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           FullWidth="true" Clearable="true" Disabled="@(_dto.PaisId == null)">
-                    <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
-                    @foreach (var e in _estados)
-                    {
-                        <MudSelectItem T="int?" Value="@((int?)e.Id)">@e.NomeEstado (@e.Uf)</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudItem>
-
-            <MudItem xs="12" sm="4" md="2">
+            <!--
+                Cidade: seletor único com todas as cidades cadastradas.
+                Sem cascata País→Estado — simplificado conforme orientação do professor.
+            -->
+            <MudItem xs="12" sm="6" md="3">
                 <MudSelect T="int?" @bind-Value="_dto.CidadeId"
                            Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           FullWidth="true" Clearable="true" Disabled="@(_dto.EstadoId == null)">
+                           FullWidth="true" Clearable="true">
                     <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
-                    @foreach (var c in _cidadesFiltradas)
+                    @foreach (var c in _cidades)
                     {
-                        <MudSelectItem T="int?" Value="@((int?)c.Id)">@c.NomeCidade</MudSelectItem>
+                        <MudSelectItem T="int?" Value="@((int?)c.Id)">
+                            @c.NomeCidade (@c.Uf)
+                        </MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Endereco"
                               ValueChanged="@((string v) => _dto.Endereco = CapitalizarPrimeira(v))"
-                              Label="Endereço"
+                              Label="Endereço *" Placeholder="Ex: Rua das Flores, 123"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="100" FullWidth="true" Immediate="true" />
+                              Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Bairro"
                               ValueChanged="@((string v) => _dto.Bairro = CapitalizarPrimeira(v))"
-                              Label="Bairro"
+                              Label="Bairro *" Placeholder="Ex: Centro"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="60" FullWidth="true" Immediate="true" />
+                              Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true" Immediate="true" />
             </MudItem>
-
+            <MudItem xs="12" sm="6" md="3">
+                <MudTextField Value="@_dto.Telefone"
+                              ValueChanged="@((string v) => _dto.Telefone = AplicarMascaraTelefone(v))"
+                              Label="Telefone *" Placeholder="(45) 99950-1199"
+                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
+                              Validation="@((string v) => ValidarTelefone(v))" />
+            </MudItem>
         </MudGrid>
 
         <MudGrid Spacing="2" Class="mt-1">
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField Value="@_dto.Telefone"
-                              ValueChanged="@((string v) => _dto.Telefone = AplicarMascaraTelefone(v))"
-                              Label="Telefone"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="15" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarTelefone(v))" />
-            </MudItem>
-            <MudItem xs="12" sm="6" md="3">
                 <MudTextField @bind-Value="_dto.Email"
-                              Label="E-mail"
+                              Label="E-mail *" Placeholder="contato@empresa.com.br"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="100" FullWidth="true"
+                              Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true"
                               Validation="@((string v) => ValidarEmail(v))"
                               InputType="InputType.Email" />
             </MudItem>
-
-            <MudItem xs="12" sm="12" md="6" Class="d-flex justify-end align-end gap-2">
+            <MudItem xs="12" sm="12" md="9" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
                 {
                     <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario" Style="height:40px;">
@@ -158,10 +127,11 @@
                     @(_salvando ? "Salvando..." : "SALVAR")
                 </MudButton>
             </MudItem>
-
         </MudGrid>
     </MudForm>
 </MudPaper>
+
+<!-- FILTROS -->
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
@@ -197,6 +167,8 @@
         </MudItem>
     </MudGrid>
 </MudPaper>
+
+<!-- TABELA -->
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
               Loading="_carregando" LoadingProgressColor="Color.Primary">
@@ -224,8 +196,7 @@
             <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
             <MudTd>
-                <MudChip T="string" Size="Size.Small"
-                         Color="@(context.Ativo ? Color.Success : Color.Error)">
+                <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">
                     @(context.Ativo ? "Ativo" : "Inativo")
                 </MudChip>
             </MudTd>
@@ -265,32 +236,22 @@
         if (d.Length != 14) return "CNPJ deve ter 14 dígitos";
         return null;
     }
-
     private string? ValidarTelefone(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         var d = new string(v.Where(char.IsDigit).ToArray());
-        return d.Length switch
-        {
-            10 => null,
-            11 => null,
-            < 10 => "Telefone incompleto — fixo: (XX) XXXX-XXXX ou celular: (XX) XXXXX-XXXX",
-            _ => "Telefone inválido — máximo 11 dígitos"
-        };
+        return d.Length switch { 10 => null, 11 => null, < 10 => "Telefone incompleto", _ => "Máximo 11 dígitos" };
     }
-
     private string? ValidarEmail(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido";
     }
-
     private string CapitalizarPrimeira(string? v)
     {
         if (string.IsNullOrEmpty(v)) return v ?? "";
         return char.ToUpper(v[0]) + v[1..];
     }
-
     private string AplicarMascaraCnpj(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
@@ -306,7 +267,6 @@
             _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}"
         };
     }
-
     private string AplicarMascaraTelefone(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
@@ -321,20 +281,15 @@
             _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"
         };
     }
-
     private static string FormatarCnpjExibicao(string cnpj)
     {
         var d = new string(cnpj.Where(char.IsDigit).ToArray());
-        return d.Length == 14
-            ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}"
-            : cnpj;
+        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : cnpj;
     }
-
-    private static string ChipTexto(DateTime? dt, string? nome)
+    // Chip sem "por X" — atualizado por não implementado neste semestre
+    private static string ChipTexto(DateTime? dt)
     {
         if (!dt.HasValue) return "";
-        var s = "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
-        if (!string.IsNullOrWhiteSpace(nome)) s += " por " + nome;
-        return s;
+        return "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
     }
 }
