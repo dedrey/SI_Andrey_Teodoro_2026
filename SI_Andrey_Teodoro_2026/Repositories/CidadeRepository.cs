@@ -64,6 +64,21 @@ public class CidadeRepository : ICidadeRepository
             new { estadoId });
     }
 
+    // Retorna todas as cidades ativas ordenadas por nome — usado em Fornecedores.
+    public async Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync()
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.QueryAsync<CidadeListDto>(
+            @"SELECT c.id, c.cidade AS NomeCidade, c.ddd,
+                     c.estado_id AS EstadoId, e.pais_id AS PaisId,
+                     e.estado AS NomeEstado, e.uf, p.pais AS NomePais
+              FROM cidades c
+              INNER JOIN estados e ON e.id = c.estado_id
+              INNER JOIN paises  p ON p.id = e.pais_id
+              WHERE c.ativo = TRUE
+              ORDER BY c.cidade");
+    }
+
     public async Task<Cidade?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();
@@ -86,12 +101,10 @@ public class CidadeRepository : ICidadeRepository
             @"SELECT MIN(seq)
               FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM cidades) t
               WHERE seq NOT IN (SELECT id FROM cidades)");
-
         await conn.ExecuteAsync(
             @"INSERT INTO cidades (id, cidade, ddd, estado_id, ativo)
               VALUES (@ProximoId, @NomeCidade, @Ddd, @EstadoId, @Ativo)",
             new { ProximoId = proximoId, dto.NomeCidade, dto.Ddd, dto.EstadoId, dto.Ativo });
-
         return proximoId;
     }
 
@@ -100,10 +113,7 @@ public class CidadeRepository : ICidadeRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE cidades
-              SET id            = @Id,
-                  cidade        = @NomeCidade,
-                  ddd           = @Ddd,
-                  estado_id     = @EstadoId,
+              SET id = @Id, cidade = @NomeCidade, ddd = @Ddd, estado_id = @EstadoId,
                   atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }

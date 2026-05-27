@@ -8,25 +8,29 @@ public class FornecedorDto
     public int IdOriginal { get; set; }
 
     [Required(ErrorMessage = "Razão Social é obrigatória")]
-    [MinLength(2, ErrorMessage = "Razão Social deve ter pelo menos 2 caracteres")]
+    [MinLength(2)]
     [MaxLength(100)]
     public string RazaoSocial { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "CNPJ é obrigatório")]
     [MaxLength(18)]
     public string Cnpj { get; set; } = string.Empty;
+
     [Required(ErrorMessage = "Nome Fantasia é obrigatório")]
-    [MinLength(2, ErrorMessage = "Nome Fantasia deve ter pelo menos 2 caracteres")]
+    [MinLength(2)]
     [MaxLength(100)]
     public string NomeFantasia { get; set; } = string.Empty;
 
+    // Localização — apenas CidadeId (sem País/Estado auxiliares)
+    public int? CidadeId { get; set; }
+
     [Required(ErrorMessage = "Endereço é obrigatório")]
-    [MinLength(5, ErrorMessage = "Endereço deve ter pelo menos 5 caracteres")]
+    [MinLength(5)]
     [MaxLength(100)]
     public string Endereco { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Bairro é obrigatório")]
-    [MinLength(2, ErrorMessage = "Bairro deve ter pelo menos 2 caracteres")]
+    [MinLength(2)]
     [MaxLength(60)]
     public string Bairro { get; set; } = string.Empty;
 
@@ -38,9 +42,7 @@ public class FornecedorDto
     [MaxLength(100)]
     [EmailAddress(ErrorMessage = "E-mail inválido")]
     public string Email { get; set; } = string.Empty;
-    public int? PaisId { get; set; }
-    public int? EstadoId { get; set; }
-    public int? CidadeId { get; set; }
+
     public bool Ativo { get; set; } = true;
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }

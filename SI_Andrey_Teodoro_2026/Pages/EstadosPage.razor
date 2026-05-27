@@ -10,16 +10,14 @@
 </div>
 
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
-
     <div class="d-flex align-center justify-space-between mb-3">
         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
             @(_dto.IdOriginal == 0 ? "Novo Estado" : "Editar Estado")
         </MudText>
         @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
         {
-            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
-                     Icon="@Icons.Material.Filled.Edit">
-                @ChipTexto(_dto.AtualizadoEm, _dto.NomeAtualizadoPor)
+            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Edit">
+                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
             </MudChip>
         }
     </div>
@@ -29,8 +27,7 @@
             @if (_dto.IdOriginal != 0)
             {
                 <MudItem xs="4" sm="2" md="1">
-                    <MudTextField @bind-Value="_dto.Id" Label="ID"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                    <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
                 </MudItem>
             }
             <MudItem xs="10" sm="5" md="3">
@@ -46,44 +43,43 @@
                 </MudSelect>
                 @if (_paisNaoSelecionado)
                 {
-                    <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">
-                        ⚠ Selecione um país antes de salvar
-                    </MudText>
+                    <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um país antes de salvar</MudText>
                 }
             </MudItem>
             <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                 <MudTooltip Text="Novo País">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                   Size="Size.Medium" OnClick="AbrirModalPais" />
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalPais" />
                 </MudTooltip>
             </MudItem>
             <MudItem xs="12" sm="5" md="4">
                 <MudTextField Value="@_dto.NomeEstado"
                               ValueChanged="@((string v) => _dto.NomeEstado = CapitalizarPrimeira(v))"
-                              Label="Nome do Estado"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Label="Nome do Estado *" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarSoLetras(v, "Estado"))" />
             </MudItem>
             <MudItem xs="4" sm="2" md="1">
                 <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = FiltrarLetrasUpper(v))"
-                              Label="UF"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Label="UF *" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarUf(v))" />
             </MudItem>
-            <MudItem xs="12" sm="12" md="@(_dto.IdOriginal != 0 ? 2 : 3)" Class="d-flex align-end gap-2">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                           Disabled="_salvando" FullWidth="true" Style="height:40px;font-weight:700;">
-                    @(_salvando ? "Salvando..." : "SALVAR")
-                </MudButton>
+        </MudGrid>
+
+        <!-- Botões sempre em linha própria, alinhados à direita -->
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
                 {
                     <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
-                               Style="height:40px;min-width:40px;">
+                               Style="height:40px;min-width:40px;" title="Cancelar edição">
                         <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
                     </MudButton>
                 }
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                           Disabled="_salvando" Style="height:40px;font-weight:700;min-width:130px;">
+                    @(_salvando ? "Salvando..." : "SALVAR")
+                </MudButton>
             </MudItem>
         </MudGrid>
     </MudForm>
@@ -92,33 +88,27 @@
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
-            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
-                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true"
+            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
                           OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem>
                 <MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem>
                 <MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por"
-                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem>
                 <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
                 <MudSelectItem T="string" Value="@("data")">Data</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
-                       FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros"
-                       Style="height:40px;min-width:40px;">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
             </MudButton>
         </MudItem>
@@ -126,8 +116,7 @@
 </MudPaper>
 
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
-    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
-              Loading="_carregando" LoadingProgressColor="Color.Primary">
+    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
             <MudTh Style="font-weight:600;">Estado</MudTh>
@@ -141,16 +130,9 @@
             <MudTd><strong>@context.NomeEstado</strong></MudTd>
             <MudTd><MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Uf</MudChip></MudTd>
             <MudTd>@context.NomePais</MudTd>
-            <MudTd>
-                <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">
-                    @(context.Ativo ? "Ativo" : "Inativo")
-                </MudChip>
-            </MudTd>
+            <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
-                <MudTooltip Text="Editar">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                   OnClick="@(() => Editar(context.Id))" />
-                </MudTooltip>
+                <MudTooltip Text="Editar"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" /></MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
                                    Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
@@ -168,8 +150,7 @@
     @if (_resultado != null)
     {
         <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas"
-                                TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
         </div>
     }
 </MudPaper>
@@ -178,30 +159,16 @@
     private string? ValidarSoLetras(string? v, string campo)
     {
         if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$"))
-            return $"{campo} deve conter apenas letras";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$")) return $"{campo} deve conter apenas letras";
         return null;
     }
     private string? ValidarUf(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         if (v.Length != 2) return "UF deve ter 2 letras";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[A-Z]{2}$"))
-            return "UF deve ter 2 letras maiúsculas";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[A-Z]{2}$")) return "UF deve ter 2 letras maiúsculas";
         return null;
     }
-    private string CapitalizarPrimeira(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return v ?? "";
-        return char.ToUpper(v[0]) + v[1..];
-    }
-    private string FiltrarLetrasUpper(string? v)
-        => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
-    private static string ChipTexto(DateTime? dt, string? nome)
-    {
-        if (!dt.HasValue) return "";
-        var s = "Atualizado em " + dt.Value.ToString("dd/MM/yyyy HH:mm");
-        if (!string.IsNullOrWhiteSpace(nome)) s += " por " + nome;
-        return s;
-    }
+    private string CapitalizarPrimeira(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }
+    private string FiltrarLetrasUpper(string? v) => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
 }

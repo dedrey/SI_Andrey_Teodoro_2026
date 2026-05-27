@@ -30,7 +30,6 @@
                 Início
             </MudNavLink>
 
-            <!-- Localização -->
             <MudNavGroup Title="Localização" Icon="@Icons.Material.Filled.LocationOn" Expanded="false">
                 <MudNavLink Href="/paises" Icon="@Icons.Material.Filled.Flag">Países</MudNavLink>
                 <MudNavLink Href="/estados" Icon="@Icons.Material.Filled.Map">Estados</MudNavLink>
@@ -45,12 +44,14 @@
                 Usuários
             </MudNavLink>
 
-            <!-- Cadastros Base — novo grupo -->
             <MudNavGroup Title="Cadastros Base" Icon="@Icons.Material.Filled.Tune" Expanded="true">
                 <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">
                     Categorias
                 </MudNavLink>
-                @* Marcas e Unidades de Medida serão adicionados aqui *@
+                <MudNavLink Href="/marcas" Icon="@Icons.Material.Filled.Style">
+                    Marcas
+                </MudNavLink>
+                @* Unidades de Medida será adicionado aqui *@
             </MudNavGroup>
 
         </MudNavMenu>

@@ -27,8 +27,6 @@ public class FornecedorService : IFornecedorService
             Bairro = f.Bairro ?? string.Empty,
             Telefone = f.Telefone ?? string.Empty,
             Email = f.Email ?? string.Empty,
-            PaisId = f.PaisId,
-            EstadoId = f.EstadoId,
             CidadeId = f.CidadeId,
             Ativo = f.Ativo,
             AtualizadoEm = f.AtualizadoEm,
