@@ -30,28 +30,29 @@
                 Início
             </MudNavLink>
 
+            <!-- Localização -->
             <MudNavGroup Title="Localização" Icon="@Icons.Material.Filled.LocationOn" Expanded="false">
                 <MudNavLink Href="/paises" Icon="@Icons.Material.Filled.Flag">Países</MudNavLink>
                 <MudNavLink Href="/estados" Icon="@Icons.Material.Filled.Map">Estados</MudNavLink>
                 <MudNavLink Href="/cidades" Icon="@Icons.Material.Filled.LocationCity">Cidades</MudNavLink>
             </MudNavGroup>
 
-            <MudNavLink Href="/fornecedores" Icon="@Icons.Material.Filled.LocalShipping">
-                Fornecedores
-            </MudNavLink>
+            <!-- Pessoas — Clientes, Fornecedores, Emitentes -->
+            <MudNavGroup Title="Pessoas" Icon="@Icons.Material.Filled.PeopleAlt" Expanded="true">
+                <MudNavLink Href="/clientes" Icon="@Icons.Material.Filled.Person">Clientes</MudNavLink>
+                <MudNavLink Href="/fornecedores" Icon="@Icons.Material.Filled.LocalShipping">Fornecedores</MudNavLink>
+            </MudNavGroup>
 
-            <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.People">
+            <!-- Usuários  -->
+            <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.ManageAccounts">
                 Usuários
             </MudNavLink>
 
-            <MudNavGroup Title="Cadastros Base" Icon="@Icons.Material.Filled.Tune" Expanded="true">
-                <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">
-                    Categorias
-                </MudNavLink>
-                <MudNavLink Href="/marcas" Icon="@Icons.Material.Filled.Style">
-                    Marcas
-                </MudNavLink>
-                @* Unidades de Medida será adicionado aqui *@
+            <!-- Cadastros Base -->
+            <MudNavGroup Title="Cadastros Base" Icon="@Icons.Material.Filled.Tune" Expanded="false">
+                <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
+                <MudNavLink Href="/marcas" Icon="@Icons.Material.Filled.Style">Marcas</MudNavLink>
+                <MudNavLink Href="/unidades-medida" Icon="@Icons.Material.Filled.Straighten">Unidades de Medida</MudNavLink>
             </MudNavGroup>
 
         </MudNavMenu>

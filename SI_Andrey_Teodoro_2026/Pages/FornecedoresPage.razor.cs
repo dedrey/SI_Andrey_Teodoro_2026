@@ -20,8 +20,6 @@ public partial class FornecedoresPage : ComponentBase
     private bool _formValido;
     private bool _carregando;
     private bool _salvando;
-
-    // Lista única de cidades (todas ativas, sem filtro de país/estado)
     private List<CidadeListDto> _cidades = new();
 
     protected override async Task OnInitializedAsync()

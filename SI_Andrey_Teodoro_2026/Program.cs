@@ -33,7 +33,9 @@ builder.Services.AddScoped<ICidadeRepository, CidadeRepository>();
 builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
-builder.Services.AddScoped<IMarcaRepository, MarcaRepository>();      // ← novo
+builder.Services.AddScoped<IMarcaRepository, MarcaRepository>();
+builder.Services.AddScoped<IUnidadeMedidaRepository, UnidadeMedidaRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────
 builder.Services.AddScoped<IPaisService, PaisService>();
@@ -42,7 +44,9 @@ builder.Services.AddScoped<ICidadeService, CidadeService>();
 builder.Services.AddScoped<IFornecedorService, FornecedorService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
-builder.Services.AddScoped<IMarcaService, MarcaService>();            // ← novo
+builder.Services.AddScoped<IMarcaService, MarcaService>();
+builder.Services.AddScoped<IUnidadeMedidaService, UnidadeMedidaService>();
+builder.Services.AddScoped<IClienteService, ClienteService>();
 
 var app = builder.Build();
 

@@ -7,7 +7,7 @@ public interface ICidadeRepository
 {
     Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId);
-    Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync();   // ← novo
+    Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync();
     Task<Cidade?> ObterPorIdAsync(int id);
     Task<int> InserirAsync(CidadeDto dto);
     Task AtualizarAsync(CidadeDto dto);
