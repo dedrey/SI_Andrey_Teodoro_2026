@@ -83,7 +83,7 @@
             <MudItem xs="12" sm="6" md="4">
                 <MudTextField Value="@_dto.NomeCidade"
                               ValueChanged="@((string v) => _dto.NomeCidade = CapitalizarPrimeira(v))"
-                              Label="Nome da Cidade *" Placeholder="Ex: Campinas"
+                              Label="Cidade"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
                               MaxLength="50" FullWidth="true" Immediate="true"
@@ -94,19 +94,13 @@
             <MudItem xs="4" sm="2" md="1">
                 <MudTextField Value="@_dddTexto"
                               ValueChanged="@((string v) => { OnDddAlterado(v); })"
-                              Label="DDD *" Placeholder="45"
+                              Label="DDD"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
                               MaxLength="3" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarDdd(v))" />
             </MudItem>
         </MudGrid>
-
-        <!--
-            Botão SALVAR em linha própria, sempre alinhado à DIREITA.
-            xs="12" garante linha nova; justify-end empurra os botões para a direita.
-            Isso resolve o problema independente de quantas colunas a linha anterior ocupa.
-        -->
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)

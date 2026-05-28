@@ -32,7 +32,7 @@
                 </MudItem>
             }
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.NomePais" Label="País *"
+                <MudTextField @bind-Value="_dto.NomePais" Label="País"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true"
                               Validation="@((string v) => ValidarNome(v, "País"))"
@@ -40,32 +40,30 @@
             </MudItem>
             <MudItem xs="6" sm="3" md="2">
                 <MudTextField Value="@_dto.Sigla" ValueChanged="@((string v) => _dto.Sigla = FiltrarLetrasUpper(v))"
-                              Label="Sigla *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Label="Sigla" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarSigla(v))" />
             </MudItem>
             <MudItem xs="6" sm="3" md="2">
                 <MudTextField Value="@_dto.Ddi" ValueChanged="@((string v) => _dto.Ddi = FiltrarNumeros(v))"
-                              Label="DDI *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Label="DDI" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarDdi(v))" />
             </MudItem>
             <MudItem xs="6" sm="3" md="2">
-                <MudTextField @bind-Value="_dto.Moeda" Label="Moeda *"
+                <MudTextField @bind-Value="_dto.Moeda" Label="Moeda"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true"
                               Validation="@((string v) => ValidarMoeda(v))"
                               OnBlur="@(() => _dto.Moeda = CapitalizarPrimeira(_dto.Moeda))" />
             </MudItem>
             <MudItem xs="6" sm="3" md="2">
-                <MudTextField @bind-Value="_dto.SimboleMoeda" Label="Símbolo *"
+                <MudTextField @bind-Value="_dto.SimboleMoeda" Label="Símbolo"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="5" FullWidth="true"
                               OnBlur="@(() => _dto.SimboleMoeda = (_dto.SimboleMoeda ?? "").ToUpper())" />
             </MudItem>
         </MudGrid>
-
-        <!-- Botões sempre em linha própria, alinhados à direita -->
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)

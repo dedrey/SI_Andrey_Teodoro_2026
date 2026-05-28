@@ -33,14 +33,12 @@
             <MudItem xs="12" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
                 <MudTextField Value="@_dto.NomeCategoria"
                               ValueChanged="@((string v) => _dto.NomeCategoria = CapitalizarPrimeira(v))"
-                              Label="Categoria *" Placeholder="Ex: Camisetas, Calças, Acessórios..."
+                              Label="Categoria"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarNome(v))" />
             </MudItem>
         </MudGrid>
-
-        <!-- Botões sempre em linha própria, alinhados à direita -->
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)

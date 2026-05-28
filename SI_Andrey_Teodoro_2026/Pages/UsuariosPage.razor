@@ -32,34 +32,32 @@
             }
             <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 5)">
                 <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = CapitalizarPrimeira(v))"
-                              Label="Nome *" Placeholder="Ex: Andrey Teodoro"
+                              Label="Nome"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="75" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarNome(v))" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Email" Label="E-mail *" Placeholder="andrey@email.com"
+                <MudTextField @bind-Value="_dto.Email" Label="E-mail *"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true"
                               InputType="InputType.Email" Validation="@((string v) => ValidarEmail(v))" />
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
                 <MudTextField Value="@_cpfTexto" ValueChanged="@((string v) => { OnCpfAlterado(v); })"
-                              Label="CPF *" Placeholder="000.000.000-00"
+                              Label="CPF"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="14" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarCpfCampo(v))" />
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
                 <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = AplicarMascaraTelefone(v))"
-                              Label="Telefone *" Placeholder="(45) 99950-1199"
+                              Label="Telefone"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarTelefone(v))" />
             </MudItem>
         </MudGrid>
-
-        <!-- Botões sempre em linha própria, alinhados à direita -->
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
