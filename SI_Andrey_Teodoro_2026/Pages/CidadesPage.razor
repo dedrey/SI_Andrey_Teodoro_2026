@@ -30,8 +30,6 @@
                     <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
                 </MudItem>
             }
-
-            <!-- País -->
             <MudItem xs="10" sm="5" md="3">
                 <MudSelect T="int" Value="_dto.PaisId" ValueChanged="OnPaisAlterado"
                            Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
@@ -53,8 +51,6 @@
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalPais" />
                 </MudTooltip>
             </MudItem>
-
-            <!-- Estado -->
             <MudItem xs="10" sm="5" md="3">
                 <MudSelect T="int" @bind-Value="_dto.EstadoId"
                            Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
@@ -78,8 +74,6 @@
                                    Disabled="@(_dto.PaisId == 0)" OnClick="AbrirModalEstado" />
                 </MudTooltip>
             </MudItem>
-
-            <!-- Nome da Cidade -->
             <MudItem xs="12" sm="6" md="4">
                 <MudTextField Value="@_dto.NomeCidade"
                               ValueChanged="@((string v) => _dto.NomeCidade = CapitalizarPrimeira(v))"
@@ -89,8 +83,6 @@
                               MaxLength="50" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarSoLetras(v, "Cidade"))" />
             </MudItem>
-
-            <!-- DDD -->
             <MudItem xs="4" sm="2" md="1">
                 <MudTextField Value="@_dddTexto"
                               ValueChanged="@((string v) => { OnDddAlterado(v); })"

@@ -88,8 +88,6 @@ public class MarcaRepository : IMarcaRepository
     public async Task<int> InserirAsync(MarcaDto dto)
     {
         using var conn = _factory.CreateConnection();
-
-        // Calcula o menor ID disponível na sequência (preenche buracos).
         var proximoId = await conn.ExecuteScalarAsync<int>(
             @"SELECT MIN(seq)
               FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM marcas) t

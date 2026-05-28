@@ -34,7 +34,6 @@ public class CategoriaService : ICategoriaService
     {
         try
         {
-            // Normaliza: capitaliza primeira letra, remove espaços extras
             dto.NomeCategoria = CapitalizarPrimeira(dto.NomeCategoria.Trim());
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;

@@ -31,16 +31,17 @@
                 </MudItem>
             }
             <MudItem xs="10" sm="5" md="3">
-                <MudSelect T="int" @bind-Value="_dto.PaisId"
-                           Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
-                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                           Class="@(_paisNaoSelecionado ? "mud-input-error" : "")">
-                    <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                    @foreach (var p in _paises)
-                    {
-                        <MudSelectItem T="int" Value="@p.Id">@p.NomePais</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete T="PaisListDto"
+                                 Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
+                                 Value="_paisSelecionado"
+                                 ValueChanged="OnPaisAlterado"
+                                 SearchFunc="PesquisarPais"
+                                 ToStringFunc="@(p => p == null ? "" : p.NomePais)"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 FullWidth="true" Clearable="true"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="false"
+                                 Class="@(_paisNaoSelecionado ? "mud-input-error" : "")" />
                 @if (_paisNaoSelecionado)
                 {
                     <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um país antes de salvar</MudText>
@@ -51,9 +52,9 @@
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalPais" />
                 </MudTooltip>
             </MudItem>
+
             <MudItem xs="12" sm="5" md="4">
-                <MudTextField Value="@_dto.NomeEstado"
-                              ValueChanged="@((string v) => _dto.NomeEstado = CapitalizarPrimeira(v))"
+                <MudTextField Value="@_dto.NomeEstado" ValueChanged="@((string v) => _dto.NomeEstado = Cap(v))"
                               Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true"
                               Immediate="true" Validation="@((string v) => ValidarSoLetras(v, "Estado"))" />
@@ -65,12 +66,12 @@
                               Immediate="true" Validation="@((string v) => ValidarUf(v))" />
             </MudItem>
         </MudGrid>
+
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
                 {
-                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
-                               Style="height:40px;min-width:40px;" title="Cancelar edição">
+                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario" Style="height:40px;min-width:40px;">
                         <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
                     </MudButton>
                 }
@@ -154,6 +155,21 @@
 </MudPaper>
 
 @code {
+    private PaisListDto? _paisSelecionado
+    {
+        get => _paises.FirstOrDefault(p => p.Id == _dto.PaisId);
+        set { _dto.PaisId = value?.Id ?? 0; _paisNaoSelecionado = false; }
+    }
+
+    private Task<IEnumerable<PaisListDto>> PesquisarPais(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca)
+            ? _paises.Take(50)
+            : _paises.Where(p => p.NomePais.Contains(busca, StringComparison.OrdinalIgnoreCase)
+                              || p.Sigla.Contains(busca, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(r);
+    }
+
     private string? ValidarSoLetras(string? v, string campo)
     {
         if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
@@ -167,6 +183,6 @@
         if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[A-Z]{2}$")) return "UF deve ter 2 letras maiúsculas";
         return null;
     }
-    private string CapitalizarPrimeira(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }
+    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }
     private string FiltrarLetrasUpper(string? v) => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
 }

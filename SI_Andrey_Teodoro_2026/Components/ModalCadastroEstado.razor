@@ -14,8 +14,6 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-
-                <!-- País -->
                 <MudItem xs="12">
                     <MudSelect T="int" @bind-Value="_dto.PaisId"
                                Label="País *" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -28,11 +26,6 @@
                         }
                     </MudSelect>
                 </MudItem>
-
-                <!--
-                    Nome do Estado: capitaliza primeira letra automaticamente.
-                    Só letras e espaços — mesma validação da EstadosPage.
-                -->
                 <MudItem xs="12" sm="9">
                     <MudTextField Value="@_dto.NomeEstado"
                                   ValueChanged="@((string v) => _dto.NomeEstado = CapitalizarPrimeira(v))"
@@ -42,11 +35,6 @@
                                   MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarSoLetras(v, "Estado"))" />
                 </MudItem>
-
-                <!--
-                    UF: somente letras, automático em maiúsculas, exatamente 2 caracteres.
-                    Filtra dígitos e caracteres especiais em tempo real.
-                -->
                 <MudItem xs="12" sm="3">
                     <MudTextField Value="@_dto.Uf"
                                   ValueChanged="@((string v) => _dto.Uf = FiltrarLetrasUpper(v))"
@@ -97,8 +85,6 @@
     }
 
     private void Cancelar() => MudDialog.Cancel();
-
-    // ── Validações (idênticas à EstadosPage) ─────────────────────────────────
     private string? ValidarSoLetras(string? v, string campo)
     {
         if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
@@ -117,15 +103,11 @@
             return "UF deve ter 2 letras maiúsculas";
         return null;
     }
-
-    // ── Formatação em tempo real ─────────────────────────────────────────────
     private string CapitalizarPrimeira(string? v)
     {
         if (string.IsNullOrEmpty(v)) return v ?? "";
         return char.ToUpper(v[0]) + v[1..];
     }
-
-    // Mantém apenas letras e converte para maiúsculas — usado em UF
     private string FiltrarLetrasUpper(string? v)
         => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
 }

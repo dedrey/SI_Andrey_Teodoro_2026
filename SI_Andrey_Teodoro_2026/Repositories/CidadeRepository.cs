@@ -63,8 +63,6 @@ public class CidadeRepository : ICidadeRepository
               WHERE c.estado_id = @estadoId AND c.ativo = TRUE ORDER BY c.cidade",
             new { estadoId });
     }
-
-    // Retorna todas as cidades ativas ordenadas por nome — usado em Fornecedores.
     public async Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync()
     {
         using var conn = _factory.CreateConnection();

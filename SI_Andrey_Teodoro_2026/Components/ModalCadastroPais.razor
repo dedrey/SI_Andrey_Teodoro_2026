@@ -13,8 +13,6 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-
-                <!-- Nome do País: capitaliza primeira letra, só letras e espaços -->
                 <MudItem xs="12" sm="8">
                     <MudTextField Value="@_dto.NomePais"
                                   ValueChanged="@((string v) => _dto.NomePais = CapitalizarPrimeira(v))"
@@ -24,11 +22,6 @@
                                   MaxLength="60" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v, "País"))" />
                 </MudItem>
-
-                <!--
-                    Sigla: somente letras, automático em maiúsculas, máx 3.
-                    Filtra qualquer dígito ou caractere especial em tempo real.
-                -->
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Sigla"
                                   ValueChanged="@((string v) => _dto.Sigla = FiltrarLetrasUpper(v))"
@@ -38,11 +31,6 @@
                                   MaxLength="3" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarSigla(v))" />
                 </MudItem>
-
-                <!--
-                    DDI: somente dígitos, máx 3 caracteres (1 a 999).
-                    Filtra letras automaticamente.
-                -->
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Ddi"
                                   ValueChanged="@((string v) => _dto.Ddi = FiltrarNumeros(v))"
@@ -52,8 +40,6 @@
                                   MaxLength="3" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarDdi(v))" />
                 </MudItem>
-
-                <!-- Moeda: capitaliza, só letras -->
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Moeda"
                                   ValueChanged="@((string v) => _dto.Moeda = CapitalizarPrimeira(v))"
@@ -63,8 +49,6 @@
                                   MaxLength="30" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v, "Moeda"))" />
                 </MudItem>
-
-                <!-- Símbolo: automático em maiúsculas, máx 5 -->
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.SimboleMoeda"
                                   ValueChanged="@((string v) => _dto.SimboleMoeda = v.ToUpper())"
@@ -107,8 +91,6 @@
     }
 
     private void Cancelar() => MudDialog.Cancel();
-
-    // ── Validações (idênticas à PaisesPage) ─────────────────────────────────
     private string? ValidarNome(string? v, string campo)
     {
         if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
@@ -141,19 +123,13 @@
         if (v.Length < 1) return "Símbolo é obrigatório";
         return null;
     }
-
-    // ── Formatação em tempo real ─────────────────────────────────────────────
     private string CapitalizarPrimeira(string? v)
     {
         if (string.IsNullOrEmpty(v)) return v ?? "";
         return char.ToUpper(v[0]) + v[1..];
     }
-
-    // Mantém apenas letras e converte para maiúsculas — usado em Sigla
     private string FiltrarLetrasUpper(string? v)
         => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
-
-    // Mantém apenas dígitos — usado em DDI
     private string FiltrarNumeros(string? v)
         => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsDigit).ToArray());
 }

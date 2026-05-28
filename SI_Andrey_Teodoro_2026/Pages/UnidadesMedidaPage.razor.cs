@@ -6,41 +6,32 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public partial class FornecedoresPage : ComponentBase
+public partial class UnidadesMedidaPage : ComponentBase
 {
-    [Inject] private IFornecedorService FornecedorService { get; set; } = null!;
-    [Inject] private ICidadeService CidadeService { get; set; } = null!;
+    [Inject] private IUnidadeMedidaService UnidadeMedidaService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
 
-    private PaginacaoDto<FornecedorListDto>? _resultado;
+    private PaginacaoDto<UnidadeMedidaListDto>? _resultado;
     private FiltroConsultaDto _filtro = new();
-    private FornecedorDto _dto = new();
+    private UnidadeMedidaDto _dto = new();
     private MudForm _form = null!;
     private bool _formValido;
     private bool _carregando;
     private bool _salvando;
-    private List<CidadeListDto> _cidades = new();
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            await CarregarCidades();
-            await CarregarDados();
-        }
+        try { await CarregarDados(); }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
-
-    private async Task CarregarCidades()
-        => _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
 
     private async Task CarregarDados()
     {
         try
         {
             _carregando = true;
-            _resultado = await FornecedorService.ObterTodosAsync(_filtro);
+            _resultado = await UnidadeMedidaService.ObterTodosAsync(_filtro);
         }
         catch (Exception ex)
         {
@@ -62,9 +53,9 @@ public partial class FornecedoresPage : ComponentBase
 
     private async Task Editar(int id)
     {
-        var f = await FornecedorService.ObterPorIdAsync(id);
-        if (f == null) { Snackbar.Add("Fornecedor não encontrado.", Severity.Warning); return; }
-        _dto = f;
+        var u = await UnidadeMedidaService.ObterPorIdAsync(id);
+        if (u == null) { Snackbar.Add("Unidade de medida não encontrada.", Severity.Warning); return; }
+        _dto = u;
         StateHasChanged();
     }
 
@@ -72,19 +63,21 @@ public partial class FornecedoresPage : ComponentBase
     {
         await _form.ValidateAsync();
         if (!_formValido) return;
+
         _salvando = true;
-        var (sucesso, mensagem, _) = await FornecedorService.SalvarAsync(_dto);
+        var (sucesso, mensagem, _) = await UnidadeMedidaService.SalvarAsync(_dto);
         _salvando = false;
+
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) { LimparFormulario(); await CarregarDados(); }
     }
 
-    private async Task AlterarStatus(int id, string nome, bool ativoAtual)
+    private async Task AlterarStatus(int id, string sigla, bool ativoAtual)
     {
         var param = new DialogParameters<ConfirmDialog>
         {
             { x => x.Titulo,     $"Confirmar {(ativoAtual ? "desativar" : "ativar")}" },
-            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} o fornecedor \"{nome}\"?" },
+            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} a unidade \"{sigla}\"?" },
             { x => x.TextoBotao, ativoAtual ? "Desativar" : "Ativar" },
             { x => x.CorBotao,   ativoAtual ? Color.Error : Color.Success }
         };
@@ -92,7 +85,7 @@ public partial class FornecedoresPage : ComponentBase
             param, new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
         if ((await dialog.Result) is { Canceled: false })
         {
-            var (sucesso, mensagem) = await FornecedorService.AlterarStatusAsync(id, !ativoAtual);
+            var (sucesso, mensagem) = await UnidadeMedidaService.AlterarStatusAsync(id, !ativoAtual);
             Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
             if (sucesso) await CarregarDados();
         }

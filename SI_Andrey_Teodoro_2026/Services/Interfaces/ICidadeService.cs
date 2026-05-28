@@ -6,7 +6,7 @@ public interface ICidadeService
 {
     Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId);
-    Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync();   // ← novo
+    Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync();
     Task<CidadeDto?> ObterPorIdAsync(int id);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CidadeDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);

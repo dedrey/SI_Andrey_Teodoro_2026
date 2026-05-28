@@ -38,7 +38,7 @@
                               Validation="@((string v) => ValidarNome(v))" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Email" Label="E-mail *"
+                <MudTextField @bind-Value="_dto.Email" Label="E-mail"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true"
                               InputType="InputType.Email" Validation="@((string v) => ValidarEmail(v))" />
