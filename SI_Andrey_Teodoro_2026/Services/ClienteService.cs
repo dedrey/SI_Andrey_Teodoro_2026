@@ -32,6 +32,7 @@ public class ClienteService : IClienteService
             ApelidoNomeFantasia = c.ApelidoNomeFantasia,
             CidadeId = c.CidadeId,
             Endereco = c.Endereco ?? string.Empty,
+            Complemento = c.Complemento,
             Bairro = c.Bairro ?? string.Empty,
             Telefone = c.Telefone ?? string.Empty,
             Email = c.Email ?? string.Empty,
