@@ -235,3 +235,39 @@ CREATE TABLE veiculos (
   CONSTRAINT fk_veiculos_criado_por       FOREIGN KEY (criado_por)        REFERENCES usuarios(id)        ON DELETE SET NULL,
   CONSTRAINT fk_veiculos_atualizado_por   FOREIGN KEY (atualizado_por)    REFERENCES usuarios(id)        ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+-- ================================================================
+-- 7. FINANCEIRO BASE
+-- ================================================================
+CREATE TABLE metodos_pagamento (
+  id               INT         AUTO_INCREMENT PRIMARY KEY,
+  codigo           VARCHAR(4)  NOT NULL UNIQUE,
+  metodo_pagamento VARCHAR(25) NOT NULL UNIQUE,
+  ativo            BOOLEAN     NOT NULL DEFAULT TRUE,
+  criado_em        DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por       INT NULL,
+  atualizado_em    DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por   INT NULL,
+  CONSTRAINT fk_metodos_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_metodos_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE condicoes_pagamentos (
+  id                        INT           AUTO_INCREMENT PRIMARY KEY,
+  condicao_pagamento        VARCHAR(50)   NOT NULL UNIQUE,
+  metodo_pagamento_id       INT           NOT NULL,
+  numero_parcelas           INT           NOT NULL DEFAULT 1,
+  entrada_minima_percentual DECIMAL(7,4)  NOT NULL DEFAULT 0,
+  desconto_percentual       DECIMAL(7,4)  NOT NULL DEFAULT 0,
+  acrescimo_percentual      DECIMAL(7,4)  NOT NULL DEFAULT 0,
+  multa_percentual          DECIMAL(7,4)  NOT NULL DEFAULT 0,
+  taxa_juros_percentual     DECIMAL(7,4)  NOT NULL DEFAULT 0,
+  ativo                     BOOLEAN       NOT NULL DEFAULT TRUE,
+  criado_em                 DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por                INT NULL,
+  atualizado_em             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por            INT NULL,
+  CONSTRAINT fk_condicoes_metodo          FOREIGN KEY (metodo_pagamento_id) REFERENCES metodos_pagamento(id) ON DELETE NO ACTION,
+  CONSTRAINT fk_condicoes_criado_por      FOREIGN KEY (criado_por)          REFERENCES usuarios(id)          ON DELETE SET NULL,
+  CONSTRAINT fk_condicoes_atualizado_por  FOREIGN KEY (atualizado_por)      REFERENCES usuarios(id)          ON DELETE SET NULL
+) ENGINE=InnoDB;
