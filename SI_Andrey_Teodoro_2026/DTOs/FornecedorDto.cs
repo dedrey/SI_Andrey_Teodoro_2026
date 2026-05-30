@@ -20,14 +20,14 @@ public class FornecedorDto
     [MinLength(2)]
     [MaxLength(100)]
     public string NomeFantasia { get; set; } = string.Empty;
-
-    // Localização — apenas CidadeId (sem País/Estado auxiliares)
     public int? CidadeId { get; set; }
 
     [Required(ErrorMessage = "Endereço é obrigatório")]
     [MinLength(5)]
     [MaxLength(100)]
     public string Endereco { get; set; } = string.Empty;
+    [MaxLength(50)] public string? Complemento { get; set; }
+
 
     [Required(ErrorMessage = "Bairro é obrigatório")]
     [MinLength(2)]

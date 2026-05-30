@@ -15,7 +15,7 @@ public class ClienteDto
     public bool Estrangeiro { get; set; } = false;
     [MaxLength(14)] public string? CpfCnpj { get; set; }
     [MaxLength(30)] public string? DocumentoEstrangeiro { get; set; }
-    [MaxLength(50)] public string? Nacionalidade { get; set; }
+    [MaxLength(50)] public string? PaisOrigem { get; set; }
     [MaxLength(100)] public string? ApelidoNomeFantasia { get; set; }
     public int? CidadeId { get; set; }
 
@@ -23,6 +23,8 @@ public class ClienteDto
     [MinLength(5)]
     [MaxLength(100)]
     public string Endereco { get; set; } = string.Empty;
+    [MaxLength(50)] public string? Complemento { get; set; }
+
 
     [Required(ErrorMessage = "Bairro é obrigatório")]
     [MinLength(2)]

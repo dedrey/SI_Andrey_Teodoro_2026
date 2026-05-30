@@ -6,6 +6,7 @@ public interface IEstadoService
 {
     Task<PaginacaoDto<EstadoListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<EstadoListDto>> ObterPorPaisAsync(int paisId);
+    Task<IEnumerable<EstadoListDto>> ObterTodosAtivosAsync();
     Task<EstadoDto?> ObterPorIdAsync(int id);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(EstadoDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);

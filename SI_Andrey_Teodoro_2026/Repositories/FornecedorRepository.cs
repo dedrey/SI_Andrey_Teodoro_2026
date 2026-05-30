@@ -14,25 +14,43 @@ public class FornecedorRepository : IFornecedorRepository
     public async Task<PaginacaoDto<FornecedorListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
+
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add("(f.razaosocial LIKE @Busca OR f.apelido_nomefantasia LIKE @Busca OR f.cnpj LIKE @Busca OR CAST(f.id AS CHAR) = @BuscaExata)");
-        where.Add(filtro.StatusFiltro switch { "ativos" => "f.ativo = TRUE", "inativos" => "f.ativo = FALSE", _ => "1=1" });
+            where.Add(@"(f.razaosocial       LIKE @Busca
+                      OR f.nomefantasia      LIKE @Busca
+                      OR f.cnpj              LIKE @Busca
+                      OR CAST(f.id AS CHAR) = @BuscaExata)");
+        where.Add(filtro.StatusFiltro switch
+        {
+            "ativos" => "f.ativo = TRUE",
+            "inativos" => "f.ativo = FALSE",
+            _ => "1=1"
+        });
         var whereClause = "WHERE " + string.Join(" AND ", where);
-        var orderBy = filtro.OrdenarPor switch { "id" => "f.id", "data" => "f.criado_em", _ => "f.razaosocial" };
+        var orderBy = filtro.OrdenarPor switch
+        {
+            "id" => "f.id",
+            "data" => "f.criado_em",
+            _ => "f.razaosocial"
+        };
 
         var sqlCount = $"SELECT COUNT(*) FROM fornecedores f {whereClause}";
         var sqlData = $@"SELECT f.id,
-                                 f.razaosocial          AS RazaoSocial,
-                                 f.cnpj                 AS Cnpj,
-                                 f.apelido_nomefantasia AS NomeFantasia,
-                                 f.cidade_id            AS CidadeId,
-                                 c.cidade               AS NomeCidade,
-                                 f.endereco, f.telefone, f.email, f.ativo,
-                                 f.criado_em AS CriadoEm, f.atualizado_em AS AtualizadoEm
+                                 f.razaosocial     AS RazaoSocial,
+                                 f.cnpj            AS Cnpj,
+                                 f.nomefantasia    AS NomeFantasia,
+                                 f.cidade_id       AS CidadeId,
+                                 c.cidade          AS NomeCidade,
+                                 f.endereco, f.telefone, f.email,
+                                 f.ativo,
+                                 f.criado_em       AS CriadoEm,
+                                 f.atualizado_em   AS AtualizadoEm
                           FROM fornecedores f
                           LEFT JOIN cidades c ON c.id = f.cidade_id
-                          {whereClause} ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
+                          {whereClause}
+                          ORDER BY {orderBy}
+                          LIMIT @Limit OFFSET @Offset";
 
         var param = new
         {
@@ -41,8 +59,10 @@ public class FornecedorRepository : IFornecedorRepository
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
+
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<FornecedorListDto>(sqlData, param);
+
         return new PaginacaoDto<FornecedorListDto>
         {
             Itens = itens.ToList(),
@@ -57,36 +77,46 @@ public class FornecedorRepository : IFornecedorRepository
         using var conn = _factory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Fornecedor>(
             @"SELECT f.id,
-                     f.razaosocial          AS RazaoSocial,
-                     f.cnpj                 AS Cnpj,
-                     f.apelido_nomefantasia AS NomeFantasia,
-                     f.cidade_id AS CidadeId, c.cidade AS NomeCidade,
-                     e.id AS EstadoId, e.pais_id AS PaisId,
-                     f.endereco, f.bairro, f.telefone, f.email, f.ativo,
-                     f.criado_em AS CriadoEm, f.atualizado_em AS AtualizadoEm,
-                     ua.nome AS NomeAtualizadoPor
+                     f.razaosocial     AS RazaoSocial,
+                     f.cnpj            AS Cnpj,
+                     f.nomefantasia    AS NomeFantasia,
+                     f.cidade_id       AS CidadeId,
+                     c.cidade          AS NomeCidade,
+                     f.endereco, f.complemento, f.bairro,
+                     f.telefone, f.email,
+                     f.ativo,
+                     f.criado_em       AS CriadoEm,
+                     f.atualizado_em   AS AtualizadoEm,
+                     ua.nome           AS NomeAtualizadoPor
               FROM fornecedores f
               LEFT JOIN cidades  c  ON c.id  = f.cidade_id
-              LEFT JOIN estados  e  ON e.id  = c.estado_id
               LEFT JOIN usuarios ua ON ua.id = f.atualizado_por
-              WHERE f.id = @id", new { id });
+              WHERE f.id = @id",
+            new { id });
+    }
+
+    public async Task<IEnumerable<FornecedorListDto>> ObterTodosAtivosAsync()
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.QueryAsync<FornecedorListDto>(
+            @"SELECT id, razaosocial AS RazaoSocial, nomefantasia AS NomeFantasia, cnpj
+              FROM fornecedores WHERE ativo = TRUE ORDER BY razaosocial");
     }
 
     public async Task<int> InserirAsync(FornecedorDto dto)
     {
         using var conn = _factory.CreateConnection();
         var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM fornecedores) t
+            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id+1 FROM fornecedores) t
               WHERE seq NOT IN (SELECT id FROM fornecedores)");
 
         await conn.ExecuteAsync(
             @"INSERT INTO fornecedores
-                (id, razaosocial, cnpj, apelido_nomefantasia,
-                 cidade_id, endereco, bairro, telefone, email, ativo)
+                (id, razaosocial, cnpj, nomefantasia,
+                 cidade_id, endereco, complemento, bairro, telefone, email, ativo)
               VALUES
                 (@ProximoId, @RazaoSocial, @Cnpj, @NomeFantasia,
-                 @CidadeId, @Endereco, @Bairro, @Telefone, @Email, @Ativo)",
+                 @CidadeId, @Endereco, @Complemento, @Bairro, @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -95,6 +125,7 @@ public class FornecedorRepository : IFornecedorRepository
                 dto.NomeFantasia,
                 dto.CidadeId,
                 dto.Endereco,
+                dto.Complemento,
                 dto.Bairro,
                 dto.Telefone,
                 dto.Email,
@@ -109,16 +140,17 @@ public class FornecedorRepository : IFornecedorRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE fornecedores
-              SET id                   = @Id,
-                  razaosocial          = @RazaoSocial,
-                  cnpj                 = @Cnpj,
-                  apelido_nomefantasia = @NomeFantasia,
-                  cidade_id            = @CidadeId,
-                  endereco             = @Endereco,
-                  bairro               = @Bairro,
-                  telefone             = @Telefone,
-                  email                = @Email,
-                  atualizado_em        = NOW()
+              SET id            = @Id,
+                  razaosocial   = @RazaoSocial,
+                  cnpj          = @Cnpj,
+                  nomefantasia  = @NomeFantasia,
+                  cidade_id     = @CidadeId,
+                  endereco      = @Endereco,
+                  complemento   = @Complemento,
+                  bairro        = @Bairro,
+                  telefone      = @Telefone,
+                  email         = @Email,
+                  atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }
 
@@ -152,8 +184,8 @@ public class FornecedorRepository : IFornecedorRepository
     {
         using var conn = _factory.CreateConnection();
         var sql = idOriginalIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM fornecedores WHERE apelido_nomefantasia = @nomeFantasia AND id <> @idOriginalIgnorar"
-            : "SELECT COUNT(*) FROM fornecedores WHERE apelido_nomefantasia = @nomeFantasia";
+            ? "SELECT COUNT(*) FROM fornecedores WHERE nomefantasia = @nomeFantasia AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM fornecedores WHERE nomefantasia = @nomeFantasia";
         return await conn.ExecuteScalarAsync<int>(sql, new { nomeFantasia, idOriginalIgnorar }) > 0;
     }
 }

@@ -52,6 +52,19 @@ public class EstadoRepository : IEstadoRepository
             "SELECT e.id, e.estado AS NomeEstado, e.uf, e.pais_id AS PaisId FROM estados e WHERE e.pais_id = @paisId AND e.ativo = TRUE ORDER BY e.estado",
             new { paisId });
     }
+    public async Task<IEnumerable<EstadoListDto>> ObterTodosAtivosAsync()
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.QueryAsync<EstadoListDto>(
+            @"SELECT e.id,
+                 e.estado   AS NomeEstado,
+                 e.uf       AS Uf
+          FROM estados e
+          INNER JOIN paises p ON p.id = e.pais_id
+          WHERE e.ativo  = TRUE
+            AND p.pais = 'Brasil'
+          ORDER BY e.uf");
+    }
 
     public async Task<Estado?> ObterPorIdAsync(int id)
     {

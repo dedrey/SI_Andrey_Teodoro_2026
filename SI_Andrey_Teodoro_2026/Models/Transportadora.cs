@@ -1,0 +1,18 @@
+﻿namespace SI_Andrey_Teodoro_2026.Models;
+
+public class Transportadora
+{
+    public int Id { get; set; }
+    public string RazaoSocial { get; set; } = string.Empty;
+    public string? NomeFantasia { get; set; }
+    public string Cnpj { get; set; } = string.Empty;
+    public string? InscricaoEstadual { get; set; }
+    public int? CidadeId { get; set; }
+    public string? NomeCidade { get; set; }
+    public string? Telefone { get; set; }
+    public string? Email { get; set; }
+    public bool Ativo { get; set; } = true;
+    public DateTime CriadoEm { get; set; } = DateTime.Now;
+    public DateTime? AtualizadoEm { get; set; }
+    public string? NomeAtualizadoPor { get; set; }
+}

@@ -13,7 +13,7 @@ public class FiltroConsultaDto
 {
     public string? Busca { get; set; }
     public string StatusFiltro { get; set; } = "ativos";
-    public string OrdenarPor { get; set; } = "nome";
+    public string OrdenarPor { get; set; } = "id";
     public int Pagina { get; set; } = 1;
     public int TamanhoPagina { get; set; } = 10;
 }
