@@ -1,18 +1,18 @@
-﻿@page "/usuarios"
+﻿@page "/veiculos"
 @rendermode InteractiveServer
 
-<PageTitle>Usuários</PageTitle>
+<PageTitle>Veículos</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
 <div class="d-flex align-center mb-4">
-    <MudIcon Icon="@Icons.Material.Filled.People" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
-    <MudText Typo="Typo.h5" Style="font-weight:700;">Usuários</MudText>
+    <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+    <MudText Typo="Typo.h5" Style="font-weight:700;">Veículos</MudText>
 </div>
 
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
     <div class="d-flex align-center justify-space-between mb-3">
         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
-            @(_dto.IdOriginal == 0 ? "Novo Usuário" : "Editar Usuário")
+            @(_dto.IdOriginal == 0 ? "Novo Veículo" : "Editar Veículo")
         </MudText>
         @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
         {
@@ -33,41 +33,38 @@
                 </MudItem>
             }
             <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 5)">
-                <MudTextField Value="@_dto.Nome"
-                              ValueChanged="@((string v) => _dto.Nome = Cap(v))"
-                              Label="Nome"
+                <MudAutocomplete T="TransportadoraListDto"
+                                 Label="Transportadora"
+                                 Value="_transportadoraSelecionada"
+                                 ValueChanged="@((TransportadoraListDto? t) => { _transportadoraSelecionada = t; _dto.TransportadoraId = t?.Id ?? 0; })"
+                                 SearchFunc="PesquisarTransportadora"
+                                 ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 FullWidth="true" Clearable="true"
+                                 ResetValueOnEmptyText="true" CoerceText="false"
+                                 Required="true" RequiredError="Obrigatório" />
+            </MudItem>
+            <MudItem xs="6" sm="3" md="2">
+                <MudTextField Value="@_placaTexto"
+                              ValueChanged="@((string? v) => { OnPlacaAlterada(v); })"
+                              Label="Placa"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
-                              MaxLength="75" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarNome(v))" />
+                              MaxLength="7" FullWidth="true" Immediate="true"
+                              Validation="@((string v) => ValidarPlaca(v))" />
             </MudItem>
-
-            <MudItem xs="12" sm="6" md="3">
-                <MudTextField @bind-Value="_dto.Email" Label="E-mail"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true"
-                              InputType="InputType.Email"
-                              Validation="@((string v) => ValidarEmail(v))" />
-            </MudItem>
-
-            <MudItem xs="12" sm="6" md="2">
-                <MudTextField Value="@_cpfTexto"
-                              ValueChanged="@((string v) => { OnCpfAlterado(v); })"
-                              Label="CPF"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="14" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarCpfCampo(v))" />
-            </MudItem>
-
-            <MudItem xs="12" sm="6" md="2">
-                <MudTextField Value="@_dto.Telefone"
-                              ValueChanged="@((string v) => _dto.Telefone = AplicarMascaraTelefone(v))"
-                              Label="Telefone"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="15" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarTelefone(v))" />
+            <MudItem xs="6" sm="2" md="2">
+                <MudAutocomplete T="string"
+                                 Label="UF"
+                                 Value="@_dto.Uf"
+                                 ValueChanged="@((string? v) => _dto.Uf = v ?? "")"
+                                 SearchFunc="PesquisarUf"
+                                 ToStringFunc="@(u => u ?? "")"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 FullWidth="true" Clearable="true"
+                                 ResetValueOnEmptyText="true" CoerceText="false"
+                                 Required="true" RequiredError="Obrigatório"
+                                 Validation="@((string v) => ValidarUf(v))" />
             </MudItem>
         </MudGrid>
 
@@ -108,7 +105,8 @@
         <MudItem xs="6" sm="3" md="2">
             <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por"
                        Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                <MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem>
+                <MudSelectItem T="string" Value="@("placa")">Placa</MudSelectItem>
+                <MudSelectItem T="string" Value="@("transportadora")">Transportadora</MudSelectItem>
                 <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
                 <MudSelectItem T="string" Value="@("data")">Data</MudSelectItem>
             </MudSelect>
@@ -127,23 +125,24 @@
               Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
-            <MudTh Style="font-weight:600;">Nome</MudTh>
-            <MudTh Style="font-weight:600;">E-mail</MudTh>
-            <MudTh Style="font-weight:600;text-align:center;">CPF</MudTh>
-            <MudTh Style="font-weight:600;">Telefone</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Placa</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">UF</MudTh>
+            <MudTh Style="font-weight:600;">Transportadora</MudTh>
             <MudTh Style="font-weight:600;">Status</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
-            <MudTd><strong>@context.Nome</strong></MudTd>
-            <MudTd>@context.Email</MudTd>
             <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">
-                    @FormatarCpfExibicao(context.Cpf)
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                         Style="font-family:monospace;font-weight:700;letter-spacing:1px;">
+                    @FormatarPlacaExibicao(context.Placa)
                 </MudChip>
             </MudTd>
-            <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
+            <MudTd Style="text-align:center;">
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">@context.Uf</MudChip>
+            </MudTd>
+            <MudTd><strong>@context.NomeTransportadora</strong></MudTd>
             <MudTd>
                 <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">
                     @(context.Ativo ? "Ativo" : "Inativo")
@@ -157,7 +156,7 @@
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
                                    Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
-                                   OnClick="@(() => AlterarStatus(context.Id, context.Nome, context.Ativo))" />
+                                   OnClick="@(() => AlterarStatus(context.Id, context.Placa, context.Ativo))" />
                 </MudTooltip>
             </MudTd>
         </RowTemplate>
@@ -178,93 +177,53 @@
 </MudPaper>
 
 @code {
-    private void OnCpfAlterado(string? v)
+    private TransportadoraListDto? _transportadoraSelecionada
     {
-        if (string.IsNullOrEmpty(v)) { _cpfTexto = ""; _dto.Cpf = ""; return; }
-        _cpfTexto = AplicarMascaraCpf(v);
-        _dto.Cpf = _cpfTexto;
+        get => _transportadoras.FirstOrDefault(t => t.Id == _dto.TransportadoraId);
+        set => _dto.TransportadoraId = value?.Id ?? 0;
     }
 
-    private string AplicarMascaraCpf(string? v)
+    private Task<IEnumerable<TransportadoraListDto>> PesquisarTransportadora(string? busca, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(v)) return "";
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        if (d.Length > 11) d = d[..11];
-        return d.Length switch
-        {
-            0 => "",
-            <= 3 => d,
-            <= 6 => $"{d[..3]}.{d[3..]}",
-            <= 9 => $"{d[..3]}.{d[3..6]}.{d[6..]}",
-            _ => $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}"
-        };
+        var r = string.IsNullOrWhiteSpace(busca)
+            ? _transportadoras.Take(50)
+            : _transportadoras.Where(t =>
+                t.RazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
+                (t.NomeFantasia ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase) ||
+                t.Cnpj.Contains(busca));
+        return Task.FromResult(r);
+    }
+    private Task<IEnumerable<string>> PesquisarUf(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca)
+            ? _ufs.Take(50)
+            : _ufs.Where(u => u.Contains(busca, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(r);
     }
 
-    private string AplicarMascaraTelefone(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return "";
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        if (d.Length > 11) d = d[..11];
-        return d.Length switch
-        {
-            0 => "",
-            <= 2 => $"({d}",
-            <= 6 => $"({d[..2]}) {d[2..]}",
-            <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}",
-            _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"
-        };
-    }
-
-    private string? ValidarCpfCampo(string? v)
+    private string? ValidarPlaca(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        return d.Length != 11 ? "CPF deve ter 11 dígitos" : null;
+        var limpa = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper();
+        if (limpa.Length != 7) return "Placa deve ter 7 caracteres";
+        var antigo = limpa[..3].All(char.IsLetter) && limpa[3..].All(char.IsDigit);
+        var mercosul = limpa[..3].All(char.IsLetter) && char.IsDigit(limpa[3])
+                    && char.IsLetter(limpa[4]) && char.IsDigit(limpa[5]) && char.IsDigit(limpa[6]);
+        return (antigo || mercosul) ? null : "Formato inválido. Use AAA9999 ou AAA9A99";
     }
 
-    private string? ValidarTelefone(string? v)
+    private string? ValidarUf(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        return d.Length switch { 10 => null, 11 => null, < 10 => "Telefone incompleto", _ => "Máximo 11 dígitos" };
-    }
-
-    private string? ValidarNome(string? v)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$"))
-            return "Nome deve conter apenas letras";
+        if (v.Length != 2 || !v.All(char.IsLetter)) return "UF deve ter 2 letras";
         return null;
     }
 
-    private string? ValidarEmail(string? v)
+    private static string FormatarPlacaExibicao(string placa)
     {
-        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido";
-    }
-
-    private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os",
-        "em", "no", "na", "nos", "nas", "com", "por", "para", "ao", "aos",
-        "à", "às", "the", "of", "and", "del", "los", "las", "la", "le"
-    };
-
-    private string Cap(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return v ?? "";
-        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < palavras.Length; i++)
-        {
-            if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
-                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
-        }
-        return string.Join(" ", palavras);
-    }
-
-    private static string FormatarCpfExibicao(string cpf)
-    {
-        var d = new string(cpf.Where(char.IsDigit).ToArray());
-        return d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : cpf;
+        if (placa.Length != 7) return placa;
+        if (placa[..3].All(char.IsLetter) && placa[3..].All(char.IsDigit))
+            return $"{placa[..3]}-{placa[3..]}";
+        return placa;
     }
 }

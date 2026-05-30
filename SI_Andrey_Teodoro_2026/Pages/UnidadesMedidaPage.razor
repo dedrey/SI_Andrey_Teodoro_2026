@@ -44,7 +44,7 @@
             </MudItem>
             <MudItem xs="8" sm="@(_dto.IdOriginal != 0 ? 7 : 9)" md="@(_dto.IdOriginal != 0 ? 9 : 9)">
                 <MudTextField Value="@_dto.Descricao"
-                              ValueChanged="@((string v) => _dto.Descricao = CapitalizarPrimeira(v))"
+                              ValueChanged="@((string v) => _dto.Descricao = Cap(v))"
                               Label="Descrição"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
@@ -182,9 +182,22 @@
         return v.Replace(" ", "").ToUpper();
     }
 
-    private string CapitalizarPrimeira(string? v)
+    private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
+    {
+    "da", "de", "do", "das", "dos", "das", "e", "a", "o", "as", "os",
+    "em", "no", "na", "nos", "nas", "com", "por", "para", "ao", "aos",
+    "à", "às", "the", "of", "and", "del", "los", "las", "de", "la", "le"
+    };
+
+    private string Cap(string? v)
     {
         if (string.IsNullOrEmpty(v)) return v ?? "";
-        return char.ToUpper(v[0]) + v[1..];
+        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < palavras.Length; i++)
+        {
+            if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
+                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
+        }
+        return string.Join(" ", palavras);
     }
 }

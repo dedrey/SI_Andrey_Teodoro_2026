@@ -28,7 +28,7 @@ public class ClienteService : IClienteService
             TipoPessoa = c.TipoPessoa,
             Estrangeiro = c.Estrangeiro,
             DocumentoEstrangeiro = c.DocumentoEstrangeiro,
-            Nacionalidade = c.Nacionalidade,
+            PaisOrigem = c.PaisOrigem,
             ApelidoNomeFantasia = c.ApelidoNomeFantasia,
             CidadeId = c.CidadeId,
             Endereco = c.Endereco ?? string.Empty,
@@ -51,6 +51,7 @@ public class ClienteService : IClienteService
             dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim();
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim();
             dto.Endereco = dto.Endereco.Trim();
+            dto.Complemento = dto.Complemento?.Trim();
             dto.Bairro = dto.Bairro.Trim();
             dto.Telefone = dto.Telefone.Trim();
             dto.Email = dto.Email.Trim().ToLower();
@@ -72,7 +73,7 @@ public class ClienteService : IClienteService
                 }
                 dto.CpfCnpj = docLimpo;
                 dto.DocumentoEstrangeiro = null;
-                dto.Nacionalidade = null;
+                dto.PaisOrigem = null;
 
                 if (await _repo.ExisteDocumentoAsync(dto.CpfCnpj, ignorar))
                     return (false, $"Já existe um cliente com este {(dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")}.", 0);
@@ -81,12 +82,12 @@ public class ClienteService : IClienteService
             {
                 dto.CpfCnpj = null;
                 dto.DocumentoEstrangeiro = dto.DocumentoEstrangeiro?.Trim().ToUpper();
-                dto.Nacionalidade = dto.Nacionalidade?.Trim();
+                dto.PaisOrigem = dto.PaisOrigem?.Trim();
 
                 if (string.IsNullOrWhiteSpace(dto.DocumentoEstrangeiro))
                     return (false, "Documento estrangeiro é obrigatório.", 0);
-                if (string.IsNullOrWhiteSpace(dto.Nacionalidade))
-                    return (false, "Nacionalidade é obrigatória.", 0);
+                if (string.IsNullOrWhiteSpace(dto.PaisOrigem))
+                    return (false, "Pais de origem é obrigatório.", 0);
 
                 if (await _repo.ExisteDocumentoAsync(dto.DocumentoEstrangeiro, ignorar))
                     return (false, $"Já existe um cliente com o documento '{dto.DocumentoEstrangeiro}'.", 0);

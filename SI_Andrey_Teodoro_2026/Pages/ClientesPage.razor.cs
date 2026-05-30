@@ -65,7 +65,7 @@ public partial class ClientesPage : ComponentBase
         _docTexto = "";
         _dto.CpfCnpj = null;
         _dto.DocumentoEstrangeiro = null;
-        _dto.Nacionalidade = null;
+        _dto.PaisOrigem = null;
     }
 
     private void OnDocAlterado(string v)
@@ -134,8 +134,6 @@ public partial class ClientesPage : ComponentBase
             if (sucesso) await CarregarDados();
         }
     }
-
-    // Máscara CPF
     private static string AplicarMascaraCpf(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
@@ -143,8 +141,6 @@ public partial class ClientesPage : ComponentBase
         if (d.Length > 11) d = d[..11];
         return d.Length switch { 0 => "", <= 3 => d, <= 6 => $"{d[..3]}.{d[3..]}", <= 9 => $"{d[..3]}.{d[3..6]}.{d[6..]}", _ => $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" };
     }
-
-    // Máscara CNPJ
     private static string AplicarMascaraCnpj(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";

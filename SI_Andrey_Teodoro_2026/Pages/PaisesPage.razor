@@ -36,7 +36,7 @@
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true"
                               Validation="@((string v) => ValidarNome(v, "País"))"
-                              OnBlur="@(() => _dto.NomePais = CapitalizarPrimeira(_dto.NomePais))" />
+                              OnBlur="@(() => _dto.NomePais = Cap(_dto.NomePais))"/>
             </MudItem>
             <MudItem xs="6" sm="3" md="2">
                 <MudTextField Value="@_dto.Sigla" ValueChanged="@((string v) => _dto.Sigla = FiltrarLetrasUpper(v))"
@@ -55,7 +55,7 @@
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true"
                               Validation="@((string v) => ValidarMoeda(v))"
-                              OnBlur="@(() => _dto.Moeda = CapitalizarPrimeira(_dto.Moeda))" />
+                              OnBlur="@(() => _dto.Moeda = Cap(_dto.Moeda))" />
             </MudItem>
             <MudItem xs="6" sm="3" md="2">
                 <MudTextField @bind-Value="_dto.SimboleMoeda" Label="Símbolo"
@@ -183,7 +183,26 @@
         if (!char.IsUpper(v.TrimStart()[0])) return "Moeda deve começar com maiúscula";
         return null;
     }
-    private string CapitalizarPrimeira(string? v) { if (string.IsNullOrWhiteSpace(v)) return v ?? ""; v = v.Trim(); return char.ToUpper(v[0]) + v[1..]; }
+    private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
+{
+    "da", "de", "do", "das", "dos", "das", "e", "a", "o", "as", "os",
+    "em", "no", "na", "nos", "nas", "com", "por", "para", "ao", "aos",
+    "à", "às", "the", "of", "and", "del", "los", "las", "de", "la", "le"
+};
+
+    private string Cap(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return v ?? "";
+        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < palavras.Length; i++)
+        {
+            if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
+                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
+        }
+        return string.Join(" ", palavras);
+    }
+
+
     private string FiltrarLetrasUpper(string? v) => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
     private string FiltrarNumeros(string? v) => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsDigit).ToArray());
 }

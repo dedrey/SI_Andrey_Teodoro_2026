@@ -1,18 +1,18 @@
-﻿@page "/fornecedores"
+﻿@page "/emitentes"
 @rendermode InteractiveServer
 
-<PageTitle>Fornecedores</PageTitle>
+<PageTitle>Emitentes</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
 <div class="d-flex align-center mb-4">
-    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
-    <MudText Typo="Typo.h5" Style="font-weight:700;">Fornecedores</MudText>
+    <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+    <MudText Typo="Typo.h5" Style="font-weight:700;">Emitentes</MudText>
 </div>
 
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
     <div class="d-flex align-center justify-space-between mb-3">
         <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
-            @(_dto.IdOriginal == 0 ? "Novo Fornecedor" : "Editar Fornecedor")
+            @(_dto.IdOriginal == 0 ? "Novo Emitente" : "Editar Emitente")
         </MudText>
         @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
         {
@@ -32,25 +32,41 @@
                 </MudItem>
             }
             <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 5)">
-                <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => _dto.RazaoSocial = Cap(v))"
+                <MudTextField Value="@_dto.NomeRazaoSocial" ValueChanged="@((string v) => _dto.NomeRazaoSocial = Cap(v))"
                               Label="Razão Social" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <MudTextField Value="@_dto.NomeFantasia" ValueChanged="@((string v) => _dto.NomeFantasia = Cap(v))"
+                <MudTextField Value="@_dto.ApelidoNomeFantasia" ValueChanged="@((string v) => _dto.ApelidoNomeFantasia = Cap(v))"
                               Label="Nome Fantasia" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
-            <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 4)">
+            <MudItem xs="12" sm="6" md="2">
                 <MudTextField Value="@_dto.Cnpj" ValueChanged="@((string v) => _dto.Cnpj = MascaraCnpj(v))"
                               Label="CNPJ" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarCnpj(v))" />
             </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudSelect T="string" @bind-Value="_dto.RegimeTributario"
+                           Label="Regime Tributário" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                    <MudSelectItem T="string" Value="@("SIMPLES")">Simples Nacional</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("PRESUMIDO")">Lucro Presumido</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("REAL")">Lucro Real</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+
+        <MudGrid Spacing="2" Class="mt-1">
+            <MudItem xs="12" sm="6" md="3">
+                <MudTextField @bind-Value="_dto.InscricaoEstadual" Label="Inscrição Estadual"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" />
+            </MudItem>
         </MudGrid>
 
         <MudDivider Class="my-3" />
-        <MudText Typo="Typo.caption" Class="mb-2" Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
+        <MudText Typo="Typo.caption" Class="mb-2"
+                 Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
             Contato e Localização
         </MudText>
         <MudGrid Spacing="2">
@@ -99,7 +115,8 @@
             <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
                 @if (_dto.IdOriginal != 0)
                 {
-                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario" Style="height:40px;min-width:40px;">
+                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
+                               Style="height:40px;min-width:40px;" title="Cancelar edição">
                         <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
                     </MudButton>
                 }
@@ -115,8 +132,10 @@
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
-            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
+            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
                           OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
@@ -143,33 +162,57 @@
 </MudPaper>
 
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
-    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
+    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
+              Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
             <MudTh Style="font-weight:600;">Razão Social</MudTh>
-            <MudTh Style="font-weight:600;">Nome Fantasia</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">CNPJ</MudTh>
-            <MudTh Style="font-weight:600;">Endereço</MudTh>
+            <MudTh Style="font-weight:600;">Cidade</MudTh>
             <MudTh Style="font-weight:600;">Telefone</MudTh>
-            <MudTh Style="font-weight:600;">E-mail</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Regime</MudTh>
             <MudTh Style="font-weight:600;">Status</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
-            <MudTd><strong>@context.RazaoSocial</strong></MudTd>
-            <MudTd>@(string.IsNullOrWhiteSpace(context.NomeFantasia) ? "—" : context.NomeFantasia)</MudTd>
-            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@FormatCnpj(context.Cnpj)</MudChip></MudTd>
-            <MudTd>@(string.IsNullOrWhiteSpace(context.Endereco) ? "—" : context.Endereco)</MudTd>
-            <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
-            <MudTd>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
-            <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
+            <MudTd>
+                <strong>@context.NomeRazaoSocial</strong>
+                @if (!string.IsNullOrWhiteSpace(context.ApelidoNomeFantasia))
+                {
+                    <br />
+                
+                    <span style="color:#888;font-size:0.8rem;">@context.ApelidoNomeFantasia</span>
+                }
+            </MudTd>
             <MudTd Style="text-align:center;">
-                <MudTooltip Text="Editar"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" /></MudTooltip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">
+                    @FormatCnpj(context.Cnpj)
+                </MudChip>
+            </MudTd>
+            <MudTd>@(string.IsNullOrWhiteSpace(context.NomeCidade) ? "—" : context.NomeCidade)</MudTd>
+            <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
+            <MudTd Style="text-align:center;">
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(context.RegimeTributario == "SIMPLES" ? Color.Success :
+                                                           context.RegimeTributario == "PRESUMIDO" ? Color.Warning : Color.Info)">
+                    @context.RegimeTributario
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">
+                    @(context.Ativo ? "Ativo" : "Inativo")
+                </MudChip>
+            </MudTd>
+            <MudTd Style="text-align:center;">
+                <MudTooltip Text="Editar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(() => Editar(context.Id))" />
+                </MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
                                    Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
-                                   OnClick="@(() => AlterarStatus(context.Id, context.RazaoSocial, context.Ativo))" />
+                                   OnClick="@(() => AlterarStatus(context.Id, context.NomeRazaoSocial, context.Ativo))" />
                 </MudTooltip>
             </MudTd>
         </RowTemplate>
@@ -183,7 +226,8 @@
     @if (_resultado != null)
     {
         <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas"
+                                TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
         </div>
     }
 </MudPaper>
@@ -198,9 +242,8 @@
     {
         var r = string.IsNullOrWhiteSpace(busca)
             ? _cidades.Take(50)
-            : _cidades.Where(c =>
-                c.NomeCidade.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
-                c.Uf.Contains(busca, StringComparison.OrdinalIgnoreCase));
+            : _cidades.Where(c => c.NomeCidade.Contains(busca, StringComparison.OrdinalIgnoreCase)
+                               || c.Uf.Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
     }
     private string? ValidarCnpj(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length != 14) return "CNPJ deve ter 14 dígitos"; return null; }

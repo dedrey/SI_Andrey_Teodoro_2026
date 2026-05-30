@@ -17,7 +17,7 @@ public class ClienteRepository : IClienteRepository
 
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add(@"(c.nome_razaosocial        LIKE @Busca
+            where.Add(@"(c.nome_razaosocial       LIKE @Busca
                       OR c.cpf_cnpj               LIKE @Busca
                       OR c.documento_estrangeiro  LIKE @Busca
                       OR c.apelido_nomefantasia   LIKE @Busca
@@ -43,7 +43,7 @@ public class ClienteRepository : IClienteRepository
                                  c.tipo_pessoa           AS TipoPessoa,
                                  c.estrangeiro,
                                  c.documento_estrangeiro AS DocumentoEstrangeiro,
-                                 c.nacionalidade,
+                                 c.pais_origem           AS PaisOrigem,
                                  c.apelido_nomefantasia  AS ApelidoNomeFantasia,
                                  c.telefone, c.email,
                                  c.limite_credito        AS LimiteCredito,
@@ -93,11 +93,12 @@ public class ClienteRepository : IClienteRepository
                      c.tipo_pessoa           AS TipoPessoa,
                      c.estrangeiro,
                      c.documento_estrangeiro AS DocumentoEstrangeiro,
-                     c.nacionalidade,
+                     c.pais_origem           AS PaisOrigem,
                      c.apelido_nomefantasia  AS ApelidoNomeFantasia,
                      c.cidade_id             AS CidadeId,
                      cid.cidade              AS NomeCidade,
-                     c.endereco, c.bairro, c.telefone, c.email,
+                     c.endereco, c.complemento, c.bairro,
+                     c.telefone, c.email,
                      c.inscricao_estadual    AS InscricaoEstadual,
                      c.inscricao_municipal   AS InscricaoMunicipal,
                      c.limite_credito        AS LimiteCredito,
@@ -122,13 +123,13 @@ public class ClienteRepository : IClienteRepository
         await conn.ExecuteAsync(
             @"INSERT INTO clientes
                 (id, nome_razaosocial, cpf_cnpj, tipo_pessoa, estrangeiro,
-                 documento_estrangeiro, nacionalidade, apelido_nomefantasia,
-                 cidade_id, endereco, bairro, telefone, email,
+                 documento_estrangeiro, pais_origem, apelido_nomefantasia,
+                 cidade_id, endereco, complemento, bairro, telefone, email,
                  inscricao_estadual, inscricao_municipal, limite_credito, ativo)
               VALUES
                 (@ProximoId, @NomeRazaoSocial, @CpfCnpj, @TipoPessoa, @Estrangeiro,
-                 @DocumentoEstrangeiro, @Nacionalidade, @ApelidoNomeFantasia,
-                 @CidadeId, @Endereco, @Bairro, @Telefone, @Email,
+                 @DocumentoEstrangeiro, @PaisOrigem, @ApelidoNomeFantasia,
+                 @CidadeId, @Endereco, @Complemento, @Bairro, @Telefone, @Email,
                  @InscricaoEstadual, @InscricaoMunicipal, @LimiteCredito, @Ativo)",
             new
             {
@@ -138,10 +139,11 @@ public class ClienteRepository : IClienteRepository
                 dto.TipoPessoa,
                 dto.Estrangeiro,
                 dto.DocumentoEstrangeiro,
-                dto.Nacionalidade,
+                dto.PaisOrigem,
                 dto.ApelidoNomeFantasia,
                 dto.CidadeId,
                 dto.Endereco,
+                dto.Complemento,
                 dto.Bairro,
                 dto.Telefone,
                 dto.Email,
@@ -165,10 +167,11 @@ public class ClienteRepository : IClienteRepository
                   tipo_pessoa           = @TipoPessoa,
                   estrangeiro           = @Estrangeiro,
                   documento_estrangeiro = @DocumentoEstrangeiro,
-                  nacionalidade         = @Nacionalidade,
+                  pais_origem           = @PaisOrigem,
                   apelido_nomefantasia  = @ApelidoNomeFantasia,
                   cidade_id             = @CidadeId,
                   endereco              = @Endereco,
+                  complemento           = @Complemento,
                   bairro                = @Bairro,
                   telefone              = @Telefone,
                   email                 = @Email,
@@ -186,6 +189,7 @@ public class ClienteRepository : IClienteRepository
             "UPDATE clientes SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
             new { ativo, id });
     }
+
     public async Task<bool> ExisteDocumentoAsync(string documento, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();

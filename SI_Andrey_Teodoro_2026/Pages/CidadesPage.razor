@@ -74,9 +74,9 @@
                                    Disabled="@(_dto.PaisId == 0)" OnClick="AbrirModalEstado" />
                 </MudTooltip>
             </MudItem>
-            <MudItem xs="12" sm="6" md="4">
+            <MudItem xs="8" sm="5" md="3">
                 <MudTextField Value="@_dto.NomeCidade"
-                              ValueChanged="@((string v) => _dto.NomeCidade = CapitalizarPrimeira(v))"
+                              ValueChanged="@((string v) => _dto.NomeCidade = Cap(v))"
                               Label="Cidade"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
@@ -210,5 +210,22 @@
         if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$")) return $"{campo} deve conter apenas letras";
         return null;
     }
-    private string CapitalizarPrimeira(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }
+    private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
+{
+    "da", "de", "do", "das", "dos", "das", "e", "a", "o", "as", "os",
+    "em", "no", "na", "nos", "nas", "com", "por", "para", "ao", "aos",
+    "à", "às", "the", "of", "and", "del", "los", "las", "de", "la", "le"
+};
+
+    private string Cap(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return v ?? "";
+        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < palavras.Length; i++)
+        {
+            if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
+                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
+        }
+        return string.Join(" ", palavras);
+    }
 }

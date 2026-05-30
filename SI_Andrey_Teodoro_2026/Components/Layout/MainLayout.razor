@@ -7,48 +7,41 @@
 
 <MudLayout>
     <MudAppBar Elevation="2" Color="Color.Primary" Dense="false">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                       Color="Color.Inherit" Edge="Edge.Start"
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
                        OnClick="@(() => _drawerOpen = !_drawerOpen)" />
-        <MudText Typo="Typo.h6" Class="ml-2" Style="font-weight:700;letter-spacing:0.5px;">
-            Sistema
-        </MudText>
+        <MudText Typo="Typo.h6" Class="ml-2" Style="font-weight:700;letter-spacing:0.5px;">Sistema</MudText>
         <MudSpacer />
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1"
-               Variant="@DrawerVariant.Responsive"
-               ClipMode="DrawerClipMode.Always">
-
+               Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
         <MudDrawerHeader>
             <MudText Typo="Typo.subtitle2" Style="font-weight:600;color:#555;">Menu</MudText>
         </MudDrawerHeader>
 
         <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Primary" Class="pa-2">
 
-            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">
-                Início
-            </MudNavLink>
+            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home" Match="NavLinkMatch.All">Início</MudNavLink>
 
-            <!-- Localização -->
             <MudNavGroup Title="Localização" Icon="@Icons.Material.Filled.LocationOn" Expanded="false">
                 <MudNavLink Href="/paises" Icon="@Icons.Material.Filled.Flag">Países</MudNavLink>
                 <MudNavLink Href="/estados" Icon="@Icons.Material.Filled.Map">Estados</MudNavLink>
                 <MudNavLink Href="/cidades" Icon="@Icons.Material.Filled.LocationCity">Cidades</MudNavLink>
             </MudNavGroup>
 
-            <!-- Pessoas — Clientes, Fornecedores, Emitentes -->
-            <MudNavGroup Title="Pessoas" Icon="@Icons.Material.Filled.PeopleAlt" Expanded="true">
+            <MudNavGroup Title="Pessoas" Icon="@Icons.Material.Filled.PeopleAlt" Expanded="false">
                 <MudNavLink Href="/clientes" Icon="@Icons.Material.Filled.Person">Clientes</MudNavLink>
+                <MudNavLink Href="/emitentes" Icon="@Icons.Material.Filled.Business">Emitentes</MudNavLink>
                 <MudNavLink Href="/fornecedores" Icon="@Icons.Material.Filled.LocalShipping">Fornecedores</MudNavLink>
             </MudNavGroup>
 
-            <!-- Usuários  -->
-            <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.ManageAccounts">
-                Usuários
-            </MudNavLink>
+            <MudNavGroup Title="Transportes" Icon="@Icons.Material.Filled.FireTruck" Expanded="false">
+                <MudNavLink Href="/transportadoras" Icon="@Icons.Material.Filled.LocalShipping">Transportadoras</MudNavLink>
+                <MudNavLink Href="/veiculos" Icon="@Icons.Material.Filled.DirectionsCar">Veículos</MudNavLink>
+            </MudNavGroup>
 
-            <!-- Cadastros Base -->
+            <MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.ManageAccounts">Usuários</MudNavLink>
+
             <MudNavGroup Title="Cadastros Base" Icon="@Icons.Material.Filled.Tune" Expanded="false">
                 <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
                 <MudNavLink Href="/marcas" Icon="@Icons.Material.Filled.Style">Marcas</MudNavLink>
@@ -59,15 +52,12 @@
     </MudDrawer>
 
     <MudMainContent Class="pa-0">
-        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
-            @Body
-        </MudContainer>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">@Body</MudContainer>
     </MudMainContent>
 </MudLayout>
 
 @code {
     private bool _drawerOpen = true;
-
     private MudTheme _theme = new MudTheme
     {
         PaletteLight = new PaletteLight

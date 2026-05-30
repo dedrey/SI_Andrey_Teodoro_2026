@@ -32,7 +32,7 @@
             }
             <MudItem xs="12" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
                 <MudTextField Value="@_dto.NomeCategoria"
-                              ValueChanged="@((string v) => _dto.NomeCategoria = CapitalizarPrimeira(v))"
+                              ValueChanged="@((string v) => _dto.NomeCategoria = Cap(v))"
                               Label="Categoria"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
@@ -131,5 +131,22 @@
         if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ0-9\s\-\/\.\'\(\)]+$")) return "Categoria contém caracteres inválidos";
         return null;
     }
-    private string CapitalizarPrimeira(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; return char.ToUpper(v[0]) + v[1..]; }
+    private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
+{
+    "da", "de", "do", "das", "dos", "das", "e", "a", "o", "as", "os",
+    "em", "no", "na", "nos", "nas", "com", "por", "para", "ao", "aos",
+    "à", "às", "the", "of", "and", "del", "los", "las", "de", "la", "le"
+};
+
+    private string Cap(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return v ?? "";
+        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < palavras.Length; i++)
+        {
+            if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
+                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
+        }
+        return string.Join(" ", palavras);
+    }
 }

@@ -1,0 +1,237 @@
+﻿CREATE DATABASE si_andrey_teodoro_2026
+USE si_andrey_teodoro_2026;
+
+-- ================================================================
+-- 1. USUÁRIOS
+-- ================================================================
+CREATE TABLE usuarios (
+  id             INT          AUTO_INCREMENT PRIMARY KEY,
+  nome           VARCHAR(75) NOT NULL,
+  email          VARCHAR(50) NOT NULL UNIQUE,
+  cpf            VARCHAR(11)  NOT NULL UNIQUE,
+  telefone       VARCHAR(15),
+  ativo          BOOLEAN      NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,                                       
+  atualizado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_usuarios_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_usuarios_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ================================================================
+-- 2. LOCALIZAÇÃO
+-- ================================================================
+CREATE TABLE paises (
+  id             INT         AUTO_INCREMENT PRIMARY KEY,
+  ddi            VARCHAR(5)  NOT NULL,
+  sigla          CHAR(3)     NOT NULL UNIQUE,
+  moeda          VARCHAR(30) NOT NULL,
+  simbolo_moeda  VARCHAR(5)  NOT NULL,
+  pais           VARCHAR(50) NOT NULL UNIQUE,
+  ativo          BOOLEAN     NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,                                       
+  atualizado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_paises_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_paises_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE estados (
+  id             INT        AUTO_INCREMENT PRIMARY KEY,
+  pais_id        INT        NOT NULL,
+  estado         VARCHAR(50) NOT NULL,
+  uf             CHAR(2)    NOT NULL,
+  ativo          BOOLEAN    NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,                                       
+  atualizado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_estados_pais            FOREIGN KEY (pais_id)        REFERENCES paises(id)   ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_estados_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_estados_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT unique_uf_pais             UNIQUE (pais_id, uf)
+) ENGINE=InnoDB;
+
+CREATE TABLE cidades (
+  id             INT         AUTO_INCREMENT PRIMARY KEY,
+  cidade         VARCHAR(50) NOT NULL,
+  ddd            SMALLINT    NOT NULL,
+  estado_id      INT         NOT NULL,
+  ativo          BOOLEAN     NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,                                       
+  atualizado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_cidades_estado           FOREIGN KEY (estado_id)      REFERENCES estados(id)  ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_cidades_criado_por       FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_cidades_atualizado_por   FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT unique_cidade_estado        UNIQUE (cidade, estado_id)
+) ENGINE=InnoDB;
+
+-- ================================================================
+-- 3. FORNECEDORES
+-- ================================================================
+CREATE TABLE fornecedores (
+  id                   INT          AUTO_INCREMENT PRIMARY KEY,
+  razaosocial          VARCHAR(100) NOT NULL UNIQUE,
+  cnpj                 VARCHAR(14)  NOT NULL UNIQUE,
+  nomefantasia         VARCHAR(100),
+  cidade_id            INT NULL,
+  endereco             VARCHAR(50),
+  complemento          VARCHAR(50),
+  bairro               VARCHAR(50),
+  telefone             VARCHAR(15),
+  email                VARCHAR(50),
+  ativo                BOOLEAN      NOT NULL DEFAULT TRUE,
+  criado_em            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por           INT NULL,
+  atualizado_em        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por       INT NULL,
+  CONSTRAINT fk_fornecedores_cidade          FOREIGN KEY (cidade_id)      REFERENCES cidades(id)  ON DELETE SET NULL  ON UPDATE CASCADE,
+  CONSTRAINT fk_fornecedores_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_fornecedores_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ================================================================
+-- 4. CADASTROS BASE
+-- (Categorias, Marcas, Unidades de Medida)
+-- ================================================================
+CREATE TABLE categorias (
+  id             INT         AUTO_INCREMENT PRIMARY KEY,
+  categoria      VARCHAR(50) NOT NULL UNIQUE,
+  ativo          BOOLEAN     NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_em  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_categorias_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_categorias_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE marcas (
+  id             INT         AUTO_INCREMENT PRIMARY KEY,
+  marca          VARCHAR(50) NOT NULL UNIQUE,
+  ativo          BOOLEAN     NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_em  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_marcas_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_marcas_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE unidades_medida (
+  id             INT        AUTO_INCREMENT PRIMARY KEY,
+  unidade_medida VARCHAR(6) NOT NULL UNIQUE,
+  descricao VARCHAR(50) NOT NULL DEFAULT '',
+  ativo          BOOLEAN    NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_em  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_unidades_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_unidades_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ================================================================
+-- 5. PESSOAS (Clientes e Emitentes)
+-- ================================================================
+CREATE TABLE clientes (
+  id                      INT              AUTO_INCREMENT PRIMARY KEY,
+  nome_razaosocial        VARCHAR(100)     NOT NULL,
+  cpf_cnpj                VARCHAR(14)      NULL UNIQUE,
+  tipo_pessoa             ENUM('PF','PJ')  NOT NULL DEFAULT 'PF',
+  estrangeiro             BOOLEAN          NOT NULL DEFAULT FALSE,
+  documento_estrangeiro   VARCHAR(30)      NULL,
+  pais_origem             VARCHAR(50)      NULL,
+  apelido_nomefantasia    VARCHAR(100),
+  cidade_id               INT NULL,
+  endereco                VARCHAR(50),
+  complemento             VARCHAR(50),
+  bairro                  VARCHAR(60),
+  telefone                VARCHAR(15),
+  email                   VARCHAR(100),
+  inscricao_estadual      VARCHAR(20),
+  inscricao_municipal     VARCHAR(20),
+  limite_credito          DECIMAL(14,2)    NOT NULL DEFAULT 0,
+  ativo                   BOOLEAN          NOT NULL DEFAULT TRUE,
+  criado_em               DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por              INT NULL,
+  atualizado_em           DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por          INT NULL,
+  CONSTRAINT fk_clientes_cidade
+    FOREIGN KEY (cidade_id)
+    REFERENCES cidades(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_clientes_criado_por
+    FOREIGN KEY (criado_por)
+    REFERENCES usuarios(id)
+    ON DELETE SET NULL,
+  CONSTRAINT fk_clientes_atualizado_por
+    FOREIGN KEY (atualizado_por)
+    REFERENCES usuarios(id)
+    ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE emitentes (
+  id                   INT          AUTO_INCREMENT PRIMARY KEY,
+  nome_razaosocial     VARCHAR(100) NOT NULL,
+  cnpj                 VARCHAR(14)  NOT NULL UNIQUE,
+  apelido_nomefantasia VARCHAR(100),
+  cidade_id            INT NULL,
+  endereco             VARCHAR(50),
+  complemento          VARCHAR(50),
+  bairro               VARCHAR(50),
+  telefone             VARCHAR(15),
+  email                VARCHAR(50),
+  inscricao_estadual   VARCHAR(20),
+  inscricao_municipal  VARCHAR(20),
+  regime_tributario    ENUM('SIMPLES','PRESUMIDO','REAL') NOT NULL DEFAULT 'SIMPLES',
+  ativo                BOOLEAN      NOT NULL DEFAULT TRUE,
+  criado_em            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por           INT NULL,
+  atualizado_em        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por       INT NULL,
+  CONSTRAINT fk_emitentes_cidade          FOREIGN KEY (cidade_id)      REFERENCES cidades(id)  ON DELETE SET NULL,
+  CONSTRAINT fk_emitentes_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_emitentes_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ================================================================
+-- 6. TRANSPORTES
+-- ================================================================
+CREATE TABLE transportadoras (
+  id             INT          AUTO_INCREMENT PRIMARY KEY,
+  razaosocial    VARCHAR(100) NOT NULL UNIQUE,
+  nome_fantasia  VARCHAR(100) NULL,
+  cnpj           VARCHAR(14)  NOT NULL UNIQUE,
+  inscricao_estadual VARCHAR(20)  NULL,
+  cidade_id      INT NULL,
+  telefone       VARCHAR(15),
+  email          VARCHAR(50),
+  ativo          BOOLEAN      NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_transp_cidade          FOREIGN KEY (cidade_id)      REFERENCES cidades(id)  ON DELETE SET NULL,
+  CONSTRAINT fk_transp_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_transp_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE veiculos (
+  id                INT         AUTO_INCREMENT PRIMARY KEY,
+  transportadora_id INT         NOT NULL,
+  placa             VARCHAR(7) NOT NULL UNIQUE,
+  uf                CHAR(2)     NOT NULL,
+  ativo             BOOLEAN     NOT NULL DEFAULT TRUE,
+  criado_em         DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por        INT NULL,
+  atualizado_em     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por    INT NULL,
+  CONSTRAINT fk_veiculos_transportadora   FOREIGN KEY (transportadora_id) REFERENCES transportadoras(id) ON DELETE NO ACTION,
+  CONSTRAINT fk_veiculos_criado_por       FOREIGN KEY (criado_por)        REFERENCES usuarios(id)        ON DELETE SET NULL,
+  CONSTRAINT fk_veiculos_atualizado_por   FOREIGN KEY (atualizado_por)    REFERENCES usuarios(id)        ON DELETE SET NULL
+) ENGINE=InnoDB;

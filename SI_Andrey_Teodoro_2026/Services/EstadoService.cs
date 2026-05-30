@@ -11,6 +11,7 @@ public class EstadoService : IEstadoService
 
     public Task<PaginacaoDto<EstadoListDto>> ObterTodosAsync(FiltroConsultaDto filtro) => _repo.ObterTodosAsync(filtro);
     public Task<IEnumerable<EstadoListDto>> ObterPorPaisAsync(int paisId) => _repo.ObterPorPaisAsync(paisId);
+    public Task<IEnumerable<EstadoListDto>> ObterTodosAtivosAsync() => _repo.ObterTodosAtivosAsync();
 
     public async Task<EstadoDto?> ObterPorIdAsync(int id)
     {
