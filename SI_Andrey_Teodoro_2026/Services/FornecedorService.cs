@@ -24,6 +24,7 @@ public class FornecedorService : IFornecedorService
             Cnpj = FormatarCnpj(f.Cnpj),
             NomeFantasia = f.NomeFantasia ?? string.Empty,
             Endereco = f.Endereco ?? string.Empty,
+            Complemento = f.Complemento,
             Bairro = f.Bairro ?? string.Empty,
             Telefone = f.Telefone ?? string.Empty,
             Email = f.Email ?? string.Empty,

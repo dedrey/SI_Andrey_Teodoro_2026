@@ -28,6 +28,7 @@ public class EmitenteService : IEmitenteService
             ApelidoNomeFantasia = e.ApelidoNomeFantasia ?? string.Empty,
             CidadeId = e.CidadeId,
             Endereco = e.Endereco ?? string.Empty,
+            Complemento = e.Complemento,
             Bairro = e.Bairro ?? string.Empty,
             Telefone = e.Telefone ?? string.Empty,
             Email = e.Email ?? string.Empty,
