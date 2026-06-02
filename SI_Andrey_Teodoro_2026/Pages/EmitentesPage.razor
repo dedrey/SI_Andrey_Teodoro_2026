@@ -70,7 +70,8 @@
             Contato e Localização
         </MudText>
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="6" md="3">
+            
+            <MudItem xs="10" sm="5" md="3">
                 <MudAutocomplete T="CidadeListDto"
                                  Label="Cidade"
                                  Value="_cidadeSelecionada"
@@ -81,6 +82,13 @@
                                  FullWidth="true" Clearable="true"
                                  ResetValueOnEmptyText="true" CoerceText="false" />
             </MudItem>
+            <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudTooltip Text="Nova Cidade">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                   Size="Size.Medium" OnClick="AbrirModalCidade" />
+                </MudTooltip>
+            </MudItem>
+
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => _dto.Endereco = Cap(v))"
                               Label="Endereço" Variant="Variant.Outlined" Margin="Margin.Dense"

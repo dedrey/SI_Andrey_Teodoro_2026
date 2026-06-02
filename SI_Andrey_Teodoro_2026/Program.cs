@@ -40,6 +40,7 @@ builder.Services.AddScoped<ITransportadoraRepository, TransportadoraRepository>(
 builder.Services.AddScoped<IVeiculoRepository, VeiculoRepository>();
 builder.Services.AddScoped<IMetodoPagamentoRepository, MetodoPagamentoRepository>();
 builder.Services.AddScoped<ICondicaoPagamentoRepository, CondicaoPagamentoRepository>();
+builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────
 builder.Services.AddScoped<IPaisService, PaisService>();
@@ -56,6 +57,8 @@ builder.Services.AddScoped<ITransportadoraService, TransportadoraService>();
 builder.Services.AddScoped<IVeiculoService, VeiculoService>();
 builder.Services.AddScoped<IMetodoPagamentoService, MetodoPagamentoService>();
 builder.Services.AddScoped<ICondicaoPagamentoService, CondicaoPagamentoService>();
+builder.Services.AddScoped<IProdutoService, ProdutoService>();
+
 
 var app = builder.Build();
 

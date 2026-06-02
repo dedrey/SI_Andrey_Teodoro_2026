@@ -2,6 +2,7 @@
 using MudBlazor;
 using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Modals;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
@@ -47,6 +48,24 @@ public partial class TransportadorasPage : ComponentBase
     private async Task MudarPagina(int p) { _filtro.Pagina = p; await CarregarDados(); }
 
     private void LimparFormulario() { _dto = new(); _form?.ResetAsync(); }
+
+    private async Task AbrirModalCidade()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync())
+                .Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (result.Data is int novoId)
+            {
+                _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == novoId);
+                _dto.CidadeId = novoId;
+            }
+        }
+    }
 
     private async Task Editar(int id)
     {

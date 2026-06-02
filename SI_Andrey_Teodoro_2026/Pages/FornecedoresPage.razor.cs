@@ -2,6 +2,7 @@
 using MudBlazor;
 using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Modals;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
@@ -60,6 +61,18 @@ public partial class FornecedoresPage : ComponentBase
         _form?.ResetAsync();
     }
 
+    private async Task AbrirModalCidade()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
+            if (result.Data is int novoId)
+                _dto.CidadeId = novoId;
+        }
+    }
     private async Task Editar(int id)
     {
         var f = await FornecedorService.ObterPorIdAsync(id);

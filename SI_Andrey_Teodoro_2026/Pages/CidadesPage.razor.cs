@@ -4,9 +4,9 @@ using SI_Andrey_Teodoro_2026.Components;
 using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
+using SI_Andrey_Teodoro_2026.Modals;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
-
 public partial class CidadesPage : ComponentBase
 {
     [Inject] private ICidadeService CidadeService { get; set; } = null!;

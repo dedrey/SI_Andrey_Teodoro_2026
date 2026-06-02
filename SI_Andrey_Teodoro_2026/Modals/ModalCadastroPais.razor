@@ -16,7 +16,7 @@
                 <MudItem xs="12" sm="8">
                     <MudTextField Value="@_dto.NomePais"
                                   ValueChanged="@((string v) => _dto.NomePais = CapitalizarPrimeira(v))"
-                                  Label="Nome do País *" Placeholder="Ex: Brasil"
+                                  Label="Nome do País"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="60" FullWidth="true" Immediate="true"
@@ -25,7 +25,7 @@
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Sigla"
                                   ValueChanged="@((string v) => _dto.Sigla = FiltrarLetrasUpper(v))"
-                                  Label="Sigla *" Placeholder="BR"
+                                  Label="Sigla"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="3" FullWidth="true" Immediate="true"
@@ -34,7 +34,7 @@
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Ddi"
                                   ValueChanged="@((string v) => _dto.Ddi = FiltrarNumeros(v))"
-                                  Label="DDI *" Placeholder="55"
+                                  Label="DDI"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="3" FullWidth="true" Immediate="true"
@@ -43,7 +43,7 @@
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Moeda"
                                   ValueChanged="@((string v) => _dto.Moeda = CapitalizarPrimeira(v))"
-                                  Label="Moeda *" Placeholder="Real"
+                                  Label="Moeda"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="30" FullWidth="true" Immediate="true"
@@ -52,7 +52,7 @@
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.SimboleMoeda"
                                   ValueChanged="@((string v) => _dto.SimboleMoeda = v.ToUpper())"
-                                  Label="Símbolo *" Placeholder="R$"
+                                  Label="Símbolo"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="5" FullWidth="true" Immediate="true"
