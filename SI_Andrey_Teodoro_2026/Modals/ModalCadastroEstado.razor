@@ -16,7 +16,7 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12">
                     <MudSelect T="int" @bind-Value="_dto.PaisId"
-                               Label="País *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
                                Required="true" RequiredError="Selecione um país"
                                FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
@@ -29,7 +29,7 @@
                 <MudItem xs="12" sm="9">
                     <MudTextField Value="@_dto.NomeEstado"
                                   ValueChanged="@((string v) => _dto.NomeEstado = CapitalizarPrimeira(v))"
-                                  Label="Nome do Estado *" Placeholder="Ex: Paraná"
+                                  Label="Nome do Estado"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="50" FullWidth="true" Immediate="true"
@@ -38,7 +38,7 @@
                 <MudItem xs="12" sm="3">
                     <MudTextField Value="@_dto.Uf"
                                   ValueChanged="@((string v) => _dto.Uf = FiltrarLetrasUpper(v))"
-                                  Label="UF *" Placeholder="PR"
+                                  Label="UF"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="2" FullWidth="true" Immediate="true"

@@ -271,3 +271,77 @@ CREATE TABLE condicoes_pagamentos (
   CONSTRAINT fk_condicoes_criado_por      FOREIGN KEY (criado_por)          REFERENCES usuarios(id)          ON DELETE SET NULL,
   CONSTRAINT fk_condicoes_atualizado_por  FOREIGN KEY (atualizado_por)      REFERENCES usuarios(id)          ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+-- ================================================================
+-- 8. PRODUTOS
+-- ================================================================
+CREATE TABLE produtos (
+  id                INT          AUTO_INCREMENT PRIMARY KEY,
+  produto           VARCHAR(100) NOT NULL,
+  descricao         VARCHAR(500),
+  categoria_id      INT          NOT NULL,
+  marca_id          INT          NOT NULL,
+  unidade_medida_id INT          NOT NULL,
+  ativo             BOOLEAN      NOT NULL DEFAULT TRUE,
+  criado_em         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por        INT NULL,
+  atualizado_em     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por    INT NULL,
+  CONSTRAINT fk_produtos_categoria        FOREIGN KEY (categoria_id)      REFERENCES categorias(id)      ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_produtos_marca            FOREIGN KEY (marca_id)          REFERENCES marcas(id)          ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_produtos_unidade          FOREIGN KEY (unidade_medida_id) REFERENCES unidades_medida(id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_produtos_criado_por       FOREIGN KEY (criado_por)        REFERENCES usuarios(id)        ON DELETE SET NULL,
+  CONSTRAINT fk_produtos_atualizado_por   FOREIGN KEY (atualizado_por)    REFERENCES usuarios(id)        ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE produto_variacoes (
+  id             INT           AUTO_INCREMENT PRIMARY KEY,
+  produto_id     INT           NOT NULL,
+  cor            VARCHAR(30)   NOT NULL,
+  tamanho        VARCHAR(10)   NOT NULL,
+  codigo_barras  VARCHAR(50)   UNIQUE,
+  preco          DECIMAL(14,2) NOT NULL,
+  ativo          BOOLEAN       NOT NULL DEFAULT TRUE,
+  criado_em      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por     INT NULL,
+  atualizado_em  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por INT NULL,
+  CONSTRAINT fk_variacoes_produto         FOREIGN KEY (produto_id)    REFERENCES produtos(id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_variacoes_criado_por      FOREIGN KEY (criado_por)    REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_variacoes_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT unique_variacao              UNIQUE (produto_id, cor, tamanho)
+) ENGINE=InnoDB;
+
+CREATE TABLE estoque (
+  id                  INT      AUTO_INCREMENT PRIMARY KEY,
+  produto_variacao_id INT      NOT NULL UNIQUE,
+  quantidade          INT      NOT NULL DEFAULT 0,
+  atualizado_em       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  atualizado_por      INT NULL,
+  CONSTRAINT fk_estoque_variacao        FOREIGN KEY (produto_variacao_id) REFERENCES produto_variacoes(id) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  CONSTRAINT fk_estoque_atualizado_por  FOREIGN KEY (atualizado_por)      REFERENCES usuarios(id)          ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+-- ================================================================
+-- 9. MOVIMENTAÇÕES DE ESTOQUE
+-- ================================================================
+CREATE TABLE movimentacoes_estoque (
+  id                INT     AUTO_INCREMENT PRIMARY KEY,
+  tipo_movimentacao ENUM('ENTRADA','SAIDA','AJUSTE') NOT NULL,
+  observacao        VARCHAR(200),
+  criado_em         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por        INT NULL,
+  CONSTRAINT fk_movest_criado_por FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE movimentacoes_estoque_itens (
+  id                  INT           AUTO_INCREMENT PRIMARY KEY,
+  movimentacao_id     INT           NOT NULL,
+  produto_variacao_id INT           NOT NULL,
+  quantidade          INT           NOT NULL,
+  valor_unitario      DECIMAL(14,4) NOT NULL DEFAULT 0,
+  criado_em           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_movest_itens_mov       FOREIGN KEY (movimentacao_id)    REFERENCES movimentacoes_estoque(id) ON DELETE NO ACTION,
+  CONSTRAINT fk_movest_itens_variacao  FOREIGN KEY (produto_variacao_id) REFERENCES produto_variacoes(id)   ON DELETE NO ACTION,
+  CONSTRAINT chk_quantidade_positiva   CHECK (quantidade > 0)
+) ENGINE=InnoDB;

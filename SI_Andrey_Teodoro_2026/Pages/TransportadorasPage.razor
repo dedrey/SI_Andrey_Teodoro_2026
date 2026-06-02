@@ -64,7 +64,7 @@
         </MudText>
 
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="4" md="3">
+            <MudItem xs="10" sm="3" md="3">
                 <MudAutocomplete T="CidadeListDto"
                                  Label="Cidade"
                                  Value="_cidadeSelecionada"
@@ -75,6 +75,13 @@
                                  FullWidth="true" Clearable="true"
                                  ResetValueOnEmptyText="true" CoerceText="false" />
             </MudItem>
+            <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudTooltip Text="Nova Cidade">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                   Size="Size.Medium" OnClick="AbrirModalCidade" />
+                </MudTooltip>
+            </MudItem>
+
             <MudItem xs="12" sm="4" md="3">
                 <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"
                               Label="Telefone "

@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SI_Andrey_Teodoro_2026.Components;
 using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
+using SI_Andrey_Teodoro_2026.Modals;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
@@ -68,6 +70,21 @@ public partial class VeiculosPage : ComponentBase
     }
 
     private void LimparFormulario() { _dto = new(); _placaTexto = ""; _form?.ResetAsync(); }
+    private async Task AbrirModalTransportadora()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
+            if (result.Data is int novoId)
+            {
+                _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == novoId);
+                _dto.TransportadoraId = novoId;
+            }
+        }
+    }
 
     private async Task Editar(int id)
     {

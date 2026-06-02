@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using SI_Andrey_Teodoro_2026.Components;
 using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
+using SI_Andrey_Teodoro_2026.Modals;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
@@ -61,6 +63,18 @@ public partial class CondicoesPagamentoPage : ComponentBase
         _jurosTexto = "";
         _metodonNaoSelecionado = false;
         _form?.ResetAsync();
+    }
+
+    private async Task AbrirModalMetodoPagamento()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método de Pagamento", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _metodos = (await MetodoPagamentoService.ObterTodosAtivosAsync()).ToList();
+            if (result.Data is int novoId) _dto.MetodoPagamentoId = novoId;
+        }
     }
     private async Task Editar(int id)
     {
