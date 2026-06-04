@@ -1,32 +1,18 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
-
 namespace SI_Andrey_Teodoro_2026.Pages;
-
-public partial class MarcasPage : ComponentBase
+public partial class MarcasPage : BasePage<MarcaListDto, MarcaDto>
 {
     [Inject] private IMarcaService MarcaService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
-
-    private PaginacaoDto<MarcaListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new();
-    private MarcaDto _dto = new();
-    private MudForm _form = null!;
-    private bool _formValido;
-    private bool _carregando;
-    private bool _salvando;
-
+    protected override string NomeEntidade => "Marca";
     protected override async Task OnInitializedAsync()
     {
         try { await CarregarDados(); }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
-
-    private async Task CarregarDados()
+    protected override async Task CarregarDados()
     {
         try
         {
@@ -40,17 +26,11 @@ public partial class MarcasPage : ComponentBase
         }
         finally { _carregando = false; }
     }
-
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new(); await CarregarDados(); }
-    private async Task MudarPagina(int p) { _filtro.Pagina = p; await CarregarDados(); }
-
     private void LimparFormulario()
     {
         _dto = new();
         _form?.ResetAsync();
     }
-
     private async Task Editar(int id)
     {
         var m = await MarcaService.ObterPorIdAsync(id);
@@ -58,36 +38,17 @@ public partial class MarcasPage : ComponentBase
         _dto = m;
         StateHasChanged();
     }
-
     private async Task Salvar()
     {
         await _form.ValidateAsync();
         if (!_formValido) return;
-
         _salvando = true;
         var (sucesso, mensagem, _) = await MarcaService.SalvarAsync(_dto);
         _salvando = false;
-
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) { LimparFormulario(); await CarregarDados(); }
     }
-
-    private async Task AlterarStatus(int id, string nome, bool ativoAtual)
-    {
-        var param = new DialogParameters<ConfirmDialog>
-        {
-            { x => x.Titulo,     $"Confirmar {(ativoAtual ? "desativar" : "ativar")}" },
-            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} a marca \"{nome}\"?" },
-            { x => x.TextoBotao, ativoAtual ? "Desativar" : "Ativar" },
-            { x => x.CorBotao,   ativoAtual ? Color.Error : Color.Success }
-        };
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar",
-            param, new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
-        if ((await dialog.Result) is { Canceled: false })
-        {
-            var (sucesso, mensagem) = await MarcaService.AlterarStatusAsync(id, !ativoAtual);
-            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-            if (sucesso) await CarregarDados();
-        }
-    }
+    private Task AlterarStatus(int id, string nome, bool ativoAtual)
+        => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
+               MarcaService.AlterarStatusAsync, CarregarDados);
 }

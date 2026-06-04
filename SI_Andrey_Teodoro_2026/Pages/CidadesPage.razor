@@ -1,5 +1,6 @@
 ﻿@page "/cidades"
 @rendermode InteractiveServer
+@inherits BasePage<CidadeListDto, CidadeDto>
 
 <PageTitle>Cidades</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
@@ -188,7 +189,6 @@
 </MudPaper>
 
 @code {
-    private string _dddTexto = "";
 
     private void OnDddAlterado(string? v)
     {

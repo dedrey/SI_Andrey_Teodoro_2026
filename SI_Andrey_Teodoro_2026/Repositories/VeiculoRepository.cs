@@ -6,10 +6,11 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class VeiculoRepository : IVeiculoRepository
+public class VeiculoRepository : BaseRepository, IVeiculoRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public VeiculoRepository(DbConnectionFactory factory) => _factory = factory;
+    public VeiculoRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "veiculos";
 
     public async Task<PaginacaoDto<VeiculoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
@@ -98,28 +99,18 @@ public class VeiculoRepository : IVeiculoRepository
               FROM veiculos v
               INNER JOIN transportadoras t ON t.id  = v.transportadora_id
               LEFT  JOIN usuarios        ua ON ua.id = v.atualizado_por
-              WHERE v.id = @id",
-            new { id });
+              WHERE v.id = @id", new { id });
     }
 
     public async Task<int> InserirAsync(VeiculoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id+1 FROM veiculos) t
-              WHERE seq NOT IN (SELECT id FROM veiculos)");
+        var proximoId = await ProximoIdAsync();
 
         await conn.ExecuteAsync(
             @"INSERT INTO veiculos (id, transportadora_id, placa, uf, ativo)
               VALUES (@ProximoId, @TransportadoraId, @Placa, @Uf, @Ativo)",
-            new
-            {
-                ProximoId = proximoId,
-                dto.TransportadoraId,
-                dto.Placa,
-                dto.Uf,
-                dto.Ativo
-            });
+            new { ProximoId = proximoId, dto.TransportadoraId, dto.Placa, dto.Uf, dto.Ativo });
 
         return proximoId;
     }
@@ -137,13 +128,8 @@ public class VeiculoRepository : IVeiculoRepository
               WHERE id = @IdOriginal", dto);
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE veiculos SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExistePlacaAsync(string placa, int? idOriginalIgnorar = null)
     {

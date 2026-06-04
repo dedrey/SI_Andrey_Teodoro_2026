@@ -4,10 +4,13 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Services;
 
-public class TransportadoraService : ITransportadoraService
+public class TransportadoraService : BaseService<TransportadoraDto, TransportadoraListDto>, ITransportadoraService
 {
     private readonly ITransportadoraRepository _repo;
+
     public TransportadoraService(ITransportadoraRepository repo) => _repo = repo;
+
+    protected override string NomeEntidade => "Transportadora";
 
     public Task<PaginacaoDto<TransportadoraListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
@@ -52,6 +55,7 @@ public class TransportadoraService : ITransportadoraService
             dto.Cnpj = cnpjLimpo;
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
+
             if (await _repo.ExisteCnpjAsync(dto.Cnpj, ignorar))
                 return (false, $"Já existe uma transportadora com o CNPJ '{FormatarCnpj(dto.Cnpj)}'.", 0);
 
@@ -60,10 +64,11 @@ public class TransportadoraService : ITransportadoraService
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Transportadora cadastrada com sucesso!", novoId);
             }
+
             await _repo.AtualizarAsync(dto);
             return (true, "Transportadora atualizada com sucesso!", dto.Id);
         }
-        catch (Exception ex) { return (false, $"Erro ao salvar transportadora: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
@@ -71,12 +76,13 @@ public class TransportadoraService : ITransportadoraService
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Transportadora {(ativar ? "ativada" : "desativada")} com sucesso!");
+            return SucessoStatus(ativar);
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
+        catch (Exception ex) { return ErroStatus(ex); }
     }
 
-    private static string LimparDigitos(string v) => new string(v.Where(char.IsDigit).ToArray());
+    private static string LimparDigitos(string v)
+        => new string(v.Where(char.IsDigit).ToArray());
 
     public static string FormatarCnpj(string cnpj)
     {

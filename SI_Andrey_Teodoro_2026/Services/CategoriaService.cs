@@ -1,13 +1,14 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
-
 namespace SI_Andrey_Teodoro_2026.Services;
-
-public class CategoriaService : ICategoriaService
+public class CategoriaService : BaseService<CategoriaDto, CategoriaListDto>, ICategoriaService
 {
     private readonly ICategoriaRepository _repo;
+
     public CategoriaService(ICategoriaRepository repo) => _repo = repo;
+
+    protected override string NomeEntidade => "Categoria";
 
     public Task<PaginacaoDto<CategoriaListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
@@ -29,7 +30,6 @@ public class CategoriaService : ICategoriaService
             NomeAtualizadoPor = c.NomeAtualizadoPor
         };
     }
-
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CategoriaDto dto)
     {
         try
@@ -46,22 +46,21 @@ public class CategoriaService : ICategoriaService
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Categoria cadastrada com sucesso!", novoId);
             }
+
             await _repo.AtualizarAsync(dto);
             return (true, "Categoria atualizada com sucesso!", dto.Id);
         }
-        catch (Exception ex) { return (false, $"Erro ao salvar categoria: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
-
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
     {
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Categoria {(ativar ? "ativada" : "desativada")} com sucesso!");
+            return SucessoStatus(ativar);
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
+        catch (Exception ex) { return ErroStatus(ex); }
     }
-
     private static string CapitalizarPrimeira(string v)
         => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

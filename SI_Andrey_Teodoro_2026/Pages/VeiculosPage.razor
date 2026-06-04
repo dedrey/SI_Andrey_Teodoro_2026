@@ -1,5 +1,6 @@
 ﻿@page "/veiculos"
 @rendermode InteractiveServer
+@inherits BasePage<VeiculoListDto, VeiculoDto>
 
 <PageTitle>Veículos</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
@@ -44,16 +45,15 @@
                                  ResetValueOnEmptyText="true" CoerceText="false"
                                  Required="true" RequiredError="Obrigatório" />
             </MudItem>
-            <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+            <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
                 <MudTooltip Text="Nova Transportadora">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
                                    Size="Size.Medium" OnClick="AbrirModalTransportadora" />
                 </MudTooltip>
             </MudItem>
-
             <MudItem xs="6" sm="3" md="2">
                 <MudTextField Value="@_placaTexto"
-                              ValueChanged="@((string? v) => { OnPlacaAlterada(v); })"
+                              ValueChanged="@((string? v) => OnPlacaAlterada(v))"
                               Label="Placa"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
@@ -92,6 +92,7 @@
         </MudGrid>
     </MudForm>
 </MudPaper>
+
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
@@ -127,6 +128,7 @@
         </MudItem>
     </MudGrid>
 </MudPaper>
+
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
               Loading="_carregando" LoadingProgressColor="Color.Primary">
@@ -200,6 +202,7 @@
                 t.Cnpj.Contains(busca));
         return Task.FromResult(r);
     }
+
     private Task<IEnumerable<string>> PesquisarUf(string? busca, CancellationToken ct)
     {
         var r = string.IsNullOrWhiteSpace(busca)
@@ -213,7 +216,7 @@
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         var limpa = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper();
         if (limpa.Length != 7) return "Placa deve ter 7 caracteres";
-        var antigo = limpa[..3].All(char.IsLetter) && limpa[3..].All(char.IsDigit);
+        var antigo   = limpa[..3].All(char.IsLetter) && limpa[3..].All(char.IsDigit);
         var mercosul = limpa[..3].All(char.IsLetter) && char.IsDigit(limpa[3])
                     && char.IsLetter(limpa[4]) && char.IsDigit(limpa[5]) && char.IsDigit(limpa[6]);
         return (antigo || mercosul) ? null : "Formato inválido. Use AAA9999 ou AAA9A99";

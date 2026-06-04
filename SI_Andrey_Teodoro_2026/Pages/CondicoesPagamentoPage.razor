@@ -1,5 +1,6 @@
 ﻿@page "/condicoes-pagamento"
 @rendermode InteractiveServer
+@inherits BasePage<CondicaoPagamentoListDto, CondicaoPagamentoDto>
 
 <PageTitle>Condições de Pagamento</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
@@ -39,7 +40,6 @@
                               MaxLength="50" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarNome(v))" />
             </MudItem>
-            
             <MudItem xs="10" sm="5" md="3">
                 <MudSelect T="int" @bind-Value="_dto.MetodoPagamentoId"
                            Label="@(_metodonNaoSelecionado ? "Método * — Obrigatório!" : "Método de Pagamento *")"
@@ -62,8 +62,6 @@
                                    Size="Size.Medium" OnClick="AbrirModalMetodoPagamento" />
                 </MudTooltip>
             </MudItem>
-
-
             <MudItem xs="6" sm="3" md="2">
                 <MudTextField Value="@_parcelasTexto"
                               ValueChanged="@((string v) => OnParcelasAlterado(v))"
@@ -74,7 +72,6 @@
                               Validation="@((string v) => ValidarParcelas(v))" />
             </MudItem>
         </MudGrid>
-
         <MudDivider Class="my-3" />
         <MudText Typo="Typo.caption" Class="mb-2"
                  Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
@@ -145,7 +142,6 @@
         </MudGrid>
     </MudForm>
 </MudPaper>
-
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
@@ -279,12 +275,6 @@
 </MudPaper>
 
 @code {
-    private string _parcelasTexto = "1";
-    private string _entradaTexto = "";
-    private string _descontoTexto = "";
-    private string _acrescimoTexto = "";
-    private string _multaTexto = "";
-    private string _jurosTexto = "";
 
     private void OnParcelasAlterado(string? v)
     {

@@ -6,20 +6,20 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class EmitenteRepository : IEmitenteRepository
+public class EmitenteRepository : BaseRepository, IEmitenteRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public EmitenteRepository(DbConnectionFactory factory) => _factory = factory;
+    public EmitenteRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "emitentes";
 
     public async Task<PaginacaoDto<EmitenteListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
-
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add(@"(e.nome_razaosocial      LIKE @Busca
-                      OR e.cnpj                  LIKE @Busca
-                      OR e.apelido_nomefantasia  LIKE @Busca
+            where.Add(@"(e.nome_razaosocial     LIKE @Busca
+                      OR e.apelido_nomefantasia LIKE @Busca
+                      OR e.cnpj                 LIKE @Busca
                       OR CAST(e.id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
@@ -37,20 +37,18 @@ public class EmitenteRepository : IEmitenteRepository
 
         var sqlCount = $"SELECT COUNT(*) FROM emitentes e {whereClause}";
         var sqlData = $@"SELECT e.id,
-                                 e.nome_razaosocial     AS NomeRazaoSocial,
-                                 e.cnpj,
-                                 e.apelido_nomefantasia AS ApelidoNomeFantasia,
-                                 c.cidade               AS NomeCidade,
-                                 e.telefone, e.email,
-                                 e.regime_tributario    AS RegimeTributario,
-                                 e.ativo,
-                                 e.criado_em            AS CriadoEm,
-                                 e.atualizado_em        AS AtualizadoEm
+                                  e.nome_razaosocial      AS NomeRazaoSocial,
+                                  e.apelido_nomefantasia  AS ApelidoNomeFantasia,
+                                  e.cnpj,
+                                  e.regime_tributario     AS RegimeTributario,
+                                  c.cidade                AS NomeCidade,
+                                  e.telefone, e.email,
+                                  e.ativo,
+                                  e.criado_em AS CriadoEm
                           FROM emitentes e
                           LEFT JOIN cidades c ON c.id = e.cidade_id
                           {whereClause}
-                          ORDER BY {orderBy}
-                          LIMIT @Limit OFFSET @Offset";
+                          ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
         var param = new
         {
@@ -62,7 +60,6 @@ public class EmitenteRepository : IEmitenteRepository
 
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<EmitenteListDto>(sqlData, param);
-
         return new PaginacaoDto<EmitenteListDto>
         {
             Itens = itens.ToList(),
@@ -76,7 +73,11 @@ public class EmitenteRepository : IEmitenteRepository
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<EmitenteListDto>(
-            "SELECT id, nome_razaosocial AS NomeRazaoSocial, cnpj FROM emitentes WHERE ativo = TRUE ORDER BY nome_razaosocial");
+            @"SELECT id,
+                     nome_razaosocial     AS NomeRazaoSocial,
+                     apelido_nomefantasia AS ApelidoNomeFantasia,
+                     cnpj
+              FROM emitentes WHERE ativo = TRUE ORDER BY nome_razaosocial");
     }
 
     public async Task<Emitente?> ObterPorIdAsync(int id)
@@ -84,59 +85,54 @@ public class EmitenteRepository : IEmitenteRepository
         using var conn = _factory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Emitente>(
             @"SELECT e.id,
-                     e.nome_razaosocial     AS NomeRazaoSocial,
+                     e.nome_razaosocial      AS NomeRazaoSocial,
+                     e.apelido_nomefantasia  AS ApelidoNomeFantasia,
                      e.cnpj,
-                     e.apelido_nomefantasia AS ApelidoNomeFantasia,
-                     e.cidade_id            AS CidadeId,
-                     c.cidade               AS NomeCidade,
+                     e.inscricao_estadual    AS InscricaoEstadual,
+                     e.regime_tributario     AS RegimeTributario,
+                     e.cidade_id             AS CidadeId,
+                     c.cidade                AS NomeCidade,
                      e.endereco, e.complemento, e.bairro,
                      e.telefone, e.email,
-                     e.inscricao_estadual   AS InscricaoEstadual,
-                     e.regime_tributario    AS RegimeTributario,
                      e.ativo,
-                     e.criado_em            AS CriadoEm,
-                     e.atualizado_em        AS AtualizadoEm,
-                     ua.nome                AS NomeAtualizadoPor
+                     e.criado_em     AS CriadoEm,
+                     e.atualizado_em AS AtualizadoEm,
+                     ua.nome         AS NomeAtualizadoPor
               FROM emitentes e
               LEFT JOIN cidades  c  ON c.id  = e.cidade_id
               LEFT JOIN usuarios ua ON ua.id = e.atualizado_por
-              WHERE e.id = @id",
-            new { id });
+              WHERE e.id = @id", new { id });
     }
 
     public async Task<int> InserirAsync(EmitenteDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id+1 FROM emitentes) t
-              WHERE seq NOT IN (SELECT id FROM emitentes)");
-
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO emitentes
-                (id, nome_razaosocial, cnpj, apelido_nomefantasia,
-                 cidade_id, endereco, complemento, bairro, telefone, email,
-                 inscricao_estadual, regime_tributario, ativo)
+                (id, nome_razaosocial, apelido_nomefantasia, cnpj, inscricao_estadual,
+                 regime_tributario, cidade_id, endereco, complemento, bairro,
+                 telefone, email, ativo)
               VALUES
-                (@ProximoId, @NomeRazaoSocial, @Cnpj, @ApelidoNomeFantasia,
-                 @CidadeId, @Endereco, @Complemento, @Bairro, @Telefone, @Email,
-                 @InscricaoEstadual, @RegimeTributario, @Ativo)",
+                (@ProximoId, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual,
+                 @RegimeTributario, @CidadeId, @Endereco, @Complemento, @Bairro,
+                 @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,
-                dto.NomeRazaoSocial,
+                NomeRazaoSocial = dto.NomeRazaoSocial,
+                ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
                 dto.Cnpj,
-                dto.ApelidoNomeFantasia,
+                dto.InscricaoEstadual,
+                dto.RegimeTributario,
                 dto.CidadeId,
                 dto.Endereco,
                 dto.Complemento,
                 dto.Bairro,
                 dto.Telefone,
                 dto.Email,
-                dto.InscricaoEstadual,
-                dto.RegimeTributario,
                 dto.Ativo
             });
-
         return proximoId;
     }
 
@@ -145,29 +141,40 @@ public class EmitenteRepository : IEmitenteRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE emitentes
-              SET id                    = @Id,
-                  nome_razaosocial      = @NomeRazaoSocial,
-                  cnpj                  = @Cnpj,
-                  apelido_nomefantasia  = @ApelidoNomeFantasia,
-                  cidade_id             = @CidadeId,
-                  endereco              = @Endereco,
-                  complemento           = @Complemento,
-                  bairro                = @Bairro,
-                  telefone              = @Telefone,
-                  email                 = @Email,
-                  inscricao_estadual    = @InscricaoEstadual,
-                  regime_tributario     = @RegimeTributario,
-                  atualizado_em         = NOW()
-              WHERE id = @IdOriginal", dto);
+              SET id                   = @Id,
+                  nome_razaosocial     = @NomeRazaoSocial,
+                  apelido_nomefantasia = @ApelidoNomeFantasia,
+                  cnpj                 = @Cnpj,
+                  inscricao_estadual   = @InscricaoEstadual,
+                  regime_tributario    = @RegimeTributario,
+                  cidade_id            = @CidadeId,
+                  endereco             = @Endereco,
+                  complemento          = @Complemento,
+                  bairro               = @Bairro,
+                  telefone             = @Telefone,
+                  email                = @Email,
+                  atualizado_em        = NOW()
+              WHERE id = @IdOriginal",
+            new
+            {
+                dto.Id,
+                dto.IdOriginal,
+                NomeRazaoSocial = dto.NomeRazaoSocial,
+                ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
+                dto.Cnpj,
+                dto.InscricaoEstadual,
+                dto.RegimeTributario,
+                dto.CidadeId,
+                dto.Endereco,
+                dto.Complemento,
+                dto.Bairro,
+                dto.Telefone,
+                dto.Email
+            });
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE emitentes SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null)
     {

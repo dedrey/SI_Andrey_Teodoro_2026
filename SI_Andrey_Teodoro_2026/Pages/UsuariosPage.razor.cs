@@ -1,25 +1,18 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public partial class UsuariosPage : ComponentBase
+public partial class UsuariosPage : BasePage<UsuarioListDto, UsuarioDto>
 {
     [Inject] private IUsuarioService UsuarioService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
 
-    private PaginacaoDto<UsuarioListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new();
-    private UsuarioDto _dto = new();
-    private MudForm _form = null!;
-    private bool _formValido;
-    private bool _carregando;
-    private bool _salvando;
-    private string _cpfTexto = "";
+    protected override string NomeEntidade => "Usuário";
+
+    private string _senhaTexto = "";
+    private bool _mostrarSenha = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -27,20 +20,26 @@ public partial class UsuariosPage : ComponentBase
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    private async Task CarregarDados()
+    protected override async Task CarregarDados()
     {
-        try { _carregando = true; _resultado = await UsuarioService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error); _resultado = new(); }
+        try
+        {
+            _carregando = true;
+            _resultado = await UsuarioService.ObterTodosAsync(_filtro);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
+            _resultado = new();
+        }
         finally { _carregando = false; }
     }
 
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new(); await CarregarDados(); }
-    private async Task MudarPagina(int p) { _filtro.Pagina = p; await CarregarDados(); }
-
     private void LimparFormulario()
     {
-        _dto = new(); _cpfTexto = "";
+        _dto = new();
+        _senhaTexto = "";
+        _mostrarSenha = false;
         _form?.ResetAsync();
     }
 
@@ -49,7 +48,8 @@ public partial class UsuariosPage : ComponentBase
         var u = await UsuarioService.ObterPorIdAsync(id);
         if (u == null) { Snackbar.Add("Usuário não encontrado.", Severity.Warning); return; }
         _dto = u;
-        _cpfTexto = u.Cpf;
+        _senhaTexto = "";
+        _mostrarSenha = false;
         StateHasChanged();
     }
 
@@ -64,22 +64,7 @@ public partial class UsuariosPage : ComponentBase
         if (sucesso) { LimparFormulario(); await CarregarDados(); }
     }
 
-    private async Task AlterarStatus(int id, string nome, bool ativoAtual)
-    {
-        var param = new DialogParameters<ConfirmDialog>
-        {
-            { x => x.Titulo,     $"Confirmar {(ativoAtual ? "desativar" : "ativar")}" },
-            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} o usuário \"{nome}\"?" },
-            { x => x.TextoBotao, ativoAtual ? "Desativar" : "Ativar" },
-            { x => x.CorBotao,   ativoAtual ? Color.Error : Color.Success }
-        };
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar",
-            param, new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
-        if ((await dialog.Result) is { Canceled: false })
-        {
-            var (sucesso, mensagem) = await UsuarioService.AlterarStatusAsync(id, !ativoAtual);
-            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-            if (sucesso) await CarregarDados();
-        }
-    }
+    private Task AlterarStatus(int id, string nome, bool ativoAtual)
+        => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
+               UsuarioService.AlterarStatusAsync, CarregarDados);
 }

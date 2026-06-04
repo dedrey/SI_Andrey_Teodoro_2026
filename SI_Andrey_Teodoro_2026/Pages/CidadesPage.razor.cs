@@ -1,41 +1,31 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SI_Andrey_Teodoro_2026.Components;
-using SI_Andrey_Teodoro_2026.Components.Shared;
 using SI_Andrey_Teodoro_2026.DTOs;
-using SI_Andrey_Teodoro_2026.Services.Interfaces;
 using SI_Andrey_Teodoro_2026.Modals;
+using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
-public partial class CidadesPage : ComponentBase
+
+public partial class CidadesPage : BasePage<CidadeListDto, CidadeDto>
 {
     [Inject] private ICidadeService CidadeService { get; set; } = null!;
     [Inject] private IEstadoService EstadoService { get; set; } = null!;
     [Inject] private IPaisService PaisService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
 
-    private PaginacaoDto<CidadeListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new();
-    private CidadeDto _dto = new();
-    private MudForm _form = null!;
-    private bool _formValido;
-    private bool _carregando;
-    private bool _salvando;
+    protected override string NomeEntidade => "Cidade";
 
     private List<PaisListDto> _paises = new();
     private List<EstadoListDto> _estados = new();
+    private bool _paisNaoSelecionado = false;
+    private bool _estadoNaoSelecionado = false;
+    private string _dddTexto = "";
 
-    private bool _paisNaoSelecionado;
-    private bool _estadoNaoSelecionado;
+    protected override void InicializarDto() => _dto = new CidadeDto();
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            await CarregarPaises();
-            await CarregarDados();
-        }
+        try { await CarregarDados(); }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
@@ -50,7 +40,7 @@ public partial class CidadesPage : ComponentBase
         _estados = (await EstadoService.ObterPorPaisAsync(paisId)).ToList();
     }
 
-    private async Task CarregarDados()
+    protected override async Task CarregarDados()
     {
         try
         {
@@ -64,10 +54,6 @@ public partial class CidadesPage : ComponentBase
         }
         finally { _carregando = false; }
     }
-
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new(); await CarregarDados(); }
-    private async Task MudarPagina(int p) { _filtro.Pagina = p; await CarregarDados(); }
 
     private void LimparFormulario()
     {
@@ -87,10 +73,8 @@ public partial class CidadesPage : ComponentBase
         _dddTexto = c.Ddd > 0 ? c.Ddd.ToString() : "";
         _paisNaoSelecionado = false;
         _estadoNaoSelecionado = false;
-
         if (_dto.PaisId > 0)
             _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList();
-
         StateHasChanged();
     }
 
@@ -118,15 +102,14 @@ public partial class CidadesPage : ComponentBase
         _salvando = true;
         var (sucesso, mensagem, _) = await CidadeService.SalvarAsync(_dto);
         _salvando = false;
-
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) { LimparFormulario(); await CarregarDados(); }
     }
 
     private async Task AbrirModalPais()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", options);
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
         {
@@ -138,8 +121,8 @@ public partial class CidadesPage : ComponentBase
     private async Task AbrirModalEstado()
     {
         var param = new DialogParameters<ModalCadastroEstado> { { x => x.PaisIdInicial, _dto.PaisId } };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", param, options);
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", param, opts);
         var result = await dialog.Result;
         if (result is { Canceled: false, Data: not null })
         {
@@ -148,23 +131,6 @@ public partial class CidadesPage : ComponentBase
         }
     }
 
-    private async Task AlterarStatus(int id, string nome, bool ativoAtual)
-    {
-        var param = new DialogParameters<ConfirmDialog>
-        {
-            { x => x.Titulo,     $"Confirmar {(ativoAtual ? "desativar" : "ativar")}" },
-            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} a cidade \"{nome}\"?" },
-            { x => x.TextoBotao, ativoAtual ? "Desativar" : "Ativar" },
-            { x => x.CorBotao,   ativoAtual ? Color.Error : Color.Success }
-        };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar", param, options);
-        var result = await dialog.Result;
-        if (result is { Canceled: false })
-        {
-            var (sucesso, mensagem) = await CidadeService.AlterarStatusAsync(id, !ativoAtual);
-            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-            if (sucesso) await CarregarDados();
-        }
-    }
+    private Task AlterarStatus(int id, string nome, bool ativoAtual)
+        => ConfirmarAlteracaoStatus(id, nome, ativoAtual, CidadeService.AlterarStatusAsync, CarregarDados);
 }

@@ -3,18 +3,19 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Services;
-
-public class VeiculoService : IVeiculoService
+public class VeiculoService : BaseService<VeiculoDto, VeiculoListDto>, IVeiculoService
 {
     private readonly IVeiculoRepository _repo;
+
     public VeiculoService(IVeiculoRepository repo) => _repo = repo;
+
+    protected override string NomeEntidade => "Veículo";
 
     public Task<PaginacaoDto<VeiculoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
 
     public Task<IEnumerable<VeiculoListDto>> ObterTodosAtivosAsync()
         => _repo.ObterTodosAtivosAsync();
-
     public async Task<VeiculoDto?> ObterPorIdAsync(int id)
     {
         var v = await _repo.ObterPorIdAsync(id);
@@ -31,12 +32,11 @@ public class VeiculoService : IVeiculoService
             NomeAtualizadoPor = v.NomeAtualizadoPor
         };
     }
-
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(VeiculoDto dto)
     {
         try
         {
-            dto.Placa = new string(dto.Placa.Where(c => char.IsLetterOrDigit(c)).ToArray()).ToUpper();
+            dto.Placa = new string(dto.Placa.Where(char.IsLetterOrDigit).ToArray()).ToUpper();
             dto.Uf = dto.Uf.Trim().ToUpper();
 
             if (dto.TransportadoraId == 0)
@@ -52,6 +52,7 @@ public class VeiculoService : IVeiculoService
                 return (false, "UF deve ter 2 letras.", 0);
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
+
             if (await _repo.ExistePlacaAsync(dto.Placa, ignorar))
                 return (false, $"Já existe um veículo com a placa '{dto.Placa}'.", 0);
 
@@ -60,20 +61,20 @@ public class VeiculoService : IVeiculoService
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Veículo cadastrado com sucesso!", novoId);
             }
+
             await _repo.AtualizarAsync(dto);
             return (true, "Veículo atualizado com sucesso!", dto.Id);
         }
-        catch (Exception ex) { return (false, $"Erro ao salvar veículo: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
-
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
     {
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Veículo {(ativar ? "ativado" : "desativado")} com sucesso!");
+            return SucessoStatus(ativar);
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
+        catch (Exception ex) { return ErroStatus(ex); }
     }
     private static bool ValidarPlaca(string placa)
     {

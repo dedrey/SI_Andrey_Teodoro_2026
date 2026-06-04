@@ -3,14 +3,11 @@ using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
-
 namespace SI_Andrey_Teodoro_2026.Repositories;
-
-public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
+public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public CondicaoPagamentoRepository(DbConnectionFactory factory) => _factory = factory;
-
+    public CondicaoPagamentoRepository(DbConnectionFactory factory) : base(factory) { }
+    protected override string Tabela => "condicoes_pagamentos";
     public async Task<PaginacaoDto<CondicaoPagamentoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
@@ -20,32 +17,40 @@ public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
                       OR m.metodo_pagamento   LIKE @Busca
                       OR m.codigo             LIKE @Busca
                       OR CAST(c.id AS CHAR) = @BuscaExata)");
-        where.Add(filtro.StatusFiltro switch { "ativos" => "c.ativo = TRUE", "inativos" => "c.ativo = FALSE", _ => "1=1" });
+        where.Add(filtro.StatusFiltro switch
+        {
+            "ativos" => "c.ativo = TRUE",
+            "inativos" => "c.ativo = FALSE",
+            _ => "1=1"
+        });
         var whereClause = "WHERE " + string.Join(" AND ", where);
-        var orderBy = filtro.OrdenarPor switch { "id" => "c.id", "data" => "c.criado_em", "metodo" => "m.metodo_pagamento", _ => "c.condicao_pagamento" };
-
+        var orderBy = filtro.OrdenarPor switch
+        {
+            "id" => "c.id",
+            "data" => "c.criado_em",
+            "metodo" => "m.metodo_pagamento",
+            _ => "c.condicao_pagamento"
+        };
         var sqlCount = $@"SELECT COUNT(*) FROM condicoes_pagamentos c
                           INNER JOIN metodos_pagamento m ON m.id = c.metodo_pagamento_id
                           {whereClause}";
         var sqlData = $@"SELECT c.id,
-                                 c.condicao_pagamento        AS CondicaoPagamento,
-                                 c.metodo_pagamento_id       AS MetodoPagamentoId,
-                                 m.metodo_pagamento          AS NomeMetodoPagamento,
-                                 m.codigo                    AS CodigoMetodo,
-                                 c.numero_parcelas           AS NumeroParcelas,
-                                 c.entrada_minima_percentual AS EntradaMinimaPercentual,
-                                 c.desconto_percentual       AS DescontoPercentual,
-                                 c.acrescimo_percentual      AS AcrescimoPercentual,
-                                 c.multa_percentual          AS MultaPercentual,
-                                 c.taxa_juros_percentual     AS TaxaJurosPercentual,
-                                 c.ativo,
-                                 c.criado_em AS CriadoEm
+                                  c.condicao_pagamento        AS CondicaoPagamento,
+                                  c.metodo_pagamento_id       AS MetodoPagamentoId,
+                                  m.metodo_pagamento          AS NomeMetodoPagamento,
+                                  m.codigo                    AS CodigoMetodo,
+                                  c.numero_parcelas           AS NumeroParcelas,
+                                  c.entrada_minima_percentual AS EntradaMinimaPercentual,
+                                  c.desconto_percentual       AS DescontoPercentual,
+                                  c.acrescimo_percentual      AS AcrescimoPercentual,
+                                  c.multa_percentual          AS MultaPercentual,
+                                  c.taxa_juros_percentual     AS TaxaJurosPercentual,
+                                  c.ativo,
+                                  c.criado_em AS CriadoEm
                           FROM condicoes_pagamentos c
                           INNER JOIN metodos_pagamento m ON m.id = c.metodo_pagamento_id
                           {whereClause}
-                          ORDER BY {orderBy}
-                          LIMIT @Limit OFFSET @Offset";
-
+                          ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
         var param = new
         {
             Busca = $"%{filtro.Busca}%",
@@ -63,7 +68,6 @@ public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
             TamanhoPagina = filtro.TamanhoPagina
         };
     }
-
     public async Task<IEnumerable<CondicaoPagamentoListDto>> ObterTodosAtivosAsync()
     {
         using var conn = _factory.CreateConnection();
@@ -76,10 +80,8 @@ public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
                      c.numero_parcelas     AS NumeroParcelas
               FROM condicoes_pagamentos c
               INNER JOIN metodos_pagamento m ON m.id = c.metodo_pagamento_id
-              WHERE c.ativo = TRUE
-              ORDER BY c.condicao_pagamento");
+              WHERE c.ativo = TRUE ORDER BY c.condicao_pagamento");
     }
-
     public async Task<CondicaoPagamento?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();
@@ -104,15 +106,10 @@ public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
               LEFT  JOIN usuarios         ua ON ua.id = c.atualizado_por
               WHERE c.id = @id", new { id });
     }
-
     public async Task<int> InserirAsync(CondicaoPagamentoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM condicoes_pagamentos) t
-              WHERE seq NOT IN (SELECT id FROM condicoes_pagamentos)");
-
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO condicoes_pagamentos
                 (id, condicao_pagamento, metodo_pagamento_id, numero_parcelas,
@@ -135,10 +132,8 @@ public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
                 dto.TaxaJurosPercentual,
                 dto.Ativo
             });
-
         return proximoId;
     }
-
     public async Task AtualizarAsync(CondicaoPagamentoDto dto)
     {
         using var conn = _factory.CreateConnection();
@@ -156,15 +151,8 @@ public class CondicaoPagamentoRepository : ICondicaoPagamentoRepository
                   atualizado_em             = NOW()
               WHERE id = @IdOriginal", dto);
     }
-
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE condicoes_pagamentos SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
-
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
     public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();

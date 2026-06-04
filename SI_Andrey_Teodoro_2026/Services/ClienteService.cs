@@ -4,10 +4,13 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Services;
 
-public class ClienteService : IClienteService
+public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteService
 {
     private readonly IClienteRepository _repo;
+
     public ClienteService(IClienteRepository repo) => _repo = repo;
+
+    protected override string NomeEntidade => "Cliente";
 
     public Task<PaginacaoDto<ClienteListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
@@ -23,17 +26,17 @@ public class ClienteService : IClienteService
         {
             Id = c.Id,
             IdOriginal = c.Id,
-            NomeRazaoSocial = c.NomeRazaoSocial,
-            CpfCnpj = c.Estrangeiro ? null : FormatarDocumento(c.CpfCnpj, c.TipoPessoa),
             TipoPessoa = c.TipoPessoa,
             Estrangeiro = c.Estrangeiro,
+            NomeRazaoSocial = c.NomeRazaoSocial,
+            ApelidoNomeFantasia = c.ApelidoNomeFantasia,
+            CpfCnpj = FormatarDocumento(c.CpfCnpj, c.TipoPessoa),
             DocumentoEstrangeiro = c.DocumentoEstrangeiro,
             PaisOrigem = c.PaisOrigem,
-            ApelidoNomeFantasia = c.ApelidoNomeFantasia,
             CidadeId = c.CidadeId,
-            Endereco = c.Endereco ?? string.Empty,
+            Endereco = c.Endereco,
             Complemento = c.Complemento,
-            Bairro = c.Bairro ?? string.Empty,
+            Bairro = c.Bairro,
             Telefone = c.Telefone ?? string.Empty,
             Email = c.Email ?? string.Empty,
             InscricaoEstadual = c.InscricaoEstadual,
@@ -51,61 +54,40 @@ public class ClienteService : IClienteService
         {
             dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim();
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim();
+            dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
+            dto.Email = dto.Email?.Trim().ToLower() ?? string.Empty;
+            dto.PaisOrigem = dto.PaisOrigem?.Trim();
             dto.Endereco = dto.Endereco.Trim();
-            dto.Complemento = dto.Complemento?.Trim();
             dto.Bairro = dto.Bairro.Trim();
-            dto.Telefone = dto.Telefone.Trim();
-            dto.Email = dto.Email.Trim().ToLower();
+
+            if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
+            {
+                var docLimpo = LimparDigitos(dto.CpfCnpj);
+                string? erroDoc = dto.TipoPessoa == "PF"
+                    ? ValidarCpf(docLimpo)
+                    : ValidarCnpj(docLimpo);
+                if (erroDoc != null) return (false, erroDoc, 0);
+                dto.CpfCnpj = docLimpo;
+            }
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
-            if (!dto.Estrangeiro)
+            if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
             {
-                var docLimpo = LimparDigitos(dto.CpfCnpj ?? "");
-                if (dto.TipoPessoa == "PF")
-                {
-                    var erroCpf = ValidarCpf(docLimpo);
-                    if (erroCpf != null) return (false, erroCpf, 0);
-                }
-                else
-                {
-                    var erroCnpj = ValidarCnpj(docLimpo);
-                    if (erroCnpj != null) return (false, erroCnpj, 0);
-                }
-                dto.CpfCnpj = docLimpo;
-                dto.DocumentoEstrangeiro = null;
-                dto.PaisOrigem = null;
-
                 if (await _repo.ExisteDocumentoAsync(dto.CpfCnpj, ignorar))
-                    return (false, $"Já existe um cliente com este {(dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")}.", 0);
+                    return (false, $"Já existe um cliente com este documento.", 0);
             }
-            else
-            {
-                dto.CpfCnpj = null;
-                dto.DocumentoEstrangeiro = dto.DocumentoEstrangeiro?.Trim().ToUpper();
-                dto.PaisOrigem = dto.PaisOrigem?.Trim();
-
-                if (string.IsNullOrWhiteSpace(dto.DocumentoEstrangeiro))
-                    return (false, "Documento estrangeiro é obrigatório.", 0);
-                if (string.IsNullOrWhiteSpace(dto.PaisOrigem))
-                    return (false, "Pais de origem é obrigatório.", 0);
-
-                if (await _repo.ExisteDocumentoAsync(dto.DocumentoEstrangeiro, ignorar))
-                    return (false, $"Já existe um cliente com o documento '{dto.DocumentoEstrangeiro}'.", 0);
-            }
-
-            if (dto.TipoPessoa == "PJ" && string.IsNullOrWhiteSpace(dto.ApelidoNomeFantasia))
-                return (false, "Nome Fantasia é obrigatório para Pessoa Jurídica.", 0);
 
             if (dto.IdOriginal == 0)
             {
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Cliente cadastrado com sucesso!", novoId);
             }
+
             await _repo.AtualizarAsync(dto);
             return (true, "Cliente atualizado com sucesso!", dto.Id);
         }
-        catch (Exception ex) { return (false, $"Erro ao salvar cliente: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
@@ -113,50 +95,45 @@ public class ClienteService : IClienteService
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Cliente {(ativar ? "ativado" : "desativado")} com sucesso!");
+            return SucessoStatus(ativar);
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
+        catch (Exception ex) { return ErroStatus(ex); }
     }
+
     private static string LimparDigitos(string v)
         => new string(v.Where(char.IsDigit).ToArray());
 
-    private static string FormatarDocumento(string? doc, string tipo)
+    public static string FormatarDocumento(string? doc, string tipoPessoa)
     {
-        if (string.IsNullOrWhiteSpace(doc)) return "";
-        var d = new string(doc.Where(char.IsDigit).ToArray());
-        if (tipo == "PF" && d.Length == 11)
+        if (string.IsNullOrWhiteSpace(doc)) return string.Empty;
+        var d = LimparDigitos(doc);
+        if (tipoPessoa == "PF" && d.Length == 11)
             return $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}";
-        if (tipo == "PJ" && d.Length == 14)
+        if (tipoPessoa == "PJ" && d.Length == 14)
             return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
         return doc;
     }
 
     private static string? ValidarCpf(string cpf)
     {
-        if (string.IsNullOrWhiteSpace(cpf)) return "CPF é obrigatório.";
-        if (cpf.Length != 11) return "CPF deve ter 11 dígitos.";
-        if (cpf.Distinct().Count() == 1) return "CPF inválido.";
+        if (cpf.Length != 11 || cpf.Distinct().Count() == 1) return "CPF inválido.";
         int[] m1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
         int[] m2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-        var s1 = m1.Select((m, i) => (cpf[i] - '0') * m).Sum();
-        var r1 = s1 % 11; var d1 = r1 < 2 ? 0 : 11 - r1;
-        if ((cpf[9] - '0') != d1) return "CPF inválido.";
-        var s2 = m2.Select((m, i) => (cpf[i] - '0') * m).Sum();
-        var r2 = s2 % 11; var d2 = r2 < 2 ? 0 : 11 - r2;
-        return (cpf[10] - '0') != d2 ? "CPF inválido." : null;
+        return Digito(cpf, m1, 9) && Digito(cpf, m2, 10) ? null : "CPF inválido.";
     }
 
     private static string? ValidarCnpj(string cnpj)
     {
-        if (string.IsNullOrWhiteSpace(cnpj)) return "CNPJ é obrigatório.";
-        if (cnpj.Length != 14) return "CNPJ deve ter 14 dígitos.";
-        if (cnpj.Distinct().Count() == 1) return "CNPJ inválido.";
+        if (cnpj.Length != 14 || cnpj.Distinct().Count() == 1) return "CNPJ inválido.";
         int[] m1 = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
         int[] m2 = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        var s1 = m1.Select((m, i) => (cnpj[i] - '0') * m).Sum();
-        var r1 = s1 % 11; if ((cnpj[12] - '0') != (r1 < 2 ? 0 : 11 - r1)) return "CNPJ inválido.";
-        var s2 = m2.Select((m, i) => (cnpj[i] - '0') * m).Sum();
-        var r2 = s2 % 11;
-        return (cnpj[13] - '0') != (r2 < 2 ? 0 : 11 - r2) ? "CNPJ inválido." : null;
+        return Digito(cnpj, m1, 12) && Digito(cnpj, m2, 13) ? null : "CNPJ inválido.";
+    }
+
+    private static bool Digito(string d, int[] m, int pos)
+    {
+        var s = m.Select((v, i) => (d[i] - '0') * v).Sum();
+        var r = s % 11;
+        return (d[pos] - '0') == (r < 2 ? 0 : 11 - r);
     }
 }

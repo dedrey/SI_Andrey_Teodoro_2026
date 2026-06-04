@@ -6,10 +6,11 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class TransportadoraRepository : ITransportadoraRepository
+public class TransportadoraRepository : BaseRepository, ITransportadoraRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public TransportadoraRepository(DbConnectionFactory factory) => _factory = factory;
+    public TransportadoraRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "transportadoras";
 
     public async Task<PaginacaoDto<TransportadoraListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
@@ -98,16 +99,13 @@ public class TransportadoraRepository : ITransportadoraRepository
               FROM transportadoras t
               LEFT JOIN cidades  c  ON c.id  = t.cidade_id
               LEFT JOIN usuarios ua ON ua.id = t.atualizado_por
-              WHERE t.id = @id",
-            new { id });
+              WHERE t.id = @id", new { id });
     }
 
     public async Task<int> InserirAsync(TransportadoraDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id+1 FROM transportadoras) t
-              WHERE seq NOT IN (SELECT id FROM transportadoras)");
+        var proximoId = await ProximoIdAsync();
 
         await conn.ExecuteAsync(
             @"INSERT INTO transportadoras
@@ -149,13 +147,8 @@ public class TransportadoraRepository : ITransportadoraRepository
               WHERE id = @IdOriginal", dto);
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE transportadoras SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null)
     {

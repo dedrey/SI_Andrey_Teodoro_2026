@@ -6,10 +6,11 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class PaisRepository : IPaisRepository
+public class PaisRepository : BaseRepository, IPaisRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public PaisRepository(DbConnectionFactory factory) => _factory = factory;
+    public PaisRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "paises";
 
     public async Task<PaginacaoDto<PaisListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
@@ -36,6 +37,7 @@ public class PaisRepository : IPaisRepository
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
+
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<PaisListDto>(sqlData, param);
         return new PaginacaoDto<PaisListDto>
@@ -72,25 +74,11 @@ public class PaisRepository : IPaisRepository
     public async Task<int> InserirAsync(PaisDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM paises) t
-              WHERE seq NOT IN (SELECT id FROM paises)");
-
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO paises (id, ddi, sigla, moeda, simbolo_moeda, pais, ativo)
               VALUES (@ProximoId, @Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo)",
-            new
-            {
-                ProximoId = proximoId,
-                dto.Ddi,
-                dto.Sigla,
-                dto.Moeda,
-                dto.SimboleMoeda,
-                dto.NomePais,
-                dto.Ativo
-            });
-
+            new { ProximoId = proximoId, dto.Ddi, dto.Sigla, dto.Moeda, dto.SimboleMoeda, dto.NomePais, dto.Ativo });
         return proximoId;
     }
 
@@ -109,13 +97,8 @@ public class PaisRepository : IPaisRepository
               WHERE id = @IdOriginal", dto);
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE paises SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteSiglaAsync(string sigla, int? idOriginalIgnorar = null)
     {

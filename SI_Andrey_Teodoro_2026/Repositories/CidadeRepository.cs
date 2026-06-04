@@ -6,10 +6,11 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class CidadeRepository : ICidadeRepository
+public class CidadeRepository : BaseRepository, ICidadeRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public CidadeRepository(DbConnectionFactory factory) => _factory = factory;
+    public CidadeRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "cidades";
 
     public async Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
@@ -40,6 +41,7 @@ public class CidadeRepository : ICidadeRepository
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
+
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<CidadeListDto>(sqlData, param);
         return new PaginacaoDto<CidadeListDto>
@@ -63,6 +65,7 @@ public class CidadeRepository : ICidadeRepository
               WHERE c.estado_id = @estadoId AND c.ativo = TRUE ORDER BY c.cidade",
             new { estadoId });
     }
+
     public async Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync()
     {
         using var conn = _factory.CreateConnection();
@@ -73,8 +76,7 @@ public class CidadeRepository : ICidadeRepository
               FROM cidades c
               INNER JOIN estados e ON e.id = c.estado_id
               INNER JOIN paises  p ON p.id = e.pais_id
-              WHERE c.ativo = TRUE
-              ORDER BY c.cidade");
+              WHERE c.ativo = TRUE ORDER BY c.cidade");
     }
 
     public async Task<Cidade?> ObterPorIdAsync(int id)
@@ -95,10 +97,7 @@ public class CidadeRepository : ICidadeRepository
     public async Task<int> InserirAsync(CidadeDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM cidades) t
-              WHERE seq NOT IN (SELECT id FROM cidades)");
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO cidades (id, cidade, ddd, estado_id, ativo)
               VALUES (@ProximoId, @NomeCidade, @Ddd, @EstadoId, @Ativo)",
@@ -116,13 +115,8 @@ public class CidadeRepository : ICidadeRepository
               WHERE id = @IdOriginal", dto);
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE cidades SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteNomeNoEstadoAsync(string nome, int estadoId, int? idOriginalIgnorar = null)
     {
