@@ -6,10 +6,11 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class EstadoRepository : IEstadoRepository
+public class EstadoRepository : BaseRepository, IEstadoRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public EstadoRepository(DbConnectionFactory factory) => _factory = factory;
+    public EstadoRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "estados";
 
     public async Task<PaginacaoDto<EstadoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
@@ -34,6 +35,7 @@ public class EstadoRepository : IEstadoRepository
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
+
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<EstadoListDto>(sqlData, param);
         return new PaginacaoDto<EstadoListDto>
@@ -52,18 +54,16 @@ public class EstadoRepository : IEstadoRepository
             "SELECT e.id, e.estado AS NomeEstado, e.uf, e.pais_id AS PaisId FROM estados e WHERE e.pais_id = @paisId AND e.ativo = TRUE ORDER BY e.estado",
             new { paisId });
     }
+
     public async Task<IEnumerable<EstadoListDto>> ObterTodosAtivosAsync()
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<EstadoListDto>(
-            @"SELECT e.id,
-                 e.estado   AS NomeEstado,
-                 e.uf       AS Uf
-          FROM estados e
-          INNER JOIN paises p ON p.id = e.pais_id
-          WHERE e.ativo  = TRUE
-            AND p.pais = 'Brasil'
-          ORDER BY e.uf");
+            @"SELECT e.id, e.estado AS NomeEstado, e.uf
+              FROM estados e
+              INNER JOIN paises p ON p.id = e.pais_id
+              WHERE e.ativo = TRUE AND p.pais = 'Brasil'
+              ORDER BY e.uf");
     }
 
     public async Task<Estado?> ObterPorIdAsync(int id)
@@ -83,16 +83,11 @@ public class EstadoRepository : IEstadoRepository
     public async Task<int> InserirAsync(EstadoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM estados) t
-              WHERE seq NOT IN (SELECT id FROM estados)");
-
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO estados (id, pais_id, estado, uf, ativo)
               VALUES (@ProximoId, @PaisId, @NomeEstado, @Uf, @Ativo)",
             new { ProximoId = proximoId, dto.PaisId, dto.NomeEstado, dto.Uf, dto.Ativo });
-
         return proximoId;
     }
 
@@ -109,13 +104,8 @@ public class EstadoRepository : IEstadoRepository
               WHERE id = @IdOriginal", dto);
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE estados SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteUfNoPaisAsync(string uf, int paisId, int? idOriginalIgnorar = null)
     {

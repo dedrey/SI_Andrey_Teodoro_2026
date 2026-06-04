@@ -1,5 +1,6 @@
 ﻿@page "/produtos"
 @rendermode InteractiveServer
+@inherits BasePage<ProdutoListDto, ProdutoDto>
 
 <PageTitle>Produtos</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
@@ -41,7 +42,6 @@
             </MudItem>
         </MudGrid>
         <MudGrid Spacing="2" Class="mt-2">
-
             <MudItem xs="10" sm="4" md="4">
                 <MudSelect T="int" @bind-Value="_dto.CategoriaId"
                            Label="Categoria *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
@@ -58,7 +58,6 @@
                                    Size="Size.Medium" OnClick="AbrirModalCategoria" />
                 </MudTooltip>
             </MudItem>
-
             <MudItem xs="10" sm="4" md="3">
                 <MudSelect T="int" @bind-Value="_dto.MarcaId"
                            Label="Marca *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
@@ -75,7 +74,6 @@
                                    Size="Size.Medium" OnClick="AbrirModalMarca" />
                 </MudTooltip>
             </MudItem>
-
             <MudItem xs="10" sm="4" md="2">
                 <MudSelect T="int" @bind-Value="_dto.UnidadeMedidaId"
                            Label="Unidade *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
@@ -92,7 +90,6 @@
                                    Size="Size.Medium" OnClick="AbrirModalUnidade" />
                 </MudTooltip>
             </MudItem>
-
         </MudGrid>
         <MudGrid Spacing="2" Class="mt-2">
             <MudItem xs="12">
@@ -128,7 +125,7 @@
                     <MudTh Style="font-weight:600;">Cód. de Barras</MudTh>
                     <MudTh Style="font-weight:600;">Preço (R$)</MudTh>
                     <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
-                    <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Status / Ação</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>
@@ -175,29 +172,24 @@
                         }
                     </MudTd>
                     <MudTd Style="text-align:center;">
-                        @if (context.IdOriginal > 0)
+                        @if (context.IdOriginal == 0)
                         {
-                            <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
-                                <MudIconButton Icon="@(context.Ativo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
-                                               Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
-                                               OnClick="@(() => AlterarStatusVariacao(context))" />
-                            </MudTooltip>
-                        }
-                        else
-                        {
-                            <MudTooltip Text="Remover">
+                            <MudTooltip Text="Remover variação">
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                Color="Color.Error" Size="Size.Small"
                                                OnClick="@(() => RemoverVariacao(context))" />
                             </MudTooltip>
                         }
+                        else
+                        {
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)"
+                                     Variant="Variant.Outlined">
+                                @(context.QuantidadeEstoque > 0 ? "Em estoque" : "Sem estoque")
+                            </MudChip>
+                        }
                     </MudTd>
                 </RowTemplate>
-                <NoRecordsContent>
-                    <div class="d-flex align-center justify-center pa-4" style="color:#bbb;">
-                        <MudText Typo="Typo.body2">Nenhuma variação adicionada.</MudText>
-                    </div>
-                </NoRecordsContent>
             </MudTable>
         }
         else
@@ -224,7 +216,6 @@
                 </MudButton>
             </MudItem>
         </MudGrid>
-
     </MudForm>
 </MudPaper>
 
@@ -259,8 +250,12 @@
 </MudPaper>
 
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
-    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
+    <MudTable T="ProdutoListDto"
+              Items="@(_resultado?.Itens ?? new())"
+              Dense="true" Hover="true"
+              Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
+            <MudTh Style="width:36px;"></MudTh>
             <MudTh Style="font-weight:600;">ID</MudTh>
             <MudTh Style="font-weight:600;">Produto</MudTh>
             <MudTh Style="font-weight:600;">Categoria</MudTh>
@@ -271,51 +266,113 @@
             <MudTh Style="font-weight:600;">Status</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
-        <RowTemplate>
-            <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
+        <RowTemplate Context="produto">
+            <MudTd Style="padding:4px 8px;">
+                <MudIconButton Icon="@(_expandidos.Contains(produto.Id) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)"
+                               Size="Size.Small" Color="Color.Default"
+                               OnClick="@(() => ToggleExpansao(produto.Id))" />
+            </MudTd>
+            <MudTd Style="color:#888;font-size:0.85rem;">@produto.Id</MudTd>
             <MudTd>
-                <strong>@context.Produto</strong>
-                @if (!string.IsNullOrWhiteSpace(context.Descricao))
+                <strong>@produto.Produto</strong>
+                @if (!string.IsNullOrWhiteSpace(produto.Descricao))
                 {
                     <br />
                     <span style="color:#888;font-size:0.78rem;">
-                        @(context.Descricao.Length > 60 ? context.Descricao[..60] + "…" : context.Descricao)
+                        @(produto.Descricao.Length > 60 ? produto.Descricao[..60] + "…" : produto.Descricao)
                     </span>
                 }
             </MudTd>
-            <MudTd>@context.NomeCategoria</MudTd>
-            <MudTd>@context.NomeMarca</MudTd>
+            <MudTd>@produto.NomeCategoria</MudTd>
+            <MudTd>@produto.NomeMarca</MudTd>
             <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@context.SiglaUnidade</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@produto.SiglaUnidade</MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">
                 <MudChip T="string" Size="Size.Small" Color="Color.Info">
-                    @context.TotalVariacoes @(context.TotalVariacoes == 1 ? "variação" : "variações")
+                    @produto.TotalVariacoes @(produto.TotalVariacoes == 1 ? "variação" : "variações")
                 </MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">
                 <MudChip T="string" Size="Size.Small"
-                         Color="@(context.TotalEstoque > 0 ? Color.Success : Color.Warning)">
-                    @context.TotalEstoque un.
+                         Color="@(produto.TotalEstoque > 0 ? Color.Success : Color.Warning)">
+                    @produto.TotalEstoque un.
                 </MudChip>
             </MudTd>
             <MudTd>
-                <MudChip T="string" Size="Size.Small" Color="@(context.Ativo ? Color.Success : Color.Error)">
-                    @(context.Ativo ? "Ativo" : "Inativo")
+                <MudChip T="string" Size="Size.Small" Color="@(produto.Ativo? Color.Success: Color.Error)">
+                    @(produto.Ativo ? "Ativo" : "Inativo")
                 </MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Editar">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                   OnClick="@(() => Editar(context.Id))" />
+                                   OnClick="@(() => Editar(produto.Id))" />
                 </MudTooltip>
-                <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
-                    <MudIconButton Icon="@(context.Ativo ? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
-                                   Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
-                                   OnClick="@(() => AlterarStatus(context.Id, context.Produto, context.Ativo))" />
+                <MudTooltip Text="@(produto.Ativo ? "Desativar" : "Ativar")">
+                    <MudIconButton Icon="@(produto.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
+                                   Color="@(produto.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
+                                   OnClick="@(() => AlterarStatus(produto.Id, produto.Produto, produto.Ativo))" />
                 </MudTooltip>
             </MudTd>
         </RowTemplate>
+        <ChildRowContent>
+            @if (_expandidos.Contains(context.Id))
+            {
+                <MudTd ColSpan="10" Style="padding:0;background:var(--mud-palette-background-grey);">
+                    @if (_variacoesCache.TryGetValue(context.Id, out var vars) && vars != null)
+                    {
+                        <div style="padding:10px 20px 14px 48px;">
+                            <MudText Typo="Typo.caption"
+                                     Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;display:block;margin-bottom:6px;">
+                                <MudIcon Icon="@Icons.Material.Filled.Palette" Size="Size.Small" Style="vertical-align:-3px;margin-right:4px;" />
+                                Variações
+                            </MudText>
+                            <MudTable Items="@vars" Dense="true" Hover="true" Elevation="0"
+                                      Style="border:0.5px solid #e0e0e0;border-radius:6px;background:white;">
+                                <HeaderContent>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;">Cor</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Tamanho</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;">Cód. Barras</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Preço</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Estoque</MudTh>
+                                </HeaderContent>
+                                <RowTemplate Context="variacao">
+                                    <MudTd Style="font-size:0.85rem;">@variacao.Cor</MudTd>
+                                    <MudTd Style="text-align:center;">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@variacao.Tamanho</MudChip>
+                                    </MudTd>
+                                    <MudTd Style="font-size:0.82rem;color:#888;">
+                                        @(string.IsNullOrWhiteSpace(variacao.CodigoBarras) ? "—" : variacao.CodigoBarras)
+                                    </MudTd>
+                                    <MudTd Style="text-align:right;font-weight:600;">
+                                        R$ @variacao.Preco.ToString("N2")
+                                    </MudTd>
+                                    <MudTd Style="text-align:center;">
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(variacao.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)">
+                                            @variacao.QuantidadeEstoque un.
+                                        </MudChip>
+                                    </MudTd>
+                                </RowTemplate>
+                                <NoRecordsContent>
+                                    <MudTd ColSpan="5" Style="text-align:center;color:#bbb;padding:12px;">
+                                        Nenhuma variação cadastrada.
+                                    </MudTd>
+                                </NoRecordsContent>
+                            </MudTable>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="padding:12px 48px;color:#bbb;font-size:0.85rem;">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            Carregando variações...
+                        </div>
+                    }
+                </MudTd>
+            }
+        </ChildRowContent>
         <NoRecordsContent>
             <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
                 <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
@@ -334,6 +391,26 @@
 
 @code {
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
+    private readonly HashSet<int> _expandidos = new();
+    private readonly Dictionary<int, List<ProdutoVariacaoDto>?> _variacoesCache = new();
+
+    private async Task ToggleExpansao(int produtoId)
+    {
+        if (_expandidos.Contains(produtoId))
+        {
+            _expandidos.Remove(produtoId);
+            return;
+        }
+        _expandidos.Add(produtoId);
+        if (!_variacoesCache.ContainsKey(produtoId))
+        {
+            _variacoesCache[produtoId] = null;
+            StateHasChanged();
+            var dto = await ProdutoService.ObterPorIdAsync(produtoId);
+            _variacoesCache[produtoId] = dto?.Variacoes ?? new();
+            StateHasChanged();
+        }
+    }
 
     private string GetPrecoTexto(ProdutoVariacaoDto v)
     {
@@ -373,10 +450,8 @@
         if (string.IsNullOrEmpty(v)) return v ?? "";
         var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         for (int i = 0; i < palavras.Length; i++)
-        {
             if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
                 palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
-        }
         return string.Join(" ", palavras);
     }
 }

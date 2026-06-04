@@ -6,10 +6,11 @@ using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Repositories;
 
-public class UsuarioRepository : IUsuarioRepository
+public class UsuarioRepository : BaseRepository, IUsuarioRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public UsuarioRepository(DbConnectionFactory factory) => _factory = factory;
+    public UsuarioRepository(DbConnectionFactory factory) : base(factory) { }
+
+    protected override string Tabela => "usuarios";
 
     public async Task<PaginacaoDto<UsuarioListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
@@ -17,13 +18,24 @@ public class UsuarioRepository : IUsuarioRepository
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add("(u.nome LIKE @Busca OR u.email LIKE @Busca OR u.cpf LIKE @Busca OR CAST(u.id AS CHAR) = @BuscaExata)");
-        where.Add(filtro.StatusFiltro switch { "ativos" => "u.ativo = TRUE", "inativos" => "u.ativo = FALSE", _ => "1=1" });
+        where.Add(filtro.StatusFiltro switch
+        {
+            "ativos" => "u.ativo = TRUE",
+            "inativos" => "u.ativo = FALSE",
+            _ => "1=1"
+        });
         var whereClause = "WHERE " + string.Join(" AND ", where);
-        var orderBy = filtro.OrdenarPor switch { "id" => "u.id", "data" => "u.criado_em", _ => "u.nome" };
+        var orderBy = filtro.OrdenarPor switch
+        {
+            "id" => "u.id",
+            "data" => "u.criado_em",
+            "email" => "u.email",
+            _ => "u.nome"
+        };
 
         var sqlCount = $"SELECT COUNT(*) FROM usuarios u {whereClause}";
         var sqlData = $@"SELECT u.id, u.nome, u.email, u.cpf, u.telefone, u.ativo,
-                                 u.criado_em AS CriadoEm
+                                  u.criado_em AS CriadoEm
                           FROM usuarios u {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
@@ -34,6 +46,7 @@ public class UsuarioRepository : IUsuarioRepository
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
+
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<UsuarioListDto>(sqlData, param);
         return new PaginacaoDto<UsuarioListDto>
@@ -67,16 +80,10 @@ public class UsuarioRepository : IUsuarioRepository
     public async Task<int> InserirAsync(UsuarioDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM usuarios) t
-              WHERE seq NOT IN (SELECT id FROM usuarios)");
-
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
-            @"INSERT INTO usuarios (id, nome, email, cpf, telefone, ativo)
-              VALUES (@ProximoId, @Nome, @Email, @Cpf, @Telefone, @Ativo)",
+            "INSERT INTO usuarios (id, nome, email, cpf, telefone, ativo) VALUES (@ProximoId, @Nome, @Email, @Cpf, @Telefone, @Ativo)",
             new { ProximoId = proximoId, dto.Nome, dto.Email, dto.Cpf, dto.Telefone, dto.Ativo });
-
         return proximoId;
     }
 
@@ -85,22 +92,14 @@ public class UsuarioRepository : IUsuarioRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE usuarios
-              SET id            = @Id,
-                  nome          = @Nome,
-                  email         = @Email,
-                  cpf           = @Cpf,
-                  telefone      = @Telefone,
+              SET id = @Id, nome = @Nome, email = @Email,
+                  cpf = @Cpf, telefone = @Telefone,
                   atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }
 
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE usuarios SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteCpfAsync(string cpf, int? idOriginalIgnorar = null)
     {

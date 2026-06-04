@@ -3,18 +3,14 @@ using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
-
 namespace SI_Andrey_Teodoro_2026.Repositories;
-
-public class MarcaRepository : IMarcaRepository
+public class MarcaRepository : BaseRepository, IMarcaRepository
 {
-    private readonly DbConnectionFactory _factory;
-    public MarcaRepository(DbConnectionFactory factory) => _factory = factory;
-
+    public MarcaRepository(DbConnectionFactory factory) : base(factory) { }
+    protected override string Tabela => "marcas";
     public async Task<PaginacaoDto<MarcaListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
-
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add("(m.marca LIKE @Busca OR CAST(m.id AS CHAR) = @BuscaExata)");
@@ -31,17 +27,11 @@ public class MarcaRepository : IMarcaRepository
             "data" => "m.criado_em",
             _ => "m.marca"
         };
-
         var sqlCount = $"SELECT COUNT(*) FROM marcas m {whereClause}";
-        var sqlData = $@"SELECT m.id,
-                                 m.marca AS NomeMarca,
-                                 m.ativo,
-                                 m.criado_em AS CriadoEm
-                          FROM marcas m
-                          {whereClause}
-                          ORDER BY {orderBy}
-                          LIMIT @Limit OFFSET @Offset";
-
+        var sqlData = $@"SELECT m.id, m.marca AS NomeMarca, m.ativo,
+                                  m.criado_em AS CriadoEm
+                          FROM marcas m {whereClause}
+                          ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
         var param = new
         {
             Busca = $"%{filtro.Busca}%",
@@ -49,10 +39,8 @@ public class MarcaRepository : IMarcaRepository
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
-
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<MarcaListDto>(sqlData, param);
-
         return new PaginacaoDto<MarcaListDto>
         {
             Itens = itens.ToList(),
@@ -61,46 +49,32 @@ public class MarcaRepository : IMarcaRepository
             TamanhoPagina = filtro.TamanhoPagina
         };
     }
-
     public async Task<IEnumerable<MarcaListDto>> ObterTodosAtivosAsync()
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<MarcaListDto>(
             "SELECT id, marca AS NomeMarca FROM marcas WHERE ativo = TRUE ORDER BY marca");
     }
-
     public async Task<Marca?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Marca>(
-            @"SELECT m.id,
-                     m.marca AS NomeMarca,
-                     m.ativo,
-                     m.criado_em     AS CriadoEm,
-                     m.atualizado_em AS AtualizadoEm,
-                     ua.nome         AS NomeAtualizadoPor
+            @"SELECT m.id, m.marca AS NomeMarca, m.ativo,
+                     m.criado_em AS CriadoEm, m.atualizado_em AS AtualizadoEm,
+                     ua.nome AS NomeAtualizadoPor
               FROM marcas m
               LEFT JOIN usuarios ua ON ua.id = m.atualizado_por
-              WHERE m.id = @id",
-            new { id });
+              WHERE m.id = @id", new { id });
     }
-
     public async Task<int> InserirAsync(MarcaDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM marcas) t
-              WHERE seq NOT IN (SELECT id FROM marcas)");
-
+        var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
-            @"INSERT INTO marcas (id, marca, ativo)
-              VALUES (@ProximoId, @NomeMarca, @Ativo)",
+            "INSERT INTO marcas (id, marca, ativo) VALUES (@ProximoId, @NomeMarca, @Ativo)",
             new { ProximoId = proximoId, dto.NomeMarca, dto.Ativo });
-
         return proximoId;
     }
-
     public async Task AtualizarAsync(MarcaDto dto)
     {
         using var conn = _factory.CreateConnection();
@@ -111,15 +85,8 @@ public class MarcaRepository : IMarcaRepository
                   atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }
-
-    public async Task AlterarStatusAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE marcas SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
-
+    public Task AlterarStatusAsync(int id, bool ativo)
+        => AlterarStatusBaseAsync(id, ativo);
     public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();

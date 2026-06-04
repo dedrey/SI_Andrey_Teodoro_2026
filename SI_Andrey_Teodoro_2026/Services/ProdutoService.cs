@@ -4,10 +4,13 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Services;
 
-public class ProdutoService : IProdutoService
+public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoService
 {
     private readonly IProdutoRepository _repo;
+
     public ProdutoService(IProdutoRepository repo) => _repo = repo;
+
+    protected override string NomeEntidade => "Produto";
 
     public Task<PaginacaoDto<ProdutoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
@@ -63,9 +66,9 @@ public class ProdutoService : IProdutoService
                     return (false, $"Variação {v.Cor}/{v.Tamanho}: preço deve ser maior que zero.", 0);
 
                 int? ignorarVar = v.IdOriginal > 0 ? v.IdOriginal : null;
+                int produtoIdRef = dto.IdOriginal > 0 ? dto.IdOriginal : -1;
 
-                int produtoIdRef = dto.IdOriginal > 0 ? dto.IdOriginal : 0;
-                if (await _repo.ExisteVariacaoAsync(produtoIdRef > 0 ? produtoIdRef : -1, v.Cor, v.Tamanho, ignorarVar))
+                if (await _repo.ExisteVariacaoAsync(produtoIdRef, v.Cor, v.Tamanho, ignorarVar))
                     return (false, $"Já existe a variação {v.Cor}/{v.Tamanho} neste produto.", 0);
 
                 if (!string.IsNullOrWhiteSpace(v.CodigoBarras))
@@ -78,9 +81,7 @@ public class ProdutoService : IProdutoService
 
             int produtoId;
             if (dto.IdOriginal == 0)
-            {
                 produtoId = await _repo.InserirAsync(dto);
-            }
             else
             {
                 produtoId = dto.Id;
@@ -90,7 +91,6 @@ public class ProdutoService : IProdutoService
             foreach (var v in variacoesValidas)
             {
                 v.ProdutoId = produtoId;
-
                 if (v.IdOriginal == 0)
                 {
                     var novoVarId = await _repo.InserirVariacaoAsync(v);
@@ -102,12 +102,11 @@ public class ProdutoService : IProdutoService
                 }
             }
 
-            var mensagem = dto.IdOriginal == 0
+            return (true, dto.IdOriginal == 0
                 ? "Produto cadastrado com sucesso!"
-                : "Produto atualizado com sucesso!";
-            return (true, mensagem, produtoId);
+                : "Produto atualizado com sucesso!", produtoId);
         }
-        catch (Exception ex) { return (false, $"Erro ao salvar produto: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
@@ -115,9 +114,9 @@ public class ProdutoService : IProdutoService
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Produto {(ativar ? "ativado" : "desativado")} com sucesso!");
+            return SucessoStatus(ativar);
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
+        catch (Exception ex) { return ErroStatus(ex); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusVariacaoAsync(int id, bool ativar)

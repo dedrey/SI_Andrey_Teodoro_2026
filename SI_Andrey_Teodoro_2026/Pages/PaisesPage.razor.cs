@@ -1,24 +1,18 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using SI_Andrey_Teodoro_2026.Components.Shared;
+using SI_Andrey_Teodoro_2026.Components;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public partial class PaisesPage : ComponentBase
+public partial class PaisesPage : BasePage<PaisListDto, PaisDto>
 {
     [Inject] private IPaisService PaisService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
 
-    private PaginacaoDto<PaisListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new();
-    private PaisDto _dto = new();
-    private MudForm _form = null!;
-    private bool _formValido;
-    private bool _carregando;
-    private bool _salvando;
+    protected override string NomeEntidade => "País";
+
+    protected override void InicializarDto() => _dto = new PaisDto();
 
     protected override async Task OnInitializedAsync()
     {
@@ -26,18 +20,26 @@ public partial class PaisesPage : ComponentBase
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    private async Task CarregarDados()
+    protected override async Task CarregarDados()
     {
-        try { _carregando = true; _resultado = await PaisService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error); _resultado = new(); }
+        try
+        {
+            _carregando = true;
+            _resultado = await PaisService.ObterTodosAsync(_filtro);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
+            _resultado = new();
+        }
         finally { _carregando = false; }
     }
 
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new(); await CarregarDados(); }
-    private async Task MudarPagina(int p) { _filtro.Pagina = p; await CarregarDados(); }
-
-    private void LimparFormulario() { _dto = new(); _form?.ResetAsync(); }
+    private void LimparFormulario()
+    {
+        _dto = new();
+        _form?.ResetAsync();
+    }
 
     private async Task Editar(int id)
     {
@@ -58,22 +60,6 @@ public partial class PaisesPage : ComponentBase
         if (sucesso) { _dto = new(); await _form.ResetAsync(); await CarregarDados(); }
     }
 
-    private async Task AlterarStatus(int id, string nome, bool ativoAtual)
-    {
-        var param = new DialogParameters<ConfirmDialog>
-        {
-            { x => x.Titulo,     $"Confirmar {(ativoAtual ? "desativar" : "ativar")}" },
-            { x => x.Mensagem,   $"Deseja realmente {(ativoAtual ? "desativar" : "ativar")} o país \"{nome}\"?" },
-            { x => x.TextoBotao, ativoAtual ? "Desativar" : "Ativar" },
-            { x => x.CorBotao,   ativoAtual ? Color.Error : Color.Success }
-        };
-        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar",
-            param, new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
-        if ((await dialog.Result) is { Canceled: false })
-        {
-            var (sucesso, mensagem) = await PaisService.AlterarStatusAsync(id, !ativoAtual);
-            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-            if (sucesso) await CarregarDados();
-        }
-    }
+    private Task AlterarStatus(int id, string nome, bool ativoAtual)
+        => ConfirmarAlteracaoStatus(id, nome, ativoAtual, PaisService.AlterarStatusAsync, CarregarDados);
 }

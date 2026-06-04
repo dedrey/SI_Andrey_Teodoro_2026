@@ -1,20 +1,16 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
-
 namespace SI_Andrey_Teodoro_2026.Services;
-
-public class UnidadeMedidaService : IUnidadeMedidaService
+public class UnidadeMedidaService : BaseService<UnidadeMedidaDto, UnidadeMedidaListDto>, IUnidadeMedidaService
 {
     private readonly IUnidadeMedidaRepository _repo;
     public UnidadeMedidaService(IUnidadeMedidaRepository repo) => _repo = repo;
-
+    protected override string NomeEntidade => "Unidade de medida";
     public Task<PaginacaoDto<UnidadeMedidaListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
-
     public Task<IEnumerable<UnidadeMedidaListDto>> ObterTodosAtivosAsync()
         => _repo.ObterTodosAtivosAsync();
-
     public async Task<UnidadeMedidaDto?> ObterPorIdAsync(int id)
     {
         var u = await _repo.ObterPorIdAsync(id);
@@ -30,7 +26,6 @@ public class UnidadeMedidaService : IUnidadeMedidaService
             NomeAtualizadoPor = u.NomeAtualizadoPor
         };
     }
-
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(UnidadeMedidaDto dto)
     {
         try
@@ -48,22 +43,21 @@ public class UnidadeMedidaService : IUnidadeMedidaService
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Unidade de medida cadastrada com sucesso!", novoId);
             }
+
             await _repo.AtualizarAsync(dto);
             return (true, "Unidade de medida atualizada com sucesso!", dto.Id);
         }
-        catch (Exception ex) { return (false, $"Erro ao salvar unidade de medida: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
-
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
     {
         try
         {
             await _repo.AlterarStatusAsync(id, ativar);
-            return (true, $"Unidade de medida {(ativar ? "ativada" : "desativada")} com sucesso!");
+            return SucessoStatus(ativar);
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status: {ex.Message}"); }
+        catch (Exception ex) { return ErroStatus(ex); }
     }
-
     private static string CapitalizarPrimeira(string v)
         => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

@@ -1,5 +1,6 @@
 ﻿@page "/fornecedores"
 @rendermode InteractiveServer
+@inherits BasePage<FornecedorListDto, FornecedorDto>
 
 <PageTitle>Fornecedores</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
@@ -39,10 +40,11 @@
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.NomeFantasia" ValueChanged="@((string v) => _dto.NomeFantasia = Cap(v))"
                               Label="Nome Fantasia" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
+                              MaxLength="100" FullWidth="true" Immediate="true" />
             </MudItem>
-            <MudItem xs="12" sm="6" md="@(_dto.IdOriginal != 0 ? 4 : 4)">
-                <MudTextField Value="@_dto.Cnpj" ValueChanged="@((string v) => _dto.Cnpj = MascaraCnpj(v))"
+            <MudItem xs="12" sm="6" md="3">
+                <MudTextField Value="@_cnpjTexto"
+                              ValueChanged="@((string v) => { _cnpjTexto = MascaraCnpj(v); _dto.Cnpj = _cnpjTexto; })"
                               Label="CNPJ" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarCnpj(v))" />
@@ -54,7 +56,6 @@
             Contato e Localização
         </MudText>
         <MudGrid Spacing="2">
-            
             <MudItem xs="10" sm="5" md="3">
                 <MudAutocomplete T="CidadeListDto"
                                  Label="Cidade"
@@ -72,23 +73,20 @@
                                    Size="Size.Medium" OnClick="AbrirModalCidade" />
                 </MudTooltip>
             </MudItem>
-
-
             <MudItem xs="12" sm="6" md="3">
                 <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => _dto.Endereco = Cap(v))"
                               Label="Endereço" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" />
+                              MaxLength="50" FullWidth="true" Immediate="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
-                <MudTextField Value="@_dto.Complemento"
-                              ValueChanged="@((string? v) => _dto.Complemento = Cap(v))"
+                <MudTextField Value="@_dto.Complemento" ValueChanged="@((string? v) => _dto.Complemento = Cap(v))"
                               Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense"
                               MaxLength="50" FullWidth="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
                 <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => _dto.Bairro = Cap(v))"
                               Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" />
+                              MaxLength="50" FullWidth="true" Immediate="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="2">
                 <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"
@@ -158,7 +156,6 @@
             <MudTh Style="font-weight:600;">Razão Social</MudTh>
             <MudTh Style="font-weight:600;">Nome Fantasia</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">CNPJ</MudTh>
-            <MudTh Style="font-weight:600;">Endereço</MudTh>
             <MudTh Style="font-weight:600;">Telefone</MudTh>
             <MudTh Style="font-weight:600;">E-mail</MudTh>
             <MudTh Style="font-weight:600;">Status</MudTh>
@@ -169,7 +166,6 @@
             <MudTd><strong>@context.RazaoSocial</strong></MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.NomeFantasia) ? "—" : context.NomeFantasia)</MudTd>
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@FormatCnpj(context.Cnpj)</MudChip></MudTd>
-            <MudTd>@(string.IsNullOrWhiteSpace(context.Endereco) ? "—" : context.Endereco)</MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
             <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
@@ -198,11 +194,16 @@
 </MudPaper>
 
 @code {
+    // _cidades, _cidadeNaoSelecionada, _cnpjTexto → migrados para FornecedoresPage.razor.cs
+
+    private string _cnpjTexto = "";
+
     private CidadeListDto? _cidadeSelecionada
     {
         get => _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
         set => _dto.CidadeId = value?.Id;
     }
+
     private Task<IEnumerable<CidadeListDto>> PesquisarCidade(string? busca, CancellationToken ct)
     {
         var r = string.IsNullOrWhiteSpace(busca)
@@ -212,13 +213,74 @@
                 c.Uf.Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
     }
-    private string? ValidarCnpj(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length != 14) return "CNPJ deve ter 14 dígitos"; return null; }
-    private string? ValidarTel(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máximo 11 dígitos" }; }
-    private string? ValidarEmail(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido"; }
+
+    private string? ValidarCnpj(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        return d.Length != 14 ? "CNPJ deve ter 14 dígitos" : null;
+    }
+
+    private string? ValidarTel(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máximo 11 dígitos" };
+    }
+
+    private string? ValidarEmail(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido";
+    }
+
     private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
     { "da","de","do","das","dos","e","a","o","as","os","em","no","na","nos","nas","com","por","para","ao","aos","à","às","the","of","and","del","los","las","la","le" };
-    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) { if (i == 0 || i == p.Length - 1 || !_minusculas.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; } return string.Join(" ", p); }
-    private string MascaraCnpj(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 14) d = d[..14]; return d.Length switch { 0 => "", <= 2 => d, <= 5 => $"{d[..2]}.{d[2..]}", <= 8 => $"{d[..2]}.{d[2..5]}.{d[5..]}", <= 12 => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..]}", _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" }; }
-    private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
-    private static string FormatCnpj(string s) { var d = new string(s.Where(char.IsDigit).ToArray()); return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : s; }
+
+    private string Cap(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return v ?? "";
+        var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < p.Length; i++)
+            if (i == 0 || i == p.Length - 1 || !_minusculas.Contains(p[i]))
+                p[i] = char.ToUpper(p[i][0]) + p[i][1..];
+        return string.Join(" ", p);
+    }
+
+    private string MascaraCnpj(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return "";
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        if (d.Length > 14) d = d[..14];
+        return d.Length switch
+        {
+            0 => "",
+            <= 2 => d,
+            <= 5 => $"{d[..2]}.{d[2..]}",
+            <= 8 => $"{d[..2]}.{d[2..5]}.{d[5..]}",
+            <= 12 => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..]}",
+            _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}"
+        };
+    }
+
+    private string MascaraTel(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return "";
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        if (d.Length > 11) d = d[..11];
+        return d.Length switch
+        {
+            0 => "",
+            <= 2 => $"({d}",
+            <= 6 => $"({d[..2]}) {d[2..]}",
+            <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}",
+            _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"
+        };
+    }
+
+    private static string FormatCnpj(string s)
+    {
+        var d = new string(s.Where(char.IsDigit).ToArray());
+        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : s;
+    }
 }
