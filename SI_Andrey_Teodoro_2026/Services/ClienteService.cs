@@ -32,7 +32,6 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             ApelidoNomeFantasia = c.ApelidoNomeFantasia,
             CpfCnpj = FormatarDocumento(c.CpfCnpj, c.TipoPessoa),
             DocumentoEstrangeiro = c.DocumentoEstrangeiro,
-            PaisOrigem = c.PaisOrigem,
             CidadeId = c.CidadeId,
             Endereco = c.Endereco,
             Complemento = c.Complemento,
@@ -56,7 +55,6 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
             dto.Email = dto.Email?.Trim().ToLower() ?? string.Empty;
-            dto.PaisOrigem = dto.PaisOrigem?.Trim();
             dto.Endereco = dto.Endereco.Trim();
             dto.Bairro = dto.Bairro.Trim();
 
@@ -75,7 +73,7 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
             {
                 if (await _repo.ExisteDocumentoAsync(dto.CpfCnpj, ignorar))
-                    return (false, $"Já existe um cliente com este documento.", 0);
+                    return (false, "Já existe um cliente com este documento.", 0);
             }
 
             if (dto.IdOriginal == 0)
