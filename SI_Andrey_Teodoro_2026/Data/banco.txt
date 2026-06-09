@@ -407,6 +407,7 @@ CREATE TABLE vendas (
   valor_desconto        DECIMAL(14,2) NOT NULL DEFAULT 0,
   valor_total           DECIMAL(14,2) NOT NULL DEFAULT 0,
   status_venda          ENUM('ABERTA','FINALIZADA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
+  motivo_cancelamento   VARCHAR(255) NULL,
   criado_em             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   criado_por            INT NULL,
   atualizado_em         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

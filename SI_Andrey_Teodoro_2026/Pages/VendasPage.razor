@@ -1,0 +1,471 @@
+﻿@page "/vendas"
+@rendermode InteractiveServer
+@inherits BasePage<VendaListDto, VendaDto>
+
+<PageTitle>Vendas</PageTitle>
+<LoadingSpinner Visivel="_carregando" />
+
+<div class="d-flex align-center mb-4">
+    <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+    <MudText Typo="Typo.h5" Style="font-weight:700;">Vendas</MudText>
+</div>
+
+<MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
+    <div class="d-flex align-center justify-space-between mb-3">
+        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
+            @(_dto.IdOriginal == 0 ? "Nova Venda" : $"Editando Venda #{_dto.Id}")
+        </MudText>
+        @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined"
+                     Icon="@Icons.Material.Filled.Edit">
+                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+            </MudChip>
+        }
+    </div>
+
+    <MudForm @ref="_form" @bind-IsValid="_formValido">
+        <MudGrid Spacing="2">
+            <MudItem xs="10" sm="5" md="5">
+                <MudAutocomplete T="ClienteListDto"
+                                 Label="Cliente"
+                                 Value="_clienteSelecionado"
+                                 ValueChanged="@((ClienteListDto? c) => { _clienteSelecionado = c; _dto.ClienteId = c?.Id; _dto.NomeCliente = c?.NomeRazaoSocial ?? ""; })"
+                                 SearchFunc="PesquisarCliente"
+                                 ToStringFunc="@(c => c == null ? "" : c.NomeRazaoSocial)"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 FullWidth="true" Clearable="true"
+                                 ResetValueOnEmptyText="true" CoerceText="false"
+                                 Placeholder="Buscar cliente..." />
+            </MudItem>
+            <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudTooltip Text="Novo Cliente">
+                    <MudIconButton Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary"
+                                   Size="Size.Medium" OnClick="AbrirModalCliente" />
+                </MudTooltip>
+            </MudItem>
+            <MudItem xs="10" sm="5" md="4">
+                <MudSelect T="int?" Value="_dto.CondicaoPagamentoId"
+                           ValueChanged="@((int? v) => OnCondicaoAlterada(v))"
+                           Label="Condição de Pagamento"
+                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                    <MudSelectItem T="int?" Value="@((int?)null)">— Selecione —</MudSelectItem>
+                    @foreach (var c in _condicoes)
+                    {
+                        <MudSelectItem T="int?" Value="@((int?)c.Id)">
+                            [@c.CodigoMetodo] @c.CondicaoPagamento
+                            @if (c.NumeroParcelas > 1)
+                            {
+                                <span style="color:#888;font-size:0.8rem;margin-left:6px;">
+                                    (@c.NumeroParcelas×)
+                                </span>
+                            }
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudTooltip Text="Nova Condição de Pagamento">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                   Size="Size.Medium" OnClick="AbrirModalCondicao" />
+                </MudTooltip>
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+        <div class="d-flex align-center justify-space-between mb-3">
+            <MudText Typo="Typo.subtitle2"
+                     Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+                <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Size="Size.Small" Class="mr-1" />
+                Itens da Venda
+            </MudText>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                       OnClick="AdicionarItem">
+                Adicionar Item
+            </MudButton>
+        </div>
+
+        @if (_dto.Itens.Any(i => !i.Removido))
+        {
+            <MudTable Items="@_dto.Itens.Where(i => !i.Removido)" Dense="true" Hover="false"
+                      Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                <HeaderContent>
+                    <MudTh Style="font-weight:600;">Produto</MudTh>
+                    <MudTh Style="font-weight:600;">Variação</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Qtd.</MudTh>
+                    <MudTh Style="font-weight:600;text-align:right;">Valor Unit.</MudTh>
+                    <MudTh Style="font-weight:600;text-align:right;">Total Item</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudAutocomplete T="ProdutoListDto"
+                                         Value="_produtosSelecionados.GetValueOrDefault(context)"
+                                         ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
+                                         SearchFunc="PesquisarProduto"
+                                         ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         FullWidth="true" Clearable="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false"
+                                         Placeholder="Buscar produto..." />
+                    </MudTd>
+                    <MudTd>
+                        <MudSelect T="int" Value="context.ProdutoVariacaoId"
+                                   ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                   Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
+                            <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
+                            @if (_variacoesPorItem.TryGetValue(context, out var vars))
+                            {
+                                @foreach (var v in vars)
+                                {
+                                    <MudSelectItem T="int" Value="@v.IdOriginal">
+                                        @v.Cor / @v.Tamanho
+                                        <span style="color:#888;font-size:0.8rem;margin-left:6px;">
+                                            (@v.QuantidadeEstoque un.)
+                                        </span>
+                                    </MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.EstoqueAtual > 0 ? Color.Success : Color.Error)">
+                            @context.EstoqueAtual un.
+                        </MudChip>
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
+                        <MudTextField Value="@context.Quantidade.ToString()"
+                                      ValueChanged="@((string v) => OnQuantidadeAlterada(context, v))"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Immediate="true" Style="max-width:70px;"
+                                      Error="@(context.EstoqueInsuficiente)"
+                                      ErrorText='@($"M\u00e1x. {context.EstoqueAtual} un.")' />
+                    </MudTd>
+                    <MudTd>
+                        <MudTextField Value="@GetValorTexto(_valorTextos, context)"
+                                      ValueChanged="@((string v) => OnDecimalAlterado(_valorTextos, context, v, (val) => context.ValorUnitario = val))"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Immediate="true" Adornment="Adornment.Start" AdornmentText="R$" />
+                    </MudTd>
+                    <MudTd Style="text-align:right;font-weight:600;">
+                        R$ @context.ValorTotal.ToString("N2")
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
+                        <MudTooltip Text="Remover">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                           Color="Color.Error" Size="Size.Small"
+                                           OnClick="@(() => RemoverItem(context))" />
+                        </MudTooltip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <div style="display:flex;flex-direction:column;align-items:flex-end;padding:8px 12px;gap:4px;border-top:1px solid #f0f0f0;">
+                <div style="display:flex;gap:32px;align-items:center;">
+                    <span style="color:#888;font-size:0.85rem;">Subtotal:</span>
+                    <span style="font-weight:600;min-width:120px;text-align:right;">R$ @RodapeSubtotal.ToString("N2")</span>
+                </div>
+                @if (RodapeTotalDesc > 0)
+                {
+                    <div style="display:flex;gap:32px;align-items:center;">
+                        <span style="color:#888;font-size:0.85rem;">
+                            Descontos@(RodapeDescCond > 0 ? $" (incl. {RodapeCond!.DescontoPercentual:N1}% da condição)" : ""):
+                        </span>
+                        <span style="font-weight:600;color:#c62828;min-width:120px;text-align:right;">- R$ @RodapeTotalDesc.ToString("N2")</span>
+                    </div>
+                }
+                @if (RodapeAcrescCond > 0)
+                {
+                    <div style="display:flex;gap:32px;align-items:center;">
+                        <span style="color:#888;font-size:0.85rem;">Acréscimo (@(RodapeCond!.AcrescimoPercentual.ToString("N1"))%):</span>
+                        <span style="font-weight:600;color:#1565c0;min-width:120px;text-align:right;">+ R$ @RodapeAcrescCond.ToString("N2")</span>
+                    </div>
+                }
+                @if (RodapeJurosCond > 0)
+                {
+                    <div style="display:flex;gap:32px;align-items:center;">
+                        <span style="color:#888;font-size:0.85rem;">Juros (@(RodapeCond!.TaxaJurosPercentual.ToString("N1"))%):</span>
+                        <span style="font-weight:600;color:#e65100;min-width:120px;text-align:right;">+ R$ @RodapeJurosCond.ToString("N2")</span>
+                    </div>
+                }
+                <div style="display:flex;gap:32px;align-items:center;border-top:2px solid #e0e0e0;padding-top:6px;margin-top:2px;">
+                    <span style="font-weight:700;font-size:1rem;">TOTAL:</span>
+                    <span style="font-weight:700;font-size:1.1rem;color:#1a237e;min-width:120px;text-align:right;">R$ @RodapeTotal.ToString("N2")</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex align-center justify-center pa-4"
+                 style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Class="mr-2" />
+                <MudText Typo="Typo.body2">Clique em "Adicionar Item" para incluir produtos nesta venda.</MudText>
+            </div>
+        }
+
+        <MudGrid Spacing="2" Class="mt-3">
+            <MudItem xs="12" Class="d-flex justify-end gap-2">
+                @if (_dto.IdOriginal != 0)
+                {
+                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
+                               Style="height:40px;min-width:40px;" title="Cancelar edição">
+                        <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
+                    </MudButton>
+                }
+                <MudTooltip Text='@(_dto.Itens.Any(i => !i.Removido && i.EstoqueInsuficiente) ? "Corrija as quantidades \u2014 estoque insuficiente." : "")'>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                               Disabled='@(_salvando || _dto.Itens.Any(i => !i.Removido && i.EstoqueInsuficiente))'
+                               Style="height:40px;font-weight:700;min-width:150px;">
+                        @(_salvando ? "Salvando..." : (_dto.IdOriginal == 0 ? "CRIAR VENDA" : "SALVAR"))
+                    </MudButton>
+                </MudTooltip>
+            </MudItem>
+        </MudGrid>
+    </MudForm>
+</MudPaper>
+
+<MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="5" md="5">
+            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar cliente ou ID..."
+                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
+                          FullWidth="true" />
+        </MudItem>
+        <MudItem xs="6" sm="3" md="2">
+            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                <MudSelectItem T="string" Value="@("todos")">Todas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("ABERTA")">Abertas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("FINALIZADA")">Finalizadas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("CANCELADA")">Canceladas</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" sm="3" md="2">
+            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                <MudSelectItem T="string" Value="@("data")">Data (recente)</MudSelectItem>
+                <MudSelectItem T="string" Value="@("total")">Maior valor</MudSelectItem>
+                <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
+                       FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
+                <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
+    <MudTable T="VendaListDto"
+              Items="@(_resultado?.Itens ?? new())"
+              Dense="true" Hover="true"
+              Loading="_carregando" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh Style="width:36px;"></MudTh>
+            <MudTh Style="font-weight:600;">ID</MudTh>
+            <MudTh Style="font-weight:600;">Cliente</MudTh>
+            <MudTh Style="font-weight:600;">Condição</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Itens</MudTh>
+            <MudTh Style="font-weight:600;text-align:right;">Subtotal</MudTh>
+            <MudTh Style="font-weight:600;text-align:right;">Desc. / Acrés.</MudTh>
+            <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
+            <MudTh Style="font-weight:600;">Data</MudTh>
+            <MudTh Style="font-weight:600;">Status</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="venda">
+            <MudTd Style="padding:4px 8px;">
+                <MudIconButton Icon="@(_expandidos.Contains(venda.Id) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)"
+                               Size="Size.Small"
+                               OnClick="@(() => ToggleDetalhe(venda.Id))" />
+            </MudTd>
+            <MudTd Style="color:#888;font-size:0.85rem;">@venda.Id</MudTd>
+            <MudTd><strong>@(string.IsNullOrWhiteSpace(venda.NomeCliente) ? "—" : venda.NomeCliente)</strong></MudTd>
+            <MudTd Style="color:#888;font-size:0.85rem;">@(venda.NomeCondicao ?? "—")</MudTd>
+            <MudTd Style="text-align:center;">
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">
+                    @venda.TotalItens @(venda.TotalItens == 1 ? "item" : "itens")
+                </MudChip>
+            </MudTd>
+            <MudTd Style="text-align:right;font-size:0.85rem;">R$ @venda.ValorSubtotal.ToString("N2")</MudTd>
+            <MudTd Style="text-align:right;font-size:0.85rem;">
+                @{
+                    var _ac = venda.AcrescimoPercentual > 0 ? Math.Round(venda.ValorSubtotal * venda.AcrescimoPercentual / 100, 2) : 0m;
+                    var _jc = venda.TaxaJurosPercentual > 0 ? Math.Round(venda.ValorSubtotal * venda.TaxaJurosPercentual / 100, 2) : 0m;
+                    var _acrescTotal = _ac + _jc;
+                }
+                @if (venda.ValorDesconto > 0)
+                {
+                    <span style="color:#c62828;display:block;">- R$ @venda.ValorDesconto.ToString("N2")</span>
+                }
+                @if (_acrescTotal > 0)
+                {
+                    <span style="color:#1565c0;display:block;">+ R$ @_acrescTotal.ToString("N2")</span>
+                }
+                @if (venda.ValorDesconto == 0 && _acrescTotal == 0)
+                {
+                    <span style="color:#bbb;">—</span>
+                }
+            </MudTd>
+            <MudTd Style="text-align:right;font-weight:700;color:#1a237e;">
+                R$ @venda.ValorTotal.ToString("N2")
+            </MudTd>
+            <MudTd Style="font-size:0.83rem;">@venda.CriadoEm.ToString("dd/MM/yyyy HH:mm")</MudTd>
+            <MudTd>
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(venda.StatusVenda == "ABERTA" ? Color.Warning : venda.StatusVenda == "FINALIZADA" ? Color.Success : Color.Error)">
+                    @venda.StatusVenda
+                </MudChip>
+            </MudTd>
+            <MudTd Style="text-align:center;">
+                @if (venda.StatusVenda == "ABERTA")
+                {
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                       Size="Size.Small" OnClick="@(() => Editar(venda.Id))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Finalizar venda">
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"
+                                       Size="Size.Small" OnClick="@(() => ConfirmarFinalizar(venda.Id))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Cancelar venda">
+                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error"
+                                       Size="Size.Small" OnClick="@(() => ConfirmarCancelar(venda.Id))" />
+                    </MudTooltip>
+                }
+                else if (venda.StatusVenda == "FINALIZADA")
+                {
+                    <MudTooltip Text="Cancelar venda (estorna estoque)">
+                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error"
+                                       Size="Size.Small" OnClick="@(() => ConfirmarCancelar(venda.Id))" />
+                    </MudTooltip>
+                }
+            </MudTd>
+        </RowTemplate>
+        <ChildRowContent>
+            @if (_expandidos.Contains(context.Id))
+            {
+                <MudTd ColSpan="11" Style="padding:0;background:var(--mud-palette-background-grey);">
+                    @if (_detalhesCache.TryGetValue(context.Id, out var itens) && itens != null)
+                    {
+                        <div style="padding:10px 20px 14px 48px;">
+                            <MudText Typo="Typo.caption"
+                                     Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;display:block;margin-bottom:6px;">
+                                Itens da Venda #@context.Id
+                            </MudText>
+                            <MudTable Items="@itens" Dense="true" Hover="true" Elevation="0"
+                                      Style="border:0.5px solid #e0e0e0;border-radius:6px;background:white;">
+                                <HeaderContent>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;">Produto</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Cor</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Tamanho</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Qtd.</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Valor Unit.</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Desconto Item</MudTh>
+                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Total Item</MudTh>
+                                </HeaderContent>
+                                <RowTemplate Context="item">
+                                    <MudTd Style="font-weight:600;font-size:0.85rem;">@item.NomeProduto</MudTd>
+                                    <MudTd Style="text-align:center;">@item.Cor</MudTd>
+                                    <MudTd Style="text-align:center;">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@item.Tamanho</MudChip>
+                                    </MudTd>
+                                    <MudTd Style="text-align:center;font-weight:600;">@item.Quantidade un.</MudTd>
+                                    <MudTd Style="text-align:right;">R$ @item.ValorUnitario.ToString("N2")</MudTd>
+                                    <MudTd Style="text-align:right;color:#c62828;">
+                                        @(item.ValorDesconto > 0 ? $"- R$ {item.ValorDesconto:N2}" : "—")
+                                    </MudTd>
+                                    <MudTd Style="text-align:right;font-weight:600;">R$ @item.ValorTotal.ToString("N2")</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+
+                            @{
+                                var _dCond2 = context.DescontoPercentual > 0 ? Math.Round(context.ValorSubtotal * context.DescontoPercentual / 100, 2) : 0m;
+                                var _aCond2 = context.AcrescimoPercentual > 0 ? Math.Round(context.ValorSubtotal * context.AcrescimoPercentual / 100, 2) : 0m;
+                                var _jCond2 = context.TaxaJurosPercentual > 0 ? Math.Round(context.ValorSubtotal * context.TaxaJurosPercentual / 100, 2) : 0m;
+                            }
+                            <div style="display:flex;flex-direction:column;align-items:flex-end;padding:6px 8px;gap:3px;font-size:0.83rem;">
+                                <div style="display:flex;gap:24px;">
+                                    <span style="color:#888;">Subtotal:</span>
+                                    <span style="font-weight:600;min-width:100px;text-align:right;">R$ @context.ValorSubtotal.ToString("N2")</span>
+                                </div>
+                                @if (_dCond2 > 0)
+                                {
+                                    <div style="display:flex;gap:24px;">
+                                        <span style="color:#888;">Desconto (@(context.DescontoPercentual.ToString("N1"))% — @context.NomeCondicao):</span>
+                                        <span style="font-weight:600;color:#c62828;min-width:100px;text-align:right;">- R$ @_dCond2.ToString("N2")</span>
+                                    </div>
+                                }
+                                @if (_aCond2 > 0)
+                                {
+                                    <div style="display:flex;gap:24px;">
+                                        <span style="color:#888;">Acréscimo (@(context.AcrescimoPercentual.ToString("N1"))%):</span>
+                                        <span style="font-weight:600;color:#1565c0;min-width:100px;text-align:right;">+ R$ @_aCond2.ToString("N2")</span>
+                                    </div>
+                                }
+                                @if (_jCond2 > 0)
+                                {
+                                    <div style="display:flex;gap:24px;">
+                                        <span style="color:#888;">Juros (@(context.TaxaJurosPercentual.ToString("N1"))% — @context.NumeroParcelas@("x")):</span>
+                                        <span style="font-weight:600;color:#e65100;min-width:100px;text-align:right;">+ R$ @_jCond2.ToString("N2")</span>
+                                    </div>
+                                }
+                                <div style="display:flex;gap:24px;border-top:1.5px solid #e0e0e0;padding-top:4px;margin-top:2px;">
+                                    <span style="font-weight:700;">TOTAL PAGO:</span>
+                                    <span style="font-weight:700;color:#1a237e;min-width:100px;text-align:right;">R$ @context.ValorTotal.ToString("N2")</span>
+                                </div>
+                                @if (context.NumeroParcelas > 1)
+                                {
+                                    <div style="display:flex;gap:24px;">
+                                        <span style="color:#888;">Parcelamento:</span>
+                                        <span style="font-weight:600;color:#1a237e;min-width:100px;text-align:right;">
+                                            @context.NumeroParcelas@("x de R$ ")@((context.ValorTotal / context.NumeroParcelas).ToString("N2"))
+                                        </span>
+                                    </div>
+                                }
+                                @if (context.StatusVenda == "CANCELADA" && !string.IsNullOrEmpty(context.MotivoCancelamento))
+                                {
+                                    <div style="display:flex;gap:24px;margin-top:6px;padding-top:6px;border-top:1px dashed #ffcdd2;">
+                                        <span style="color:#c62828;font-weight:600;white-space:nowrap;">Motivo do cancelamento:</span>
+                                        <span style="color:#c62828;">@context.MotivoCancelamento</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="padding:12px 48px;color:#bbb;font-size:0.85rem;">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            Carregando itens...
+                        </div>
+                    }
+                </MudTd>
+            }
+        </ChildRowContent>
+        <NoRecordsContent>
+            <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
+                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
+                <MudText Typo="Typo.body1">Nenhuma venda encontrada.</MudText>
+            </div>
+        </NoRecordsContent>
+    </MudTable>
+    @if (_resultado != null)
+    {
+        <div class="pa-2" style="border-top:1px solid #f0f0f0;">
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas"
+                                TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
+        </div>
+    }
+</MudPaper>
+

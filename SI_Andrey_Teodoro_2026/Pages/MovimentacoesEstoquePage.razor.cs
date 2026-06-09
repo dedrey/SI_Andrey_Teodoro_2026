@@ -11,8 +11,6 @@ public partial class MovimentacoesEstoquePage : BasePage<MovimentacaoEstoqueList
     [Inject] private IProdutoService ProdutoService { get; set; } = null!;
 
     protected override string NomeEntidade => "Movimentação de estoque";
-
-    // declarado aqui para ser acessível tanto no .razor quanto no LimparFormulario
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _qtdRealTextos = new();
 
     protected override async Task OnInitializedAsync()
