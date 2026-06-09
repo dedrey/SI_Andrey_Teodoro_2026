@@ -6,16 +6,17 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            <MudIcon Icon="@Icons.Material.Filled.Payment" Class="mr-2" />
+            <MudIcon Icon="@Icons.Material.Filled.CreditCard" Class="mr-2" />
             Cadastrar Novo Método de Pagamento
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
+
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Codigo"
-                                  ValueChanged="@((string v) => _dto.Codigo = FiltrarCodigo(v))"
+                                  ValueChanged="@((string v) => _dto.Codigo = FiltrarLetrasUpper(v))"
                                   Label="Código"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
@@ -24,13 +25,14 @@
                 </MudItem>
                 <MudItem xs="12" sm="8">
                     <MudTextField Value="@_dto.MetodoPagamento"
-                                  ValueChanged="@((string v) => _dto.MetodoPagamento = Cap(v))"
-                                  Label="Método de Pagamento"
+                                  ValueChanged="@((string v) => _dto.MetodoPagamento = CapPalavras(v))"
+                                  Label="Nome do Método"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="25" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v))" />
                 </MudItem>
+
             </MudGrid>
         </MudForm>
     </DialogContent>
@@ -67,12 +69,30 @@
     private string? ValidarCodigo(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[A-Z0-9]{1,4}$"))
-            return "Código: letras maiúsculas e números (máx. 4)";
+        if (v.Length < 1 || v.Length > 4) return "1 a 4 caracteres";
         return null;
     }
-    private string? ValidarNome(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; if (v.Trim().Length < 2) return "Deve ter pelo menos 2 caracteres"; return null; }
-    private string FiltrarCodigo(string? v) => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper();
-    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) { if (i == 0 || i == p.Length - 1 || !_min.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; } return string.Join(" ", p); }
-    private static readonly HashSet<string> _min = new(StringComparer.OrdinalIgnoreCase) { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
+
+    private string? ValidarNome(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
+        if (v.Trim().Length < 2) return "Mínimo 2 caracteres";
+        return null;
+    }
+
+    private string FiltrarLetrasUpper(string? v)
+        => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper();
+
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
+    { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
+
+    private string CapPalavras(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return v ?? "";
+        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (int i = 0; i < palavras.Length; i++)
+            if (i == 0 || i == palavras.Length - 1 || !_prep.Contains(palavras[i]))
+                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
+        return string.Join(" ", palavras);
+    }
 }
