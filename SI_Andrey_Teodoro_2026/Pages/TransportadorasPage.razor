@@ -5,12 +5,15 @@
 <PageTitle>Transportadoras</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
+@* ═══ CABEÇALHO COM BOTÃO CADASTRAR ═══ *@
 <div class="d-flex align-center justify-space-between mb-4">
     <div class="d-flex align-center">
-        <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+        <MudIcon Icon="@Icons.Material.Filled.LocalShipping"
+                 Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
         <MudText Typo="Typo.h5" Style="font-weight:700;">Transportadoras</MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.Add"
                OnClick="AbrirModalCadastro"
                Style="height:40px;font-weight:600;">
@@ -18,12 +21,14 @@
     </MudButton>
 </div>
 
+@* ═══ FILTROS ═══ *@
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
             <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
                           Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
                           Immediate="true"
                           OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
                           FullWidth="true" />
@@ -45,15 +50,19 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
-                       FullWidth="true" Style="height:40px;">PESQUISAR</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="Pesquisar" FullWidth="true" Style="height:40px;">
+                PESQUISAR
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros"
+                       Style="height:40px;min-width:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
             </MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
 
+@* ═══ TABELA ═══ *@
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true"
               Loading="_carregando" LoadingProgressColor="Color.Primary">
@@ -87,14 +96,16 @@
             <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
             <MudTd>
-                <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(context.Ativo ? Color.Success : Color.Error)">
                     @(context.Ativo ? "Ativa" : "Inativa")
                 </MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Editar">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
-                                   Size="Size.Small" OnClick="@(() => AbrirModalEdicao(context.Id))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary" Size="Size.Small"
+                                   OnClick="@(() => AbrirModalEdicao(context.Id))" />
                 </MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
@@ -106,7 +117,8 @@
         </RowTemplate>
         <NoRecordsContent>
             <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
-                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
+                <MudIcon Icon="@Icons.Material.Filled.SearchOff"
+                         Style="font-size:2.5rem;margin-bottom:8px;" />
                 <MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText>
             </div>
         </NoRecordsContent>
@@ -126,6 +138,8 @@
     private static string FormatCnpj(string s)
     {
         var d = new string(s.Where(char.IsDigit).ToArray());
-        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : s;
+        return d.Length == 14
+            ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}"
+            : s;
     }
 }
