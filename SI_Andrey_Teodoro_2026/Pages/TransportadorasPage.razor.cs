@@ -14,8 +14,7 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
 
     protected override async Task OnInitializedAsync()
     {
-        try { await CarregarDados(); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        await CarregarDados();
     }
 
     protected override async Task CarregarDados()
@@ -30,14 +29,19 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
             Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
             _resultado = new();
         }
-        finally { _carregando = false; StateHasChanged(); }
+        finally
+        {
+            _carregando = false;
+            StateHasChanged();
+        }
     }
 
     private async Task AbrirModalCadastro()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
-        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
+        if ((await dialog.Result) is { Canceled: false })
+            await CarregarDados();
     }
 
     private async Task AbrirModalEdicao(int id)
@@ -48,7 +52,8 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         var param = new DialogParameters<ModalCadastroTransportadora> { { x => x.DtoInicial, dto } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Editar Transportadora", param, opts);
-        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
+        if ((await dialog.Result) is { Canceled: false })
+            await CarregarDados();
     }
 
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
