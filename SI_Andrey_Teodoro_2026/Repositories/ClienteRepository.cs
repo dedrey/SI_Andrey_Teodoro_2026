@@ -37,24 +37,21 @@ public class ClienteRepository : BaseRepository, IClienteRepository
 
         var sqlCount = $"SELECT COUNT(*) FROM clientes c {whereClause}";
         var sqlData = $@"SELECT c.id,
-                                c.tipo_pessoa            AS TipoPessoa,
-                                c.estrangeiro,
-                                c.nome_razaosocial       AS NomeRazaoSocial,
-                                c.apelido_nomefantasia   AS ApelidoNomeFantasia,
-                                c.cpf_cnpj               AS CpfCnpj,
-                                c.documento_estrangeiro  AS DocumentoEstrangeiro,
-                                ci.cidade                AS NomeCidade,
-                                p.pais                   AS NomePais,
-                                c.telefone, c.email,
-                                c.limite_credito         AS LimiteCredito,
-                                c.ativo,
-                                c.criado_em              AS CriadoEm
-                         FROM clientes c
-                         LEFT JOIN cidades  ci ON ci.id  = c.cidade_id
-                         LEFT JOIN estados  e  ON e.id   = ci.estado_id
-                         LEFT JOIN paises   p  ON p.id   = e.pais_id
-                         {whereClause}
-                         ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
+                                  c.tipo_pessoa            AS TipoPessoa,
+                                  c.estrangeiro,
+                                  c.nome_razaosocial       AS NomeRazaoSocial,
+                                  c.apelido_nomefantasia   AS ApelidoNomeFantasia,
+                                  c.cpf_cnpj               AS CpfCnpj,
+                                  c.documento_estrangeiro  AS DocumentoEstrangeiro,
+                                  ci.cidade                AS NomeCidade,
+                                  c.telefone, c.email,
+                                  c.limite_credito         AS LimiteCredito,
+                                  c.ativo,
+                                  c.criado_em AS CriadoEm
+                          FROM clientes c
+                          LEFT JOIN cidades ci ON ci.id = c.cidade_id
+                          {whereClause}
+                          ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
         var param = new
         {
@@ -80,9 +77,9 @@ public class ClienteRepository : BaseRepository, IClienteRepository
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<ClienteListDto>(
             @"SELECT id,
-                     nome_razaosocial AS NomeRazaoSocial,
-                     tipo_pessoa      AS TipoPessoa,
-                     cpf_cnpj         AS CpfCnpj
+                     nome_razaosocial     AS NomeRazaoSocial,
+                     tipo_pessoa          AS TipoPessoa,
+                     cpf_cnpj             AS CpfCnpj
               FROM clientes WHERE ativo = TRUE ORDER BY nome_razaosocial");
     }
 
@@ -109,8 +106,8 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                      c.atualizado_em AS AtualizadoEm,
                      ua.nome         AS NomeAtualizadoPor
               FROM clientes c
-              LEFT JOIN cidades  ci ON ci.id  = c.cidade_id
-              LEFT JOIN usuarios ua ON ua.id  = c.atualizado_por
+              LEFT JOIN cidades  ci ON ci.id = c.cidade_id
+              LEFT JOIN usuarios ua ON ua.id = c.atualizado_por
               WHERE c.id = @id", new { id });
     }
 
@@ -207,5 +204,16 @@ public class ClienteRepository : BaseRepository, IClienteRepository
             ? "SELECT COUNT(*) FROM clientes WHERE cpf_cnpj = @cpfCnpj AND id <> @idOriginalIgnorar"
             : "SELECT COUNT(*) FROM clientes WHERE cpf_cnpj = @cpfCnpj";
         return await conn.ExecuteScalarAsync<int>(sql, new { cpfCnpj, idOriginalIgnorar }) > 0;
+    }
+
+    public async Task<decimal> ObterSaldoDevidoAsync(int clienteId)
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.ExecuteScalarAsync<decimal>(
+            @"SELECT COALESCE(SUM(valor), 0)
+              FROM contas_receber
+              WHERE cliente_id = @clienteId
+                AND status IN ('PENDENTE', 'VENCIDA')",
+            new { clienteId });
     }
 }

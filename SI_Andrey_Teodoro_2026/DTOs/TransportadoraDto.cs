@@ -24,6 +24,15 @@ public class TransportadoraDto
 
     public int? CidadeId { get; set; }
 
+    [MaxLength(100)]
+    public string? Endereco { get; set; }
+
+    [MaxLength(50)]
+    public string? Complemento { get; set; }
+
+    [MaxLength(60)]
+    public string? Bairro { get; set; }
+
     [Required(ErrorMessage = "Telefone é obrigatório")]
     [MaxLength(15)]
     public string Telefone { get; set; } = string.Empty;

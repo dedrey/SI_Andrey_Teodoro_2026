@@ -39,7 +39,7 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
             Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
             _resultado = new();
         }
-        finally { _carregando = false; }
+        finally { _carregando = false; StateHasChanged(); }
     }
 
     private void OnTipoPessoaAlterado(string tipo)
@@ -49,24 +49,39 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
         _dto.CpfCnpj = "";
     }
 
+    private void OnEstrangeiroAlterado(bool valor)
+    {
+        _dto.Estrangeiro = valor;
+        _dto.CidadeId = null;
+        _dto.CpfCnpj = "";
+        _docTexto = "";
+    }
+
     private void OnDocAlterado(string? v)
     {
         if (string.IsNullOrEmpty(v)) { _docTexto = ""; _dto.CpfCnpj = ""; return; }
-        var limpo = new string(v.Where(char.IsDigit).ToArray());
-        _docTexto = _dto.TipoPessoa == "PF" ? FormatarCpf(limpo) : FormatarCnpj(limpo);
-        _dto.CpfCnpj = limpo;
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        if (_dto.TipoPessoa == "PF")
+        {
+            if (d.Length > 11) d = d[..11];
+            _docTexto = d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : d;
+        }
+        else
+        {
+            if (d.Length > 14) d = d[..14];
+            _docTexto = d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d;
+        }
+        _dto.CpfCnpj = d;
     }
 
     private void OnLimiteCreditoAlterado(string? v)
     {
         if (string.IsNullOrEmpty(v)) { _limiteCreditoTexto = ""; _dto.LimiteCredito = 0; return; }
-        var filtrado = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _limiteCreditoTexto = filtrado;
-        _dto.LimiteCredito = decimal.TryParse(
-            filtrado.Replace(",", "."),
+        var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _limiteCreditoTexto = f;
+        _dto.LimiteCredito = decimal.TryParse(f.Replace(",", "."),
             System.Globalization.NumberStyles.Any,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out decimal d) ? d : 0m;
+            System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0m;
     }
 
     private void LimparFormulario()
@@ -91,6 +106,23 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
     {
         await _form.ValidateAsync();
         if (!_formValido) return;
+
+        if (!_dto.Estrangeiro && (string.IsNullOrWhiteSpace(_dto.CpfCnpj) ||
+            (_dto.TipoPessoa == "PF" && _dto.CpfCnpj.Length != 11) ||
+            (_dto.TipoPessoa == "PJ" && _dto.CpfCnpj.Length != 14)))
+        {
+            Snackbar.Add(_dto.TipoPessoa == "PF"
+                ? "CPF inválido. Informe os 11 dígitos."
+                : "CNPJ inválido. Informe os 14 dígitos.", Severity.Warning);
+            return;
+        }
+
+        if (_dto.CidadeId == null)
+        {
+            Snackbar.Add("Selecione uma cidade.", Severity.Warning);
+            return;
+        }
+
         _salvando = true;
         var (sucesso, mensagem, _) = await ClienteService.SalvarAsync(_dto);
         _salvando = false;
@@ -108,7 +140,6 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
             _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
             if (result.Data is int novoId)
             {
-                _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == novoId);
                 _dto.CidadeId = novoId;
             }
         }
@@ -117,16 +148,4 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
                ClienteService.AlterarStatusAsync, CarregarDados);
-
-    private static string FormatarCpf(string d)
-    {
-        if (d.Length >= 11) d = d[..11];
-        return d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : d;
-    }
-
-    private static string FormatarCnpj(string d)
-    {
-        if (d.Length >= 14) d = d[..14];
-        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d;
-    }
 }

@@ -11,5 +11,6 @@ public interface IClienteRepository
     Task<int> InserirAsync(ClienteDto dto);
     Task AtualizarAsync(ClienteDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
-    Task<bool> ExisteDocumentoAsync(string documento, int? idOriginalIgnorar = null);
+    Task<bool> ExisteDocumentoAsync(string cpfCnpj, int? idOriginalIgnorar = null);
+    Task<decimal> ObterSaldoDevidoAsync(int clienteId);
 }

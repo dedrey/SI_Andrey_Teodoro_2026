@@ -8,11 +8,13 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
 {
     private readonly IVendaRepository _repo;
     private readonly ICondicaoPagamentoRepository _condicaoRepo;
+    private readonly IClienteRepository _clienteRepo;
 
-    public VendaService(IVendaRepository repo, ICondicaoPagamentoRepository condicaoRepo)
+    public VendaService(IVendaRepository repo, ICondicaoPagamentoRepository condicaoRepo, IClienteRepository clienteRepo)
     {
         _repo = repo;
         _condicaoRepo = condicaoRepo;
+        _clienteRepo = clienteRepo;
     }
 
     protected override string NomeEntidade => "Venda";
@@ -77,6 +79,7 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 if (item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade)
                     return (false, $"{item.NomeProduto}: desconto não pode ser maior que o valor do item.", 0);
             }
+
             dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
             var descItens = itensValidos.Sum(i => i.ValorDesconto);
 
@@ -126,6 +129,26 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
 
             var itens = await _repo.ObterItensPorVendaAsync(vendaId);
             if (itens.Count == 0) return (false, "A venda não possui itens.");
+
+            // 1. Validar limite de crédito do cliente
+            if (venda.ClienteId.HasValue)
+            {
+                var cliente = await _clienteRepo.ObterPorIdAsync(venda.ClienteId.Value);
+                if (cliente != null && cliente.LimiteCredito > 0)
+                {
+                    var saldoDevido = await _clienteRepo.ObterSaldoDevidoAsync(venda.ClienteId.Value);
+                    var totalComEstaVenda = saldoDevido + venda.ValorTotal;
+                    if (totalComEstaVenda > cliente.LimiteCredito)
+                        return (false,
+                            $"Limite de crédito insuficiente para {cliente.NomeRazaoSocial}. " +
+                            $"Limite: R$ {cliente.LimiteCredito:N2} | " +
+                            $"Já devido: R$ {saldoDevido:N2} | " +
+                            $"Esta venda: R$ {venda.ValorTotal:N2} | " +
+                            $"Total ficaria: R$ {totalComEstaVenda:N2}.");
+                }
+            }
+
+            // 2. Validar estoque
             foreach (var item in itens)
             {
                 var estoque = await _repo.ObterEstoqueAtualAsync(item.ProdutoVariacaoId);

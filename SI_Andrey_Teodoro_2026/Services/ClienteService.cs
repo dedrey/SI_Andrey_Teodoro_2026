@@ -73,7 +73,7 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
             {
                 if (await _repo.ExisteDocumentoAsync(dto.CpfCnpj, ignorar))
-                    return (false, "Já existe um cliente com este documento.", 0);
+                    return (false, $"Já existe um cliente com este documento.", 0);
             }
 
             if (dto.IdOriginal == 0)
