@@ -9,21 +9,12 @@ namespace SI_Andrey_Teodoro_2026.Pages;
 public partial class TransportadorasPage : BasePage<TransportadoraListDto, TransportadoraDto>
 {
     [Inject] private ITransportadoraService TransportadoraService { get; set; } = null!;
-    [Inject] private ICidadeService CidadeService { get; set; } = null!;
 
     protected override string NomeEntidade => "Transportadora";
 
-    private List<CidadeListDto> _cidades = new();
-
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync())
-                .Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            await CarregarDados();
-        }
+        try { await CarregarDados(); }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
@@ -36,53 +27,28 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
             _resultado = new();
         }
-        finally { _carregando = false; }
+        finally { _carregando = false; StateHasChanged(); }
     }
 
-    private void LimparFormulario()
-    {
-        _dto = new();
-        _form?.ResetAsync();
-    }
-
-    private async Task Editar(int id)
-    {
-        var t = await TransportadoraService.ObterPorIdAsync(id);
-        if (t == null) { Snackbar.Add("Transportadora não encontrada.", Severity.Warning); return; }
-        _dto = t;
-        StateHasChanged();
-    }
-
-    private async Task Salvar()
-    {
-        await _form.ValidateAsync();
-        if (!_formValido) return;
-        _salvando = true;
-        var (sucesso, mensagem, _) = await TransportadoraService.SalvarAsync(_dto);
-        _salvando = false;
-        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-        if (sucesso) { LimparFormulario(); await CarregarDados(); }
-    }
-
-    private async Task AbrirModalCidade()
+    private async Task AbrirModalCadastro()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
-        var result = await dialog.Result;
-        if (result is { Canceled: false })
-        {
-            _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync())
-                .Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-            if (result.Data is int novoId)
-            {
-                _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == novoId);
-                _dto.CidadeId = novoId;
-            }
-        }
+        var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
+        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
+    }
+
+    private async Task AbrirModalEdicao(int id)
+    {
+        var dto = await TransportadoraService.ObterPorIdAsync(id);
+        if (dto == null) { Snackbar.Add("Transportadora não encontrada.", Severity.Warning); return; }
+
+        var param = new DialogParameters<ModalCadastroTransportadora> { { x => x.DtoInicial, dto } };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Editar Transportadora", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
     private Task AlterarStatus(int id, string nome, bool ativoAtual)

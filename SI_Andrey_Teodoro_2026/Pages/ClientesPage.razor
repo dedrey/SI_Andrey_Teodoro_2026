@@ -29,7 +29,7 @@
             {
                 <MudItem xs="4" sm="2" md="1">
                     <MudTextField @bind-Value="_dto.Id" Label="ID"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
                 </MudItem>
             }
             <MudItem xs="6" sm="3" md="2">
@@ -50,7 +50,7 @@
             <MudItem xs="12" sm="6" md="5">
                 <MudTextField Value="@_dto.NomeRazaoSocial"
                               ValueChanged="@((string v) => _dto.NomeRazaoSocial = Cap(v))"
-                              Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Nome Completo")"
+                              Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Cliente")"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
                               MaxLength="100" FullWidth="true" Immediate="true" />
@@ -83,7 +83,7 @@
         @if (_dto.TipoPessoa == "PJ")
         {
             <MudGrid Spacing="2" Class="mt-1">
-                <MudItem xs="12" sm="6" md="3">
+                <MudItem xs="12" sm="6" md="4">
                     <MudTextField Value="@_dto.ApelidoNomeFantasia"
                                   ValueChanged="@((string v) => _dto.ApelidoNomeFantasia = Cap(v))"
                                   Label="Nome Fantasia"
@@ -95,6 +95,11 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   MaxLength="20" FullWidth="true" />
                 </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudTextField @bind-Value="_dto.InscricaoMunicipal" Label="Inscrição Municipal"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  MaxLength="20" FullWidth="true" />
+                </MudItem>
             </MudGrid>
         }
 
@@ -103,8 +108,9 @@
                  Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
             Contato e Localização
         </MudText>
+
         <MudGrid Spacing="2">
-            <MudItem xs="10" sm="5" md="3">
+            <MudItem xs="10" sm="4" md="4">
                 <MudAutocomplete T="CidadeListDto"
                                  Label="@(_dto.Estrangeiro ? "Cidade / País" : "Cidade")"
                                  Value="_cidadeSelecionada"
@@ -121,14 +127,14 @@
                                    Size="Size.Medium" OnClick="AbrirModalCidade" />
                 </MudTooltip>
             </MudItem>
-            <MudItem xs="12" sm="6" md="2">
+            <MudItem xs="12" sm="3" md="3">
                 <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"
                               Label="Telefone" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
                               MaxLength="15" FullWidth="true" Immediate="true"
                               Validation="@((string v) => ValidarTel(v))" />
             </MudItem>
-            <MudItem xs="12" sm="6" md="4">
+            <MudItem xs="12" sm="4" md="4">
                 <MudTextField @bind-Value="_dto.Email" Label="E-mail"
                               Variant="Variant.Outlined" Margin="Margin.Dense"
                               Required="true" RequiredError="Obrigatório"
@@ -136,13 +142,34 @@
                               Validation="@((string v) => ValidarEmail(v))"
                               InputType="InputType.Email" />
             </MudItem>
-            <MudItem xs="12" sm="6" md="3">
+            <MudItem xs="12" sm="6" md="5">
+                <MudTextField Value="@_dto.Endereco"
+                              ValueChanged="@((string v) => _dto.Endereco = Cap(v))"
+                              Label="Endereço" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="100" FullWidth="true" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" sm="3" md="3">
+                <MudTextField Value="@_dto.Complemento"
+                              ValueChanged="@((string v) => _dto.Complemento = Cap(v))"
+                              Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              MaxLength="50" FullWidth="true" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" sm="3" md="4">
+                <MudTextField Value="@_dto.Bairro"
+                              ValueChanged="@((string v) => _dto.Bairro = Cap(v))"
+                              Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Required="true" RequiredError="Obrigatório"
+                              MaxLength="60" FullWidth="true" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4" md="3">
                 <MudTextField Value="@_limiteCreditoTexto"
                               ValueChanged="@((string v) => OnLimiteCreditoAlterado(v))"
-                              Label="Limite de Crédito (R$)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Label="Limite de Crédito" Variant="Variant.Outlined" Margin="Margin.Dense"
                               MaxLength="15" FullWidth="true" Immediate="true"
                               Adornment="Adornment.Start" AdornmentText="R$" />
             </MudItem>
+
         </MudGrid>
 
         <MudGrid Spacing="2" Class="mt-2">
@@ -169,8 +196,7 @@
             <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
                           Variant="Variant.Outlined" Margin="Margin.Dense"
                           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true"
-                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
+                          Immediate="true" OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })"
                           FullWidth="true" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
@@ -191,7 +217,7 @@
         </MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar"
-                       FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+                       FullWidth="true" Style="height:40px;">PESQUISAR</MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
                 <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
             </MudButton>
@@ -217,30 +243,17 @@
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
             <MudTd>
                 <strong>@context.NomeRazaoSocial</strong>
-                @if (!string.IsNullOrWhiteSpace(context.ApelidoNomeFantasia))
-                {
-                    <br />
-                
-                    <span style="color:#888;font-size:0.8rem;">@context.ApelidoNomeFantasia</span>
-                }
                 @if (!string.IsNullOrWhiteSpace(context.NomeCidade))
                 {
                     <br />
                 
-                    <span style="color:#aaa;font-size:0.78rem;">
-                        @context.NomeCidade
-                        @if (!string.IsNullOrWhiteSpace(context.NomePais) &&
-                                            !context.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase))
-                        {
-                            <span> — @context.NomePais</span>
-                        }
-                    </span>
+                    <span style="color:#888;font-size:0.8rem;">@context.NomeCidade</span>
                 }
             </MudTd>
             <MudTd Style="text-align:center;">
                 @if (context.Estrangeiro)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">🌍 Estrangeiro</MudChip>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">Estrangeiro</MudChip>
                 }
                 else
                 {
@@ -262,10 +275,11 @@
             <MudTd Style="text-align:right;">
                 @if (context.LimiteCredito > 0)
                 {
-                    <MudText Style="font-size:0.85rem;">R$ @context.LimiteCredito.ToString("N2")</MudText>
+                    <span style="font-size:0.85rem;">R$ @context.LimiteCredito.ToString("N2")</span>
                 }
                 else
                 {
+
                     <span style="color:#bbb;">—</span>
                 }
             </MudTd>
@@ -277,12 +291,13 @@
             </MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Editar">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                   OnClick="@(() => Editar(context.Id))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary"
+                                   Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
                 </MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
                     <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
-                                   Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
+                                   Color="@(context.Ativo ? Color.Error : Color.Success)"
+                                   Size="Size.Small"
                                    OnClick="@(() => AlterarStatus(context.Id, context.NomeRazaoSocial, context.Ativo))" />
                 </MudTooltip>
             </MudTd>
@@ -297,8 +312,10 @@
     @if (_resultado != null)
     {
         <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas"
-                                TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina"
+                                TotalPaginas="@_resultado.TotalPaginas"
+                                TotalItens="@_resultado.TotalItens"
+                                OnPaginaMudou="MudarPagina" />
         </div>
     }
 </MudPaper>
@@ -312,25 +329,12 @@
 
     private Task<IEnumerable<CidadeListDto>> PesquisarCidade(string? busca, CancellationToken ct)
     {
-        var fonte = _dto.Estrangeiro
-            ? _cidades
-            : _cidades.Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase));
-
+        var fonte = _dto.Estrangeiro ? _cidades : _cidades.Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase));
         var r = string.IsNullOrWhiteSpace(busca)
             ? fonte.Take(50)
             : fonte.Where(c => c.NomeCidade.Contains(busca, StringComparison.OrdinalIgnoreCase)
-                            || c.Uf.Contains(busca, StringComparison.OrdinalIgnoreCase)
-                            || c.NomePais.Contains(busca, StringComparison.OrdinalIgnoreCase));
+                            || (c.Uf ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
-    }
-
-    private void OnEstrangeiroAlterado(bool valor)
-    {
-        _dto.Estrangeiro = valor;
-        _dto.CidadeId = null;
-        _dto.DocumentoEstrangeiro = null;
-        _docTexto = "";
-        _dto.CpfCnpj = null;
     }
 
     private string? ValidarDocumento(string? v)
@@ -372,7 +376,7 @@
             <= 2 => $"({d}",
             <= 6 => $"({d[..2]}) {d[2..]}",
             <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}",
-            _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"   
+            _ => $"({d[..2]}) {d[2..7]}-{d[7..]}"
         };
     }
 
@@ -386,11 +390,7 @@
     }
 
     private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "da","de","do","das","dos","e","a","o","as","os",
-        "em","no","na","nos","nas","com","por","para","ao","aos",
-        "à","às","the","of","and","del","los","las","la","le"
-    };
+    { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
 
     private string Cap(string? v)
     {

@@ -36,22 +36,6 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
             _ => "t.razaosocial"
         };
 
-        var sqlCount = $"SELECT COUNT(*) FROM transportadoras t {whereClause}";
-        var sqlData = $@"SELECT t.id,
-                                 t.razaosocial        AS RazaoSocial,
-                                 t.nome_fantasia       AS NomeFantasia,
-                                 t.cnpj,
-                                 t.inscricao_estadual  AS InscricaoEstadual,
-                                 c.cidade              AS NomeCidade,
-                                 t.telefone, t.email,
-                                 t.ativo,
-                                 t.criado_em           AS CriadoEm
-                          FROM transportadoras t
-                          LEFT JOIN cidades c ON c.id = t.cidade_id
-                          {whereClause}
-                          ORDER BY {orderBy}
-                          LIMIT @Limit OFFSET @Offset";
-
         var param = new
         {
             Busca = $"%{filtro.Busca}%",
@@ -60,8 +44,24 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
 
-        var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
-        var itens = await conn.QueryAsync<TransportadoraListDto>(sqlData, param);
+        var total = await conn.ExecuteScalarAsync<int>(
+            $"SELECT COUNT(*) FROM transportadoras t {whereClause}", param);
+
+        var itens = await conn.QueryAsync<TransportadoraListDto>(
+            $@"SELECT t.id,
+                      t.razaosocial       AS RazaoSocial,
+                      t.nome_fantasia     AS NomeFantasia,
+                      t.cnpj,
+                      t.inscricao_estadual AS InscricaoEstadual,
+                      c.cidade            AS NomeCidade,
+                      t.telefone, t.email,
+                      t.ativo,
+                      t.criado_em         AS CriadoEm
+               FROM transportadoras t
+               LEFT JOIN cidades c ON c.id = t.cidade_id
+               {whereClause}
+               ORDER BY {orderBy}
+               LIMIT @Limit OFFSET @Offset", param);
 
         return new PaginacaoDto<TransportadoraListDto>
         {
@@ -76,8 +76,9 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<TransportadoraListDto>(
-            @"SELECT id, razaosocial AS RazaoSocial, nome_fantasia AS NomeFantasia, cnpj
-              FROM transportadoras WHERE ativo = TRUE ORDER BY razaosocial");
+            @"SELECT t.id, t.razaosocial AS RazaoSocial,
+                     t.nome_fantasia AS NomeFantasia, t.cnpj
+              FROM transportadoras t WHERE t.ativo = TRUE ORDER BY t.razaosocial");
     }
 
     public async Task<Transportadora?> ObterPorIdAsync(int id)
@@ -85,17 +86,20 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         using var conn = _factory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Transportadora>(
             @"SELECT t.id,
-                     t.razaosocial        AS RazaoSocial,
-                     t.nome_fantasia       AS NomeFantasia,
+                     t.razaosocial       AS RazaoSocial,
+                     t.nome_fantasia     AS NomeFantasia,
                      t.cnpj,
-                     t.inscricao_estadual  AS InscricaoEstadual,
-                     t.cidade_id           AS CidadeId,
-                     c.cidade              AS NomeCidade,
+                     t.inscricao_estadual AS InscricaoEstadual,
+                     t.cidade_id         AS CidadeId,
+                     c.cidade            AS NomeCidade,
+                     t.endereco,
+                     t.complemento,
+                     t.bairro,
                      t.telefone, t.email,
                      t.ativo,
-                     t.criado_em           AS CriadoEm,
-                     t.atualizado_em       AS AtualizadoEm,
-                     ua.nome               AS NomeAtualizadoPor
+                     t.criado_em         AS CriadoEm,
+                     t.atualizado_em     AS AtualizadoEm,
+                     ua.nome             AS NomeAtualizadoPor
               FROM transportadoras t
               LEFT JOIN cidades  c  ON c.id  = t.cidade_id
               LEFT JOIN usuarios ua ON ua.id = t.atualizado_por
@@ -106,14 +110,13 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
     {
         using var conn = _factory.CreateConnection();
         var proximoId = await ProximoIdAsync();
-
         await conn.ExecuteAsync(
             @"INSERT INTO transportadoras
                 (id, razaosocial, nome_fantasia, cnpj, inscricao_estadual,
-                 cidade_id, telefone, email, ativo)
+                 cidade_id, endereco, complemento, bairro, telefone, email, ativo)
               VALUES
                 (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @InscricaoEstadual,
-                 @CidadeId, @Telefone, @Email, @Ativo)",
+                 @CidadeId, @Endereco, @Complemento, @Bairro, @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -122,11 +125,13 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                 dto.Cnpj,
                 dto.InscricaoEstadual,
                 dto.CidadeId,
+                dto.Endereco,
+                dto.Complemento,
+                dto.Bairro,
                 dto.Telefone,
                 dto.Email,
                 dto.Ativo
             });
-
         return proximoId;
     }
 
@@ -141,6 +146,9 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                   cnpj               = @Cnpj,
                   inscricao_estadual = @InscricaoEstadual,
                   cidade_id          = @CidadeId,
+                  endereco           = @Endereco,
+                  complemento        = @Complemento,
+                  bairro             = @Bairro,
                   telefone           = @Telefone,
                   email              = @Email,
                   atualizado_em      = NOW()

@@ -31,6 +31,9 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             Cnpj = FormatarCnpj(t.Cnpj),
             InscricaoEstadual = t.InscricaoEstadual,
             CidadeId = t.CidadeId,
+            Endereco = t.Endereco,
+            Complemento = t.Complemento,
+            Bairro = t.Bairro,
             Telefone = t.Telefone ?? string.Empty,
             Email = t.Email ?? string.Empty,
             Ativo = t.Ativo,
@@ -46,6 +49,9 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             dto.RazaoSocial = dto.RazaoSocial.Trim();
             dto.NomeFantasia = dto.NomeFantasia?.Trim();
             dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim();
+            dto.Endereco = dto.Endereco?.Trim();
+            dto.Complemento = dto.Complemento?.Trim();
+            dto.Bairro = dto.Bairro?.Trim();
             dto.Telefone = dto.Telefone.Trim();
             dto.Email = dto.Email.Trim().ToLower();
 
@@ -55,7 +61,6 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             dto.Cnpj = cnpjLimpo;
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
-
             if (await _repo.ExisteCnpjAsync(dto.Cnpj, ignorar))
                 return (false, $"Já existe uma transportadora com o CNPJ '{FormatarCnpj(dto.Cnpj)}'.", 0);
 
