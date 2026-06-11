@@ -1,0 +1,116 @@
+﻿@inject IVeiculoService VeiculoService
+@inject ITransportadoraService TransportadoraService
+@inject IEstadoService EstadoService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@using SI_Andrey_Teodoro_2026.DTOs
+@using SI_Andrey_Teodoro_2026.Services.Interfaces
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Class="mr-2" />
+            @(_dto.IdOriginal == 0 ? "Cadastrar Novo Veículo" : "Editar Veículo")
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <MudGrid Spacing="2">
+                <MudItem xs="10" sm="5">
+                    <MudAutocomplete T="TransportadoraListDto" Label="Transportadora"
+                                     Value="_transportadoraSelecionada"
+                                     ValueChanged="@((TransportadoraListDto? t) => { _transportadoraSelecionada = t; _dto.TransportadoraId = t?.Id ?? 0; })"
+                                     SearchFunc="PesquisarTransportadora"
+                                     ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
+                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudTooltip Text="Nova Transportadora">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalTransportadora" />
+                    </MudTooltip>
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudTextField Value="@_placaTexto" ValueChanged="@((string? v) => OnPlacaAlterada(v))"
+                                  Label="Placa" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="7" FullWidth="true" Immediate="true"
+                                  Validation="@((string v) => ValidarPlaca(v))" />
+                </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudAutocomplete T="string" Label="UF"
+                                     Value="@_dto.Uf" ValueChanged="@((string? v) => _dto.Uf = v ?? "")"
+                                     SearchFunc="PesquisarUf"
+                                     ToStringFunc="@(u => u ?? "")"
+                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+        <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+            @(_salvando ? "Salvando..." : "Salvar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public VeiculoDto? DtoEdicao { get; set; }
+
+    private VeiculoDto _dto = new();
+    private MudForm _form = null!;
+    private bool _formValido, _salvando;
+    private string _placaTexto = "";
+    private List<TransportadoraListDto> _transportadoras = new();
+    private TransportadoraListDto? _transportadoraSelecionada;
+    private List<string> _ufs = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
+        _ufs = (await EstadoService.ObterTodosAtivosAsync()).Select(e => e.Uf).Distinct().OrderBy(u => u).ToList();
+        if (DtoEdicao is not null)
+        {
+            _dto = new VeiculoDto
+            {
+                Id = DtoEdicao.Id,
+                IdOriginal = DtoEdicao.IdOriginal,
+                TransportadoraId = DtoEdicao.TransportadoraId,
+                Placa = DtoEdicao.Placa,
+                Uf = DtoEdicao.Uf,
+                Ativo = DtoEdicao.Ativo
+            };
+            _placaTexto = DtoEdicao.Placa;
+            _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == DtoEdicao.TransportadoraId);
+        }
+    }
+
+    private void OnPlacaAlterada(string? v) { if (string.IsNullOrEmpty(v)) { _placaTexto = ""; _dto.Placa = ""; return; } var l = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper(); if (l.Length > 7) l = l[..7]; _placaTexto = l; _dto.Placa = l; }
+    private string? ValidarPlaca(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var l = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper(); if (l.Length != 7) return "Placa: 7 caracteres"; var a = l[..3].All(char.IsLetter) && l[3..].All(char.IsDigit); var m = l[..3].All(char.IsLetter) && char.IsDigit(l[3]) && char.IsLetter(l[4]) && char.IsDigit(l[5]) && char.IsDigit(l[6]); return (a || m) ? null : "Formato inválido (AAA9999 ou AAA9A99)"; }
+    private Task<IEnumerable<TransportadoraListDto>> PesquisarTransportadora(string? busca, CancellationToken ct) { var r = string.IsNullOrWhiteSpace(busca) ? _transportadoras.Take(50) : _transportadoras.Where(t => t.RazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase) || (t.NomeFantasia ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase)); return Task.FromResult(r); }
+    private Task<IEnumerable<string>> PesquisarUf(string? busca, CancellationToken ct) { var r = string.IsNullOrWhiteSpace(busca) ? _ufs.Take(50) : _ufs.Where(u => u.Contains(busca, StringComparison.OrdinalIgnoreCase)); return Task.FromResult(r); }
+
+    private async Task AbrirModalTransportadora()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false }) { _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == id); _dto.TransportadoraId = id; } }
+    }
+
+    private async Task Salvar()
+    {
+        if (_dto.TransportadoraId == 0) { Snackbar.Add("Selecione uma transportadora.", Severity.Warning); return; }
+        await _form.Validate();
+        if (!_formValido) return;
+        _salvando = true;
+        var (sucesso, mensagem, id) = await VeiculoService.SalvarAsync(_dto);
+        _salvando = false;
+        if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
+        else Snackbar.Add(mensagem, Severity.Error);
+    }
+    private void Cancelar() => MudDialog.Cancel();
+}

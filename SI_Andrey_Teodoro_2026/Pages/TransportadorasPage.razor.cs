@@ -14,7 +14,8 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
 
     protected override async Task OnInitializedAsync()
     {
-        await CarregarDados();
+        try { await CarregarDados(); }
+        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
     protected override async Task CarregarDados()
@@ -26,33 +27,36 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
             _resultado = new();
         }
-        finally
-        {
-            _carregando = false;
-            StateHasChanged();
-        }
+        finally { _carregando = false; }
     }
 
+    // ── Abre modal em modo INSERÇÃO ─────────────────────────────
     private async Task AbrirModalCadastro()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
-        if ((await dialog.Result) is { Canceled: false })
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
             await CarregarDados();
     }
 
-    private async Task AbrirModalEdicao(int id)
+    // ── Abre modal em modo EDIÇÃO ───────────────────────────────
+    private async Task Editar(int id)
     {
         var dto = await TransportadoraService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Transportadora não encontrada.", Severity.Warning); return; }
 
-        var param = new DialogParameters<ModalCadastroTransportadora> { { x => x.DtoInicial, dto } };
+        var param = new DialogParameters<ModalCadastroTransportadora>
+        {
+            { x => x.DtoEdicao, dto }
+        };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Editar Transportadora", param, opts);
-        if ((await dialog.Result) is { Canceled: false })
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
             await CarregarDados();
     }
 

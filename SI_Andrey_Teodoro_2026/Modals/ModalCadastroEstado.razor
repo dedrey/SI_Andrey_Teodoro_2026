@@ -8,40 +8,33 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Map" Class="mr-2" />
-            Cadastrar Novo Estado
+            @(_dto.IdOriginal == 0 ? "Cadastrar Novo Estado" : "Editar Estado")
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12">
-                    <MudSelect T="int" @bind-Value="_dto.PaisId"
-                               Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
-                               Required="true" RequiredError="Selecione um país" FullWidth="true">
+                    <MudSelect T="int" @bind-Value="_dto.PaisId" Label="País"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var pais in _paises)
+                        @foreach (var p in _paises)
                         {
-                            <MudSelectItem T="int" Value="@pais.Id">@pais.NomePais</MudSelectItem>
+                            <MudSelectItem T="int" Value="@p.Id">@p.NomePais</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="9">
-                    <MudTextField Value="@_dto.NomeEstado"
-                                  ValueChanged="@((string v) => _dto.NomeEstado = CapPalavras(v))"
-                                  Label="Nome do Estado"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório"
-                                  MaxLength="50" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarSoLetras(v, "Estado"))" />
+                    <MudTextField Value="@_dto.NomeEstado" ValueChanged="@((string v) => _dto.NomeEstado = Cap(v))"
+                                  Label="Nome do Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
+                                  Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null)" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_dto.Uf"
-                                  ValueChanged="@((string v) => _dto.Uf = FiltrarLetrasUpper(v))"
-                                  Label="UF"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório"
-                                  MaxLength="2" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarUf(v))" />
+                    <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = new string(v.Where(char.IsLetter).ToArray()).ToUpper())"
+                                  Label="UF" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true" Immediate="true"
+                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[A-Z]{2}$") ? "2 letras maiúsculas" : null)" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -57,22 +50,34 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public EstadoDto? DtoEdicao { get; set; }
     [Parameter] public int PaisIdInicial { get; set; }
 
     private EstadoDto _dto = new();
     private MudForm _form = null!;
-    private bool _formValido;
-    private bool _salvando;
+    private bool _formValido, _salvando;
     private List<PaisListDto> _paises = new();
 
     protected override async Task OnInitializedAsync()
     {
         _paises = (await PaisService.ObterTodosAtivosAsync()).ToList();
-        if (PaisIdInicial > 0) _dto.PaisId = PaisIdInicial;
+        if (DtoEdicao is not null)
+            _dto = new EstadoDto
+            {
+                Id = DtoEdicao.Id,
+                IdOriginal = DtoEdicao.IdOriginal,
+                PaisId = DtoEdicao.PaisId,
+                NomeEstado = DtoEdicao.NomeEstado,
+                Uf = DtoEdicao.Uf,
+                Ativo = DtoEdicao.Ativo
+            };
+        else if (PaisIdInicial > 0)
+            _dto.PaisId = PaisIdInicial;
     }
 
     private async Task Salvar()
     {
+        if (_dto.PaisId == 0) { Snackbar.Add("Selecione um País.", Severity.Warning); return; }
         await _form.Validate();
         if (!_formValido) return;
         _salvando = true;
@@ -81,38 +86,7 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-
     private void Cancelar() => MudDialog.Cancel();
-
-    private string? ValidarSoLetras(string? v, string campo)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return $"{campo} é obrigatório";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$"))
-            return $"{campo} deve conter apenas letras";
-        return null;
-    }
-
-    private string? ValidarUf(string? v)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        if (v.Length != 2) return "UF deve ter exatamente 2 letras";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v, @"^[A-Z]{2}$")) return "UF: 2 letras maiúsculas";
-        return null;
-    }
-
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-    { "da","de","do","das","dos","e","a","o","as","os","em","no","na","of","and","the" };
-
-    private string CapPalavras(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return v ?? "";
-        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < palavras.Length; i++)
-            if (i == 0 || i == palavras.Length - 1 || !_prep.Contains(palavras[i]))
-                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
-        return string.Join(" ", palavras);
-    }
-
-    private string FiltrarLetrasUpper(string? v)
-        => string.IsNullOrEmpty(v) ? "" : new string(v.Where(char.IsLetter).ToArray()).ToUpper();
+    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) if (i == 0 || i == p.Length - 1 || !_prep.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; return string.Join(" ", p); }
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
 }
