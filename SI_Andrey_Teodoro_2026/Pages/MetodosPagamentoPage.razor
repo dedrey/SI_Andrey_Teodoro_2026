@@ -1,184 +1,32 @@
 ﻿@page "/metodos-pagamento"
 @rendermode InteractiveServer
 @inherits BasePage<MetodoPagamentoListDto, MetodoPagamentoDto>
-
 <PageTitle>Métodos de Pagamento</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
-
-<div class="d-flex align-center mb-4">
-    <MudIcon Icon="@Icons.Material.Filled.Payment" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
-    <MudText Typo="Typo.h5" Style="font-weight:700;">Métodos de Pagamento</MudText>
+<div class="d-flex align-center justify-space-between mb-4">
+    <div class="d-flex align-center"><MudIcon Icon="@Icons.Material.Filled.Payment" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;"/><MudText Typo="Typo.h5" Style="font-weight:700;">Métodos de Pagamento</MudText></div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirModalCadastro" Style="font-weight:700;">Cadastrar</MudButton>
 </div>
-
-<MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
-    <div class="d-flex align-center justify-space-between mb-3">
-        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">
-            @(_dto.IdOriginal == 0 ? "Novo Método de Pagamento" : "Editar Método de Pagamento")
-        </MudText>
-        @if (_dto.IdOriginal != 0 && _dto.AtualizadoEm.HasValue)
-        {
-            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Edit">
-                Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
-            </MudChip>
-        }
-    </div>
-
-    <MudForm @ref="_form" @bind-IsValid="_formValido">
-        <MudGrid Spacing="2">
-            @if (_dto.IdOriginal != 0)
-            {
-                <MudItem xs="4" sm="2" md="1">
-                    <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" />
-                </MudItem>
-            }
-            <MudItem xs="4" sm="3" md="@(_dto.IdOriginal != 0 ? 2 : 3)">
-                <MudTextField Value="@_dto.Codigo"
-                              ValueChanged="@((string v) => _dto.Codigo = FiltrarCodigo(v))"
-                              Label="Código"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="4" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarCodigo(v))" />
-            </MudItem>
-            <MudItem xs="8" sm="@(_dto.IdOriginal != 0 ? 7 : 9)" md="@(_dto.IdOriginal != 0 ? 9 : 9)">
-                <MudTextField Value="@_dto.MetodoPagamento"
-                              ValueChanged="@((string v) => _dto.MetodoPagamento = Cap(v))"
-                              Label="Método de Pagamento"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              Required="true" RequiredError="Obrigatório"
-                              MaxLength="25" FullWidth="true" Immediate="true"
-                              Validation="@((string v) => ValidarNome(v))" />
-            </MudItem>
-        </MudGrid>
-        <MudGrid Spacing="2" Class="mt-2">
-            <MudItem xs="12" Class="d-flex justify-end align-end gap-2">
-                @if (_dto.IdOriginal != 0)
-                {
-                    <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario"
-                               Style="height:40px;min-width:40px;" title="Cancelar edição">
-                        <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" />
-                    </MudButton>
-                }
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                           Disabled="_salvando" Style="height:40px;font-weight:700;min-width:130px;">
-                    @(_salvando ? "Salvando..." : "SALVAR")
-                </MudButton>
-            </MudItem>
-        </MudGrid>
-    </MudForm>
-</MudPaper>
-
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="5" md="5">
-            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
-                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                <MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem>
-                <MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem>
-                <MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                <MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem>
-                <MudSelectItem T="string" Value="@("codigo")">Código</MudSelectItem>
-                <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
-                <MudSelectItem T="string" Value="@("data")">Data</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
-                <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
-            </MudButton>
-        </MudItem>
+        <MudItem xs="12" sm="5"><MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" OnKeyUp="@(async e => { if (e.Key=="Enter") await Pesquisar(); })" FullWidth="true"/></MudItem>
+        <MudItem xs="6" sm="3"><MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem><MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem><MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="6" sm="3"><MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem><MudSelectItem T="string" Value="@("codigo")">Código</MudSelectItem><MudSelectItem T="string" Value="@("id")">ID</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton><MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small"/></MudButton></MudItem>
     </MudGrid>
 </MudPaper>
-
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
     <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
-        <HeaderContent>
-            <MudTh Style="font-weight:600;">ID</MudTh>
-            <MudTh Style="font-weight:600;text-align:center;">Código</MudTh>
-            <MudTh Style="font-weight:600;">Método de Pagamento</MudTh>
-            <MudTh Style="font-weight:600;">Status</MudTh>
-            <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
-        </HeaderContent>
+        <HeaderContent><MudTh Style="font-weight:600;">ID</MudTh><MudTh Style="font-weight:600;text-align:center;">Código</MudTh><MudTh Style="font-weight:600;">Método de Pagamento</MudTh><MudTh Style="font-weight:600;">Status</MudTh><MudTh Style="font-weight:600;text-align:center;">Ações</MudTh></HeaderContent>
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
-            <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
-                         Style="font-family:monospace;font-weight:700;letter-spacing:1px;">
-                    @context.Codigo
-                </MudChip>
-            </MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" Style="font-family:monospace;font-weight:700;">@context.Codigo</MudChip></MudTd>
             <MudTd><strong>@context.MetodoPagamento</strong></MudTd>
             <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
-            <MudTd Style="text-align:center;">
-                <MudTooltip Text="Editar">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
-                </MudTooltip>
-                <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")">
-                    <MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)"
-                                   Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small"
-                                   OnClick="@(() => AlterarStatus(context.Id, context.MetodoPagamento, context.Ativo))" />
-                </MudTooltip>
-            </MudTd>
+            <MudTd Style="text-align:center;"><MudTooltip Text="Editar"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))"/></MudTooltip><MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")"><MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)" Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small" OnClick="@(() => AlterarStatus(context.Id, context.MetodoPagamento, context.Ativo))"/></MudTooltip></MudTd>
         </RowTemplate>
-        <NoRecordsContent>
-            <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
-                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
-                <MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText>
-            </div>
-        </NoRecordsContent>
+        <NoRecordsContent><div class="d-flex flex-column align-center pa-6" style="color:#bbb;"><MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;"/><MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText></div></NoRecordsContent>
     </MudTable>
-    @if (_resultado != null)
-    {
-        <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
-        </div>
-    }
+    @if (_resultado != null) { <div class="pa-2" style="border-top:1px solid #f0f0f0;"><PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina"/></div> }
 </MudPaper>
-
-@code {
-    private string? ValidarCodigo(string? v)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[A-Z0-9]{1,4}$"))
-            return "Código deve conter apenas letras maiúsculas e números (máx. 4)";
-        return null;
-    }
-
-    private string? ValidarNome(string? v)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        if (v.Trim().Length < 2) return "Deve ter pelo menos 2 caracteres";
-        return null;
-    }
-
-    private string FiltrarCodigo(string? v)
-        => string.IsNullOrEmpty(v) ? "" : new string(v.Where(c => char.IsLetterOrDigit(c)).ToArray()).ToUpper();
-
-    private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os",
-        "em", "no", "na", "nos", "nas", "com", "por", "para", "ao", "aos",
-        "à", "às", "the", "of", "and", "del", "los", "las", "la", "le"
-    };
-
-    private string Cap(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return v ?? "";
-        var palavras = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < palavras.Length; i++)
-        {
-            if (i == 0 || i == palavras.Length - 1 || !_minusculas.Contains(palavras[i]))
-                palavras[i] = char.ToUpper(palavras[i][0]) + palavras[i][1..];
-        }
-        return string.Join(" ", palavras);
-    }
-}
+@code { }
