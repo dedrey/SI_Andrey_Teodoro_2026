@@ -14,6 +14,8 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
 
     public Task<PaginacaoDto<FornecedorListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
+    public Task<IEnumerable<FornecedorListDto>> ObterTodosAtivosAsync()
+    => _repo.ObterTodosAtivosAsync();
 
     public async Task<FornecedorDto?> ObterPorIdAsync(int id)
     {

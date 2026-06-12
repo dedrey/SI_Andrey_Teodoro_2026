@@ -2,6 +2,9 @@
 @inject ICategoriaService CategoriaService
 @inject IMarcaService MarcaService
 @inject IUnidadeMedidaService UnidadeMedidaService
+@inject IFornecedorService FornecedorService
+@inject ICorService CorService
+@inject ITamanhoService TamanhoService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
@@ -18,7 +21,8 @@
                 @if (_dto.IdOriginal != 0)
                 {
                     <MudItem xs="3" sm="2" md="1">
-                        <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
+                        <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
                     </MudItem>
                 }
                 <MudItem xs="@(_dto.IdOriginal != 0 ? 9 : 12)" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
@@ -28,9 +32,11 @@
                                   Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null)" />
                 </MudItem>
             </MudGrid>
+
             <MudGrid Spacing="2" Class="mt-2">
                 <MudItem xs="10" sm="4" md="4">
-                    <MudSelect T="int" @bind-Value="_dto.CategoriaId" Label="Categoria *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                    <MudSelect T="int" @bind-Value="_dto.CategoriaId" Label="Categoria *"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var c in _categorias)
                         {
@@ -38,11 +44,12 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCategoria" />
                 </MudItem>
                 <MudItem xs="10" sm="4" md="3">
-                    <MudSelect T="int" @bind-Value="_dto.MarcaId" Label="Marca *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                    <MudSelect T="int" @bind-Value="_dto.MarcaId" Label="Marca *"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var m in _marcas)
                         {
@@ -50,11 +57,12 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalMarca" />
                 </MudItem>
                 <MudItem xs="10" sm="4" md="2">
-                    <MudSelect T="int" @bind-Value="_dto.UnidadeMedidaId" Label="Unidade *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                    <MudSelect T="int" @bind-Value="_dto.UnidadeMedidaId" Label="Unidade *"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var u in _unidades)
                         {
@@ -62,15 +70,29 @@
                         }
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="2" sm="1" md="1" Class="d-flex align-end pb-1">
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalUnidade" />
                 </MudItem>
             </MudGrid>
+
             <MudGrid Spacing="2" Class="mt-2">
-                <MudItem xs="12">
+                <MudItem xs="10" sm="5">
+                    <MudSelect T="int?" Value="_dto.FornecedorId" ValueChanged="@((int? v) => _dto.FornecedorId = v)"
+                               Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                        <MudSelectItem T="int?" Value="@((int?)null)">— Nenhum —</MudSelectItem>
+                        @foreach (var f in _fornecedores)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)f.Id)">@f.RazaoSocial</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-center">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalFornecedor" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
-                                  Label="Descrição" Placeholder="Opcional" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="500" FullWidth="true" Lines="2" />
+                                  Label="Descrição" Placeholder="Opcional" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2" />
                 </MudItem>
             </MudGrid>
 
@@ -87,26 +109,85 @@
 
             @if (_dto.Variacoes.Any(v => !v.Removida))
             {
-                <MudTable Items="@_dto.Variacoes.Where(v => !v.Removida)" Dense="true" Hover="false" Elevation="0"
-                          Style="border:1px solid #f0f0f0;border-radius:8px;">
+                <MudTable Items="@_dto.Variacoes.Where(v => !v.Removida)" Dense="true" Hover="false"
+                          Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
                     <HeaderContent>
                         <MudTh Style="font-weight:600;">Cor</MudTh>
+                        <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Tamanho</MudTh>
+                        <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Cód. Barras</MudTh>
-                        <MudTh Style="font-weight:600;">Preço (R$)</MudTh>
+                        <MudTh Style="font-weight:600;">Custo (R$)</MudTh>
+                        <MudTh Style="font-weight:600;">Venda (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd><MudTextField Value="@context.Cor" ValueChanged="@((string v) => context.Cor = Cap(v))" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="30" Immediate="true" FullWidth="true" /></MudTd>
-                        <MudTd><MudTextField Value="@context.Tamanho" ValueChanged="@((string v) => context.Tamanho = v.Trim().ToUpper())" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="10" Immediate="true" FullWidth="true" /></MudTd>
-                        <MudTd><MudTextField @bind-Value="context.CodigoBarras" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" /></MudTd>
-                        <MudTd><MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" /></MudTd>
+                        @{
+                            bool fastFashion = context.IdOriginal > 0 && context.PrecoCusto > 0 && context.PermiteVendaAbaixoCusto;
+                            bool abaixoCusto = context.PrecoCusto > 0 && context.Preco < context.PrecoCusto;
+                        }
+                        <MudTd>
+                            <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                                <MudSelectItem T="int" Value="0" Disabled="true">— Cor —</MudSelectItem>
+                                @foreach (var c in _cores)
+                                {
+                                    <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudTd>
+                        <MudTd Style="padding:4px;">
+                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                           Size="Size.Small" OnClick="AbrirModalCor" />
+                        </MudTd>
+                        <MudTd>
+                            <MudSelect T="int" Value="context.TamanhoId" ValueChanged="@((int id) => { context.TamanhoId = id; context.Tamanho = _tamanhos.FirstOrDefault(t => t.Id == id)?.Nome ?? ""; })"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                                <MudSelectItem T="int" Value="0" Disabled="true">— Tam —</MudSelectItem>
+                                @foreach (var t in _tamanhos)
+                                {
+                                    <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudTd>
+                        <MudTd Style="padding:4px;">
+                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                           Size="Size.Small" OnClick="AbrirModalTamanho" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField @bind-Value="context.CodigoBarras" Variant="Variant.Outlined"
+                                          Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField Value="@GetCustoTexto(context)" ValueChanged="@((string v) => OnCustoAlterado(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
+                                          Style="@(abaixoCusto && !fastFashion ? "border-color:red;" : "")" />
+                            @if (abaixoCusto)
+                            {
+                                <MudText Typo="Typo.caption" Color="@(fastFashion? Color.Warning: Color.Error)">
+                                    @(fastFashion ? "⚡ Fast Fashion — abaixo do custo permitido" : "⚠ Abaixo do custo")
+                                </MudText>
+                            }
+                        </MudTd>
                         <MudTd Style="text-align:center;">
                             @if (context.IdOriginal > 0)
                             {
-                                <MudText Typo="Typo.body2" Style="font-weight:600;">@context.QuantidadeEstoque un.</MudText>
-                                <MudText Typo="Typo.caption" Style="color:#bbb;">(via Movimentações)</MudText>
+                                <div>
+                                    <MudText Typo="Typo.body2" Style="font-weight:600;">@context.QuantidadeEstoque un.</MudText>
+                                    @if (context.DataUltimaCompra.HasValue)
+                                    {
+                                        <MudText Typo="Typo.caption" Style="color:#888;">
+                                            Última compra: @context.DataUltimaCompra.Value.ToString("dd/MM/yyyy")
+                                        </MudText>
+                                    }
+                                </div>
                             }
                             else
                             {
@@ -116,11 +197,14 @@
                         <MudTd Style="text-align:center;">
                             @if (context.IdOriginal == 0)
                             {
-                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverVariacao(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
+                                               Size="Size.Small" OnClick="@(() => RemoverVariacao(context))" />
                             }
                             else
                             {
-                                <MudChip T="string" Size="Size.Small" Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)" Variant="Variant.Outlined">
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)"
+                                         Variant="Variant.Outlined">
                                     @(context.QuantidadeEstoque > 0 ? "Em estoque" : "Sem estoque")
                                 </MudChip>
                             }
@@ -138,7 +222,7 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">Cancelar</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
                    Disabled="_salvando" Style="height:40px;font-weight:700;min-width:140px;">
             @(_salvando ? "Salvando..." : "SALVAR")
@@ -151,23 +235,24 @@
     [Parameter] public ProdutoDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
-    private bool _formValido;
-    private bool _salvando;
+    private bool _formValido, _salvando;
     private ProdutoDto _dto = new();
     private List<CategoriaListDto> _categorias = new();
     private List<MarcaListDto> _marcas = new();
     private List<UnidadeMedidaListDto> _unidades = new();
+    private List<FornecedorListDto> _fornecedores = new();
+    private List<CorListDto> _cores = new();
+    private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
+    private readonly Dictionary<ProdutoVariacaoDto, string> _custoTextos = new();
 
     private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-        { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "com", "por", "para", "ao", "aos" };
-
+        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
     private static string Cap(string? s)
     {
         if (string.IsNullOrWhiteSpace(s)) return s ?? "";
         return string.Join(" ", s.Trim().Split(' ')
-            .Select((w, i) => i > 0 && _prep.Contains(w)
-                ? w.ToLower()
+            .Select((w, i) => i > 0 && _prep.Contains(w) ? w.ToLower()
                 : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
     }
 
@@ -175,34 +260,46 @@
     {
         _dto = DtoEdicao ?? new ProdutoDto();
         if (DtoEdicao != null)
+        {
             foreach (var v in _dto.Variacoes)
+            {
                 _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
-
-        var t1 = CategoriaService.ObterTodosAtivosAsync();
-        var t2 = MarcaService.ObterTodosAtivosAsync();
-        var t3 = UnidadeMedidaService.ObterTodosAtivosAsync();
-        await Task.WhenAll(t1, t2, t3);
-        _categorias = (await t1).ToList();
-        _marcas = (await t2).ToList();
-        _unidades = (await t3).ToList();
+                _custoTextos[v] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : "";
+            }
+        }
+        await Task.WhenAll(
+            Task.Run(async () => _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList()),
+            Task.Run(async () => _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList()),
+            Task.Run(async () => _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList()),
+            Task.Run(async () => _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList()),
+            Task.Run(async () => _cores = (await CorService.ObterTodosAtivosAsync()).ToList()),
+            Task.Run(async () => _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList())
+        );
     }
 
     private void AdicionarVariacao() { _dto.Variacoes.Add(new ProdutoVariacaoDto()); StateHasChanged(); }
-    private void RemoverVariacao(ProdutoVariacaoDto v) { if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); } else v.Removida = true; StateHasChanged(); }
+    private void RemoverVariacao(ProdutoVariacaoDto v) { if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); _custoTextos.Remove(v); } else v.Removida = true; StateHasChanged(); }
 
-    private string GetPrecoTexto(ProdutoVariacaoDto v)
-    {
-        if (!_precoTextos.ContainsKey(v)) _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
-        return _precoTextos[v];
-    }
-    private void OnPrecoAlterado(ProdutoVariacaoDto v, string? texto)
-    {
-        if (string.IsNullOrEmpty(texto)) { _precoTextos[v] = ""; v.Preco = 0; return; }
-        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _precoTextos[v] = f;
-        v.Preco = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
-    }
+    private string GetPrecoTexto(ProdutoVariacaoDto v) { if (!_precoTextos.ContainsKey(v)) _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : ""; return _precoTextos[v]; }
+    private void OnPrecoAlterado(ProdutoVariacaoDto v, string? texto) { var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _precoTextos[v] = f; v.Preco = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0; StateHasChanged(); }
 
+    private string GetCustoTexto(ProdutoVariacaoDto v) { if (!_custoTextos.ContainsKey(v)) _custoTextos[v] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : ""; return _custoTextos[v]; }
+    private void OnCustoAlterado(ProdutoVariacaoDto v, string? texto) { var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _custoTextos[v] = f; v.PrecoCusto = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0; StateHasChanged(); }
+
+    private async Task AbrirModalCor()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCor>("Nova Cor", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _cores = (await CorService.ObterTodosAtivosAsync()).ToList();
+    }
+    private async Task AbrirModalTamanho()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroTamanho>("Novo Tamanho", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList();
+    }
     private async Task AbrirModalCategoria()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
@@ -223,6 +320,13 @@
         var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Nova Unidade", opts);
         if ((await dialog.Result) is { Canceled: false })
             _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList();
+    }
+    private async Task AbrirModalFornecedor()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
     }
 
     private async Task Salvar()

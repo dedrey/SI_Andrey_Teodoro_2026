@@ -180,4 +180,17 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
             : "SELECT COUNT(*) FROM fornecedores WHERE nomefantasia = @nomeFantasia";
         return await conn.ExecuteScalarAsync<int>(sql, new { nomeFantasia, idOriginalIgnorar }) > 0;
     }
+    public async Task<IEnumerable<FornecedorListDto>> ObterTodosAtivosAsync()
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.QueryAsync<FornecedorListDto>(
+            @"SELECT id,
+                 razaosocial AS RazaoSocial,
+                 nomefantasia AS NomeFantasia,
+                 cnpj,
+                 ativo
+          FROM fornecedores
+          WHERE ativo = TRUE
+          ORDER BY razaosocial");
+    }
 }

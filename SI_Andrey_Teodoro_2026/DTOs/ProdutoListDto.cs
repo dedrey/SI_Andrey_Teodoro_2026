@@ -11,6 +11,8 @@ public class ProdutoListDto
     public string NomeMarca { get; set; } = string.Empty;
     public int UnidadeMedidaId { get; set; }
     public string SiglaUnidade { get; set; } = string.Empty;
+    public int? FornecedorId { get; set; }
+    public string? NomeFornecedor { get; set; }
     public int TotalVariacoes { get; set; }
     public int TotalEstoque { get; set; }
     public bool Ativo { get; set; }

@@ -51,6 +51,8 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                                  m.marca              AS NomeMarca,
                                  p.unidade_medida_id  AS UnidadeMedidaId,
                                  u.unidade_medida     AS SiglaUnidade,
+                                 p.fornecedor_id      AS FornecedorId,
+                                 f.razaosocial       AS NomeFornecedor,
                                  COUNT(DISTINCT pv.id)          AS TotalVariacoes,
                                  COALESCE(SUM(e.quantidade), 0) AS TotalEstoque,
                                  p.ativo,
@@ -59,12 +61,13 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                           INNER JOIN categorias      c  ON c.id  = p.categoria_id
                           INNER JOIN marcas          m  ON m.id  = p.marca_id
                           INNER JOIN unidades_medida u  ON u.id  = p.unidade_medida_id
+                          LEFT  JOIN fornecedores    f  ON f.id  = p.fornecedor_id
                           LEFT  JOIN produto_variacoes pv ON pv.produto_id = p.id AND pv.ativo = TRUE
                           LEFT  JOIN estoque          e  ON e.produto_variacao_id = pv.id
                           {whereClause}
                           GROUP BY p.id, p.produto, p.descricao, p.categoria_id, c.categoria,
                                    p.marca_id, m.marca, p.unidade_medida_id, u.unidade_medida,
-                                   p.ativo, p.criado_em
+                                   p.fornecedor_id, f.razaosocial, p.ativo, p.criado_em
                           ORDER BY {orderBy}
                           LIMIT @Limit OFFSET @Offset";
 
@@ -110,6 +113,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      m.marca              AS NomeMarca,
                      p.unidade_medida_id  AS UnidadeMedidaId,
                      u.unidade_medida     AS SiglaUnidade,
+                     p.fornecedor_id      AS FornecedorId,
                      p.ativo,
                      p.criado_em          AS CriadoEm,
                      p.atualizado_em      AS AtualizadoEm,
@@ -127,21 +131,27 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         using var conn = _factory.CreateConnection();
         var result = await conn.QueryAsync<ProdutoVariacaoDto>(
             @"SELECT pv.id,
-                     pv.id            AS IdOriginal,
-                     pv.produto_id    AS ProdutoId,
-                     pv.cor           AS Cor,
-                     pv.tamanho       AS Tamanho,
-                     pv.codigo_barras AS CodigoBarras,
-                     pv.preco         AS Preco,
-                     pv.ativo         AS Ativo,
+                     pv.id                    AS IdOriginal,
+                     pv.produto_id            AS ProdutoId,
+                     pv.cor_id                AS CorId,
+                     co.nome                  AS Cor,
+                     pv.tamanho_id            AS TamanhoId,
+                     ta.nome                  AS Tamanho,
+                     pv.codigo_barras         AS CodigoBarras,
+                     pv.preco                 AS Preco,
+                     pv.preco_custo           AS PrecoCusto,
+                     pv.data_ultima_compra    AS DataUltimaCompra,
+                     pv.ativo                 AS Ativo,
                      COALESCE(e.quantidade, 0) AS QuantidadeEstoque,
-                     pv.atualizado_em AS AtualizadoEm,
-                     ua.nome          AS NomeAtualizadoPor
+                     pv.atualizado_em         AS AtualizadoEm,
+                     ua.nome                  AS NomeAtualizadoPor
               FROM produto_variacoes pv
+              LEFT JOIN cores    co ON co.id = pv.cor_id
+              LEFT JOIN tamanhos ta ON ta.id = pv.tamanho_id
               LEFT JOIN estoque  e  ON e.produto_variacao_id = pv.id
               LEFT JOIN usuarios ua ON ua.id = pv.atualizado_por
               WHERE pv.produto_id = @produtoId
-              ORDER BY pv.cor, pv.tamanho", new { produtoId });
+              ORDER BY co.nome, ta.ordem, ta.nome", new { produtoId });
         return result.ToList();
     }
 
@@ -150,8 +160,10 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         using var conn = _factory.CreateConnection();
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
-            @"INSERT INTO produtos (id, produto, descricao, categoria_id, marca_id, unidade_medida_id, ativo)
-              VALUES (@ProximoId, @Produto, @Descricao, @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
+            @"INSERT INTO produtos (id, produto, descricao, categoria_id, marca_id,
+                                    unidade_medida_id, fornecedor_id, ativo)
+              VALUES (@ProximoId, @Produto, @Descricao, @CategoriaId, @MarcaId,
+                      @UnidadeMedidaId, @FornecedorId, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -160,6 +172,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.CategoriaId,
                 dto.MarcaId,
                 dto.UnidadeMedidaId,
+                dto.FornecedorId,
                 dto.Ativo
             });
         return proximoId;
@@ -176,8 +189,20 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                   categoria_id      = @CategoriaId,
                   marca_id          = @MarcaId,
                   unidade_medida_id = @UnidadeMedidaId,
+                  fornecedor_id     = @FornecedorId,
                   atualizado_em     = NOW()
-              WHERE id = @IdOriginal", dto);
+              WHERE id = @IdOriginal",
+            new
+            {
+                dto.Id,
+                dto.IdOriginal,
+                dto.Produto,
+                dto.Descricao,
+                dto.CategoriaId,
+                dto.MarcaId,
+                dto.UnidadeMedidaId,
+                dto.FornecedorId
+            });
     }
 
     public Task AlterarStatusAsync(int id, bool ativo)
@@ -195,21 +220,25 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
     public async Task<int> InserirVariacaoAsync(ProdutoVariacaoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        using var connId = _factory.CreateConnection();
-        var proximoId = await connId.ExecuteScalarAsync<int>(
+        var proximoId = await conn.ExecuteScalarAsync<int>(
             @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM produto_variacoes) t
               WHERE seq NOT IN (SELECT id FROM produto_variacoes)");
         await conn.ExecuteAsync(
-            @"INSERT INTO produto_variacoes (id, produto_id, cor, tamanho, codigo_barras, preco, ativo)
-              VALUES (@ProximoId, @ProdutoId, @Cor, @Tamanho, @CodigoBarras, @Preco, @Ativo)",
+            @"INSERT INTO produto_variacoes
+                (id, produto_id, cor_id, tamanho_id, codigo_barras,
+                 preco, preco_custo, ativo)
+              VALUES
+                (@ProximoId, @ProdutoId, @CorId, @TamanhoId, @CodigoBarras,
+                 @Preco, @PrecoCusto, @Ativo)",
             new
             {
                 ProximoId = proximoId,
                 dto.ProdutoId,
-                dto.Cor,
-                dto.Tamanho,
+                dto.CorId,
+                dto.TamanhoId,
                 dto.CodigoBarras,
                 dto.Preco,
+                dto.PrecoCusto,
                 dto.Ativo
             });
         return proximoId;
@@ -221,12 +250,23 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         await conn.ExecuteAsync(
             @"UPDATE produto_variacoes
               SET id            = @Id,
-                  cor           = @Cor,
-                  tamanho       = @Tamanho,
+                  cor_id        = @CorId,
+                  tamanho_id    = @TamanhoId,
                   codigo_barras = @CodigoBarras,
                   preco         = @Preco,
+                  preco_custo   = @PrecoCusto,
                   atualizado_em = NOW()
-              WHERE id = @IdOriginal", dto);
+              WHERE id = @IdOriginal",
+            new
+            {
+                dto.Id,
+                dto.IdOriginal,
+                dto.CorId,
+                dto.TamanhoId,
+                dto.CodigoBarras,
+                dto.Preco,
+                dto.PrecoCusto
+            });
     }
 
     public async Task AlterarStatusVariacaoAsync(int id, bool ativo)
@@ -237,13 +277,13 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             new { ativo, id });
     }
 
-    public async Task<bool> ExisteVariacaoAsync(int produtoId, string cor, string tamanho, int? idIgnorar = null)
+    public async Task<bool> ExisteVariacaoAsync(int produtoId, int corId, int tamanhoId, int? idIgnorar = null)
     {
         using var conn = _factory.CreateConnection();
         var sql = idIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor = @cor AND tamanho = @tamanho AND id <> @idIgnorar"
-            : "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor = @cor AND tamanho = @tamanho";
-        return await conn.ExecuteScalarAsync<int>(sql, new { produtoId, cor, tamanho, idIgnorar }) > 0;
+            ? "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor_id = @corId AND tamanho_id = @tamanhoId AND id <> @idIgnorar"
+            : "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor_id = @corId AND tamanho_id = @tamanhoId";
+        return await conn.ExecuteScalarAsync<int>(sql, new { produtoId, corId, tamanhoId, idIgnorar }) > 0;
     }
 
     public async Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null)
@@ -269,5 +309,13 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         await conn.ExecuteAsync(
             "UPDATE estoque SET quantidade = @quantidade, atualizado_em = NOW() WHERE produto_variacao_id = @variacaoId",
             new { variacaoId, quantidade });
+    }
+
+    public async Task AtualizarDataUltimaCompraAsync(int variacaoId, DateTime data)
+    {
+        using var conn = _factory.CreateConnection();
+        await conn.ExecuteAsync(
+            "UPDATE produto_variacoes SET data_ultima_compra = @data WHERE id = @variacaoId",
+            new { variacaoId, data });
     }
 }

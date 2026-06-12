@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
 namespace SI_Andrey_Teodoro_2026.DTOs;
 
 public class ProdutoVariacaoDto
@@ -8,22 +7,27 @@ public class ProdutoVariacaoDto
     public int IdOriginal { get; set; }
     public int ProdutoId { get; set; }
 
+    // FK para tabela cores
     [Required(ErrorMessage = "Cor é obrigatória")]
-    [MinLength(2, ErrorMessage = "Deve ter pelo menos 2 caracteres")]
-    [MaxLength(30, ErrorMessage = "Deve ter no máximo 30 caracteres")]
+    public int CorId { get; set; }
     public string Cor { get; set; } = string.Empty;
 
+    // FK para tabela tamanhos
     [Required(ErrorMessage = "Tamanho é obrigatório")]
-    [MinLength(1, ErrorMessage = "Deve ter pelo menos 1 caractere")]
-    [MaxLength(10, ErrorMessage = "Deve ter no máximo 10 caracteres")]
+    public int TamanhoId { get; set; }
     public string Tamanho { get; set; } = string.Empty;
 
     [MaxLength(50)]
     public string? CodigoBarras { get; set; }
 
-    [Required(ErrorMessage = "Preço é obrigatório")]
+    [Required(ErrorMessage = "Preço de venda é obrigatório")]
     [Range(0.01, 999999.99, ErrorMessage = "Preço deve ser maior que zero")]
     public decimal Preco { get; set; }
+
+    [Range(0, 999999.99, ErrorMessage = "Preço de custo inválido")]
+    public decimal PrecoCusto { get; set; }
+
+    public DateTime? DataUltimaCompra { get; set; }
 
     public bool Ativo { get; set; } = true;
     public int QuantidadeEstoque { get; set; }
@@ -32,4 +36,9 @@ public class ProdutoVariacaoDto
 
     public bool IsNova => IdOriginal == 0 && Id == 0;
     public bool Removida { get; set; } = false;
+
+    /// Fast Fashion: produto sem venda há mais de 90 dias pode ser vendido abaixo do custo.
+    public bool PermiteVendaAbaixoCusto =>
+        DataUltimaCompra.HasValue &&
+        (DateTime.Today - DataUltimaCompra.Value).TotalDays > 90;
 }

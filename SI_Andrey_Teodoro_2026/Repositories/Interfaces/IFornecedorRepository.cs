@@ -13,4 +13,6 @@ public interface IFornecedorRepository
     Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null);
     Task<bool> ExisteRazaoSocialAsync(string razaoSocial, int? idOriginalIgnorar = null);
     Task<bool> ExisteNomeFantasiaAsync(string nomeFantasia, int? idOriginalIgnorar = null);
+    Task<IEnumerable<FornecedorListDto>> ObterTodosAtivosAsync();
+
 }
