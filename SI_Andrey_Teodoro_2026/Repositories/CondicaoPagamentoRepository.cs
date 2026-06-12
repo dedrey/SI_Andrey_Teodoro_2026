@@ -20,7 +20,7 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
             where.Add(@"(c.condicao_pagamento LIKE @Busca
                       OR m.metodo_pagamento   LIKE @Busca
                       OR m.codigo             LIKE @Busca
-                      OR CAST(c.id AS CHAR) = @BuscaExata)");
+                      OR CAST(c.id AS CHAR)  = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
             "ativos" => "c.ativo = TRUE",
@@ -40,18 +40,17 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                           INNER JOIN metodos_pagamento m ON m.id = c.metodo_pagamento_id
                           {whereClause}";
         var sqlData = $@"SELECT c.id,
-                                  c.condicao_pagamento        AS CondicaoPagamento,
-                                  c.metodo_pagamento_id       AS MetodoPagamentoId,
-                                  m.metodo_pagamento          AS NomeMetodoPagamento,
-                                  m.codigo                    AS CodigoMetodo,
-                                  c.numero_parcelas           AS NumeroParcelas,
-                                  c.entrada_minima_percentual AS EntradaMinimaPercentual,
-                                  c.desconto_percentual       AS DescontoPercentual,
-                                  c.acrescimo_percentual      AS AcrescimoPercentual,
-                                  c.multa_percentual          AS MultaPercentual,
-                                  c.taxa_juros_percentual     AS TaxaJurosPercentual,
-                                  c.ativo,
-                                  c.criado_em AS CriadoEm
+                                 c.condicao_pagamento        AS CondicaoPagamento,
+                                 c.metodo_pagamento_id       AS MetodoPagamentoId,
+                                 m.metodo_pagamento          AS NomeMetodoPagamento,
+                                 m.codigo                    AS CodigoMetodo,
+                                 c.numero_parcelas           AS NumeroParcelas,
+                                 c.entrada_minima_percentual AS EntradaMinimaPercentual,
+                                 c.desconto_percentual       AS DescontoPercentual,
+                                 c.acrescimo_percentual      AS AcrescimoPercentual,
+                                 c.multa_percentual          AS MultaPercentual,
+                                 c.taxa_juros_percentual     AS TaxaJurosPercentual,
+                                 c.ativo, c.criado_em AS CriadoEm
                           FROM condicoes_pagamentos c
                           INNER JOIN metodos_pagamento m ON m.id = c.metodo_pagamento_id
                           {whereClause}
@@ -64,34 +63,25 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
-
         var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
         var itens = await conn.QueryAsync<CondicaoPagamentoListDto>(sqlData, param);
         return new PaginacaoDto<CondicaoPagamentoListDto>
-        {
-            Itens = itens.ToList(),
-            TotalItens = total,
-            Pagina = filtro.Pagina,
-            TamanhoPagina = filtro.TamanhoPagina
-        };
+        { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
     }
 
     public async Task<IEnumerable<CondicaoPagamentoListDto>> ObterTodosAtivosAsync()
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<CondicaoPagamentoListDto>(
-            @"SELECT c.id,
-                     c.condicao_pagamento        AS CondicaoPagamento,
-                     c.metodo_pagamento_id       AS MetodoPagamentoId,
-                     m.metodo_pagamento          AS NomeMetodoPagamento,
-                     m.codigo                    AS CodigoMetodo,
-                     c.numero_parcelas           AS NumeroParcelas,
+            @"SELECT c.id, c.condicao_pagamento AS CondicaoPagamento,
+                     c.metodo_pagamento_id AS MetodoPagamentoId,
+                     m.metodo_pagamento AS NomeMetodoPagamento, m.codigo AS CodigoMetodo,
+                     c.numero_parcelas AS NumeroParcelas,
                      c.entrada_minima_percentual AS EntradaMinimaPercentual,
-                     c.desconto_percentual       AS DescontoPercentual,
-                     c.acrescimo_percentual      AS AcrescimoPercentual,
-                     c.multa_percentual          AS MultaPercentual,
-                     c.taxa_juros_percentual     AS TaxaJurosPercentual,
-                     c.ativo
+                     c.desconto_percentual AS DescontoPercentual,
+                     c.acrescimo_percentual AS AcrescimoPercentual,
+                     c.multa_percentual AS MultaPercentual,
+                     c.taxa_juros_percentual AS TaxaJurosPercentual, c.ativo
               FROM condicoes_pagamentos c
               INNER JOIN metodos_pagamento m ON m.id = c.metodo_pagamento_id
               WHERE c.ativo = TRUE ORDER BY c.condicao_pagamento");
@@ -112,14 +102,40 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                      c.acrescimo_percentual      AS AcrescimoPercentual,
                      c.multa_percentual          AS MultaPercentual,
                      c.taxa_juros_percentual     AS TaxaJurosPercentual,
-                     c.ativo,
-                     c.criado_em     AS CriadoEm,
-                     c.atualizado_em AS AtualizadoEm,
-                     ua.nome         AS NomeAtualizadoPor
+                     c.ativo, c.criado_em AS CriadoEm,
+                     c.atualizado_em AS AtualizadoEm, ua.nome AS NomeAtualizadoPor
               FROM condicoes_pagamentos c
-              INNER JOIN metodos_pagamento m ON m.id  = c.metodo_pagamento_id
+              INNER JOIN metodos_pagamento m  ON m.id  = c.metodo_pagamento_id
               LEFT  JOIN usuarios         ua ON ua.id = c.atualizado_por
               WHERE c.id = @id", new { id });
+    }
+
+    // ← NOVO: retorna parcelas individuais de uma condição
+    public async Task<List<CondicaoPagamentoParcelaDto>> ObterParcelasAsync(int condicaoId)
+    {
+        using var conn = _factory.CreateConnection();
+        var result = await conn.QueryAsync<CondicaoPagamentoParcelaDto>(
+            @"SELECT id, numero_parcela AS NumeroParcela, dias_vencimento AS DiasVencimento
+              FROM condicoes_pagamentos_parcelas
+              WHERE condicao_pagamento_id = @condicaoId
+              ORDER BY numero_parcela", new { condicaoId });
+        return result.ToList();
+    }
+
+    // ← NOVO: remove e reinserção das parcelas (simples e confiável)
+    private async Task SalvarParcelasAsync(int condicaoId, List<CondicaoPagamentoParcelaDto> parcelas,
+        Dapper.SqlMapper.GridReader? _ = null)
+    {
+        using var conn = _factory.CreateConnection();
+        await conn.ExecuteAsync(
+            "DELETE FROM condicoes_pagamentos_parcelas WHERE condicao_pagamento_id = @condicaoId",
+            new { condicaoId });
+        foreach (var p in parcelas.OrderBy(x => x.NumeroParcela))
+            await conn.ExecuteAsync(
+                @"INSERT INTO condicoes_pagamentos_parcelas
+                    (condicao_pagamento_id, numero_parcela, dias_vencimento)
+                  VALUES (@condicaoId, @NumeroParcela, @DiasVencimento)",
+                new { condicaoId, p.NumeroParcela, p.DiasVencimento });
     }
 
     public async Task<int> InserirAsync(CondicaoPagamentoDto dto)
@@ -148,6 +164,8 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                 dto.TaxaJurosPercentual,
                 dto.Ativo
             });
+        if (dto.Parcelas.Count > 0)
+            await SalvarParcelasAsync(proximoId, dto.Parcelas);
         return proximoId;
     }
 
@@ -156,8 +174,7 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE condicoes_pagamentos
-              SET id                        = @Id,
-                  condicao_pagamento        = @CondicaoPagamento,
+              SET condicao_pagamento        = @CondicaoPagamento,
                   metodo_pagamento_id       = @MetodoPagamentoId,
                   numero_parcelas           = @NumeroParcelas,
                   entrada_minima_percentual = @EntradaMinimaPercentual,
@@ -167,10 +184,10 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                   taxa_juros_percentual     = @TaxaJurosPercentual,
                   atualizado_em             = NOW()
               WHERE id = @IdOriginal", dto);
+        await SalvarParcelasAsync(dto.IdOriginal, dto.Parcelas);
     }
 
-    public Task AlterarStatusAsync(int id, bool ativo)
-        => AlterarStatusBaseAsync(id, ativo);
+    public Task AlterarStatusAsync(int id, bool ativo) => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
     {

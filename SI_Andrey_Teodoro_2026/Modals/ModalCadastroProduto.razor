@@ -117,7 +117,6 @@
                         <MudTh Style="font-weight:600;">Tamanho</MudTh>
                         <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Cód. Barras</MudTh>
-                        <MudTh Style="font-weight:600;">Custo (R$)</MudTh>
                         <MudTh Style="font-weight:600;">Venda (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
@@ -160,11 +159,6 @@
                                           Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
                         </MudTd>
                         <MudTd>
-                            <MudTextField Value="@GetCustoTexto(context)" ValueChanged="@((string v) => OnCustoAlterado(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
-                        </MudTd>
-                        <MudTd>
                             <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                           FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
@@ -172,7 +166,7 @@
                             @if (abaixoCusto)
                             {
                                 <MudText Typo="Typo.caption" Color="@(fastFashion? Color.Warning: Color.Error)">
-                                    @(fastFashion ? "⚡ Fast Fashion — abaixo do custo permitido" : "⚠ Abaixo do custo")
+                                    @(fastFashion ? "⚡ Fast Fashion — abaixo do custo permitido" : "⚠ Abaixo do custo (definido na última entrada)")
                                 </MudText>
                             }
                         </MudTd>
@@ -244,7 +238,6 @@
     private List<CorListDto> _cores = new();
     private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
-    private readonly Dictionary<ProdutoVariacaoDto, string> _custoTextos = new();
 
     private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
         { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
@@ -262,10 +255,7 @@
         if (DtoEdicao != null)
         {
             foreach (var v in _dto.Variacoes)
-            {
                 _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
-                _custoTextos[v] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : "";
-            }
         }
         await Task.WhenAll(
             Task.Run(async () => _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList()),
@@ -278,13 +268,26 @@
     }
 
     private void AdicionarVariacao() { _dto.Variacoes.Add(new ProdutoVariacaoDto()); StateHasChanged(); }
-    private void RemoverVariacao(ProdutoVariacaoDto v) { if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); _custoTextos.Remove(v); } else v.Removida = true; StateHasChanged(); }
+    private void RemoverVariacao(ProdutoVariacaoDto v)
+    {
+        if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); }
+        else v.Removida = true;
+        StateHasChanged();
+    }
 
-    private string GetPrecoTexto(ProdutoVariacaoDto v) { if (!_precoTextos.ContainsKey(v)) _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : ""; return _precoTextos[v]; }
-    private void OnPrecoAlterado(ProdutoVariacaoDto v, string? texto) { var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _precoTextos[v] = f; v.Preco = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0; StateHasChanged(); }
-
-    private string GetCustoTexto(ProdutoVariacaoDto v) { if (!_custoTextos.ContainsKey(v)) _custoTextos[v] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : ""; return _custoTextos[v]; }
-    private void OnCustoAlterado(ProdutoVariacaoDto v, string? texto) { var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _custoTextos[v] = f; v.PrecoCusto = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0; StateHasChanged(); }
+    private string GetPrecoTexto(ProdutoVariacaoDto v)
+    {
+        if (!_precoTextos.ContainsKey(v)) _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
+        return _precoTextos[v];
+    }
+    private void OnPrecoAlterado(ProdutoVariacaoDto v, string? texto)
+    {
+        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _precoTextos[v] = f;
+        v.Preco = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        StateHasChanged();
+    }
 
     private async Task AbrirModalCor()
     {

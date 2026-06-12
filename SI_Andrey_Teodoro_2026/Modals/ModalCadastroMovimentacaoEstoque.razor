@@ -52,7 +52,9 @@
                         <MudTh Style="font-weight:600;">Variação</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">@(_dto.TipoMovimentacao == "AJUSTE" ? "Qtd. Real" : "Quantidade")</MudTh>
-                        <MudTh Style="font-weight:600;text-align:right;">Valor Unit.</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">
+                            @(_dto.TipoMovimentacao == "ENTRADA" ? "Custo Unit." : "Valor Unit.")
+                        </MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
@@ -102,7 +104,10 @@
                         <MudTd>
                             <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          Adornment="Adornment.Start" AdornmentText="R$" />
+                                          Adornment="Adornment.Start" AdornmentText="R$"
+                                          Placeholder="@(_dto.TipoMovimentacao == "ENTRADA" ? "Preço pago" : "Opcional")"
+                                          Error="@(_dto.TipoMovimentacao == "ENTRADA" && context.ValorUnitario > 0 && _precoVendaPorItem.GetValueOrDefault(context) > 0 && context.ValorUnitario > _precoVendaPorItem.GetValueOrDefault(context))"
+                                          ErrorText="@($"Custo (R$ {context.ValorUnitario:N2}) > venda (R$ {_precoVendaPorItem.GetValueOrDefault(context):N2})")" />
                         </MudTd>
                         <MudTd Style="text-align:right;font-weight:600;">
                             R$ @((context.Quantidade * context.ValorUnitario).ToString("N2"))
@@ -151,6 +156,7 @@
     private readonly Dictionary<MovimentacaoEstoqueItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _valorTextos = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _qtdRealTextos = new();
+    private readonly Dictionary<MovimentacaoEstoqueItemDto, decimal> _precoVendaPorItem = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -166,8 +172,10 @@
         _variacoesPorItem[item] = new();
         _valorTextos[item] = "";
         _qtdRealTextos[item] = "";
+        _precoVendaPorItem[item] = 0;
         StateHasChanged();
     }
+
     private void RemoverItem(MovimentacaoEstoqueItemDto item)
     {
         _dto.Itens.Remove(item);
@@ -175,41 +183,99 @@
         _variacoesPorItem.Remove(item);
         _valorTextos.Remove(item);
         _qtdRealTextos.Remove(item);
+        _precoVendaPorItem.Remove(item);
         StateHasChanged();
     }
 
     private async Task OnProdutoAlterado(MovimentacaoEstoqueItemDto item, ProdutoListDto? produto)
     {
         _produtosSelecionados[item] = produto;
-        item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? ""; item.EstoqueAtual = 0;
-        if (produto != null) { var dto = await ProdutoService.ObterPorIdAsync(produto.Id); _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new(); }
+        item.ProdutoVariacaoId = 0;
+        item.NomeProduto = produto?.Produto ?? "";
+        item.EstoqueAtual = 0;
+        item.ValorUnitario = 0;
+        _valorTextos[item] = "";
+        if (produto != null)
+        {
+            var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
+            _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+        }
         else _variacoesPorItem[item] = new();
         StateHasChanged();
     }
+
     private void OnVariacaoAlterada(MovimentacaoEstoqueItemDto item, int variacaoId)
     {
         item.ProdutoVariacaoId = variacaoId;
         if (_variacoesPorItem.TryGetValue(item, out var vars))
         {
             var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
-            if (v != null) { item.Cor = v.Cor; item.Tamanho = v.Tamanho; item.EstoqueAtual = v.QuantidadeEstoque; if (item.ValorUnitario == 0) { item.ValorUnitario = v.Preco; _valorTextos[item] = v.Preco.ToString("N2"); } }
+            if (v != null)
+            {
+                item.Cor = v.Cor;
+                item.Tamanho = v.Tamanho;
+                item.EstoqueAtual = v.QuantidadeEstoque;
+
+                if (_dto.TipoMovimentacao == "ENTRADA")
+                {
+                    // Preenche com o último custo registrado (vem da entrada anterior)
+                    // Se nunca houve entrada, deixa em branco para o usuário digitar
+                    item.ValorUnitario = v.PrecoCusto > 0 ? v.PrecoCusto : 0;
+                    _valorTextos[item] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : "";
+                    _precoVendaPorItem[item] = v.Preco; // guarda preço de venda para comparar
+                }
+                else
+                {
+                    // SAÍDA e AJUSTE: valor unitário é opcional, deixa em branco
+                    item.ValorUnitario = 0;
+                    _valorTextos[item] = "";
+                    _precoVendaPorItem[item] = v.Preco;
+                }
+            }
         }
         StateHasChanged();
     }
-    private void OnQtdAlterada(MovimentacaoEstoqueItemDto item, string? v) { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0; }
-    private string GetQtdRealTexto(MovimentacaoEstoqueItemDto item) { if (!_qtdRealTextos.ContainsKey(item)) _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : ""; return _qtdRealTextos[item]; }
-    private void OnQtdRealAlterada(MovimentacaoEstoqueItemDto item, string? v) { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); _qtdRealTextos[item] = d; item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1; StateHasChanged(); }
-    private string GetValorTexto(MovimentacaoEstoqueItemDto item) { if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : ""; return _valorTextos[item]; }
+
+    private void OnQtdAlterada(MovimentacaoEstoqueItemDto item, string? v)
+    {
+        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
+        item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
+    }
+
+    private string GetQtdRealTexto(MovimentacaoEstoqueItemDto item)
+    {
+        if (!_qtdRealTextos.ContainsKey(item)) _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : "";
+        return _qtdRealTextos[item];
+    }
+
+    private void OnQtdRealAlterada(MovimentacaoEstoqueItemDto item, string? v)
+    {
+        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
+        _qtdRealTextos[item] = d;
+        item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1;
+        StateHasChanged();
+    }
+
+    private string GetValorTexto(MovimentacaoEstoqueItemDto item)
+    {
+        if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
+        return _valorTextos[item];
+    }
+
     private void OnValorAlterado(MovimentacaoEstoqueItemDto item, string? texto)
     {
         if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; return; }
         var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
         _valorTextos[item] = f;
-        item.ValorUnitario = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        item.ValorUnitario = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                              System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
     }
+
     private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
     {
-        var r = string.IsNullOrWhiteSpace(busca) ? _todosProdutos.Take(50) : _todosProdutos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
+        var r = string.IsNullOrWhiteSpace(busca)
+            ? _todosProdutos.Take(50)
+            : _todosProdutos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
     }
 
@@ -222,5 +288,6 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
+
     private void Fechar() => MudDialog.Cancel();
 }

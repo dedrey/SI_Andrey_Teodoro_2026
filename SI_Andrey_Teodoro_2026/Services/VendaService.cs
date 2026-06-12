@@ -64,7 +64,6 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
         try
         {
             var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
-
             if (itensValidos.Count == 0)
                 return (false, "Adicione pelo menos um item à venda.", 0);
 
@@ -94,7 +93,6 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                     jurosCond = cond.TaxaJurosPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.TaxaJurosPercentual / 100, 2) : 0m;
                 }
             }
-
             dto.ValorDesconto = descItens + descCond;
             dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + acrescCond + jurosCond;
 
@@ -130,7 +128,7 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
             var itens = await _repo.ObterItensPorVendaAsync(vendaId);
             if (itens.Count == 0) return (false, "A venda não possui itens.");
 
-            // 1. Validar limite de crédito do cliente
+            // 1. Validar limite de crédito
             if (venda.ClienteId.HasValue)
             {
                 var cliente = await _clienteRepo.ObterPorIdAsync(venda.ClienteId.Value);
@@ -141,10 +139,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                     if (totalComEstaVenda > cliente.LimiteCredito)
                         return (false,
                             $"Limite de crédito insuficiente para {cliente.NomeRazaoSocial}. " +
-                            $"Limite: R$ {cliente.LimiteCredito:N2} | " +
-                            $"Já devido: R$ {saldoDevido:N2} | " +
-                            $"Esta venda: R$ {venda.ValorTotal:N2} | " +
-                            $"Total ficaria: R$ {totalComEstaVenda:N2}.");
+                            $"Limite: R$ {cliente.LimiteCredito:N2} | Já devido: R$ {saldoDevido:N2} | " +
+                            $"Esta venda: R$ {venda.ValorTotal:N2} | Total ficaria: R$ {totalComEstaVenda:N2}.");
                 }
             }
 
@@ -155,6 +151,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 if (estoque < item.Quantidade)
                     return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {estoque} un.");
             }
+
+            // 3. Baixa estoque e cria movimentação de saída
             var movId = await _repo.InserirMovimentacaoSaidaAsync(vendaId);
             foreach (var item in itens)
             {
@@ -162,6 +160,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, -item.Quantidade);
             }
             await _repo.AtualizarStatusAsync(vendaId, "FINALIZADA", movId);
+
+            // 4. Gerar contas a receber usando prazos individuais das parcelas
             if (venda.ClienteId.HasValue && venda.CondicaoPagamentoId.HasValue)
             {
                 var condicao = await _condicaoRepo.ObterPorIdAsync(venda.CondicaoPagamentoId.Value);
@@ -170,12 +170,21 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                     var valorParcela = Math.Round(venda.ValorTotal / condicao.NumeroParcelas, 2);
                     var diferenca = venda.ValorTotal - (valorParcela * condicao.NumeroParcelas);
 
+                    // Tenta usar prazos individuais cadastrados na condição
+                    var parcelas = await _condicaoRepo.ObterParcelasAsync(venda.CondicaoPagamentoId.Value);
+
                     for (int p = 1; p <= condicao.NumeroParcelas; p++)
                     {
-                        var vencimento = DateTime.Today.AddMonths(p);
+                        // Usa dias individuais se existirem; senão, fallback mensal
+                        var parcelaConfig = parcelas.FirstOrDefault(x => x.NumeroParcela == p);
+                        var vencimento = parcelaConfig != null
+                            ? DateTime.Today.AddDays(parcelaConfig.DiasVencimento)
+                            : DateTime.Today.AddMonths(p);
+
                         var valor = p == condicao.NumeroParcelas
-                            ? valorParcela + diferenca
+                            ? valorParcela + diferenca  // última parcela absorve centavos de arredondamento
                             : valorParcela;
+
                         var descricao = condicao.NumeroParcelas == 1
                             ? $"Venda #{vendaId}"
                             : $"Venda #{vendaId} — Parcela {p}/{condicao.NumeroParcelas}";
@@ -203,7 +212,6 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 foreach (var item in itens)
                     await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, +item.Quantidade);
             }
-
             await _repo.AtualizarStatusAsync(vendaId, "CANCELADA", motivoCancelamento: motivo);
             return (true, "Venda cancelada com sucesso!");
         }
