@@ -28,7 +28,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="8">
                     <MudTextField Value="@_dto.NomeRazaoSocial" ValueChanged="@((string v) => _dto.NomeRazaoSocial = Cap(v))"
-                                  Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Nome Completo")"
+                                  Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Cliente")"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" />
                 </MudItem>

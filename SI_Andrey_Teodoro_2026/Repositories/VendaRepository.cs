@@ -47,10 +47,10 @@ public class VendaRepository : BaseRepository, IVendaRepository
                                 v.valor_subtotal               AS ValorSubtotal,
                                 v.valor_desconto               AS ValorDesconto,
                                 v.valor_total                  AS ValorTotal,
-                                COALESCE(cp.desconto_percentual,  0) AS DescontoPercentual,
-                                COALESCE(cp.acrescimo_percentual, 0) AS AcrescimoPercentual,
-                                COALESCE(cp.taxa_juros_percentual,0) AS TaxaJurosPercentual,
-                                COALESCE(cp.numero_parcelas,      1) AS NumeroParcelas,
+                                COALESCE(cp.desconto_percentual,   0) AS DescontoPercentual,
+                                COALESCE(cp.acrescimo_percentual,  0) AS AcrescimoPercentual,
+                                COALESCE(cp.taxa_juros_percentual, 0) AS TaxaJurosPercentual,
+                                COALESCE(cp.numero_parcelas,       1) AS NumeroParcelas,
                                 v.status_venda                 AS StatusVenda,
                                 v.motivo_cancelamento          AS MotivoCancelamento,
                                 v.criado_em                    AS CriadoEm
@@ -209,14 +209,16 @@ public class VendaRepository : BaseRepository, IVendaRepository
             new { vendaId, subtotal, desconto, total });
     }
 
-    public async Task AtualizarStatusAsync(int vendaId, string status, int? movimentacaoId = null, string? motivoCancelamento = null)
+    public async Task AtualizarStatusAsync(int vendaId, string status,
+        int? movimentacaoId = null, string? motivoCancelamento = null)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            @"UPDATE vendas SET status_venda = @status,
-                                movimentacao_id = COALESCE(@movimentacaoId, movimentacao_id),
-                                motivo_cancelamento = COALESCE(@motivoCancelamento, motivo_cancelamento),
-                                atualizado_em = NOW()
+            @"UPDATE vendas
+              SET status_venda          = @status,
+                  movimentacao_id       = COALESCE(@movimentacaoId, movimentacao_id),
+                  motivo_cancelamento   = COALESCE(@motivoCancelamento, motivo_cancelamento),
+                  atualizado_em         = NOW()
               WHERE id = @vendaId",
             new { vendaId, status, movimentacaoId, motivoCancelamento });
     }
@@ -242,25 +244,37 @@ public class VendaRepository : BaseRepository, IVendaRepository
     {
         using var conn = _factory.CreateConnection();
         var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM movimentacoes_estoque) t
-              WHERE seq NOT IN (SELECT id FROM movimentacoes_estoque)");
+            @"SELECT MIN(seq)
+              FROM (SELECT 1 AS seq
+                    UNION ALL
+                    SELECT id + 1 FROM movimentacoes_estoque) t
+              WHERE seq NOT IN (SELECT id FROM movimentacoes_estoque)
+                AND seq NOT IN (
+                    SELECT movimentacao_id FROM vendas
+                    WHERE movimentacao_id IS NOT NULL
+                )");
+
         await conn.ExecuteAsync(
             @"INSERT INTO movimentacoes_estoque (id, tipo_movimentacao, observacao)
               VALUES (@proximoId, 'SAIDA', @obs)",
             new { proximoId, obs = $"Saída automática — Venda #{vendaId}" });
+
         return proximoId;
     }
 
-    public async Task InserirMovimentacaoItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario)
+    public async Task InserirMovimentacaoItemAsync(int movimentacaoId, int variacaoId,
+        int quantidade, decimal valorUnitario)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
-            @"INSERT INTO movimentacoes_estoque_itens (movimentacao_id, produto_variacao_id, quantidade, valor_unitario)
+            @"INSERT INTO movimentacoes_estoque_itens
+                (movimentacao_id, produto_variacao_id, quantidade, valor_unitario)
               VALUES (@movimentacaoId, @variacaoId, @quantidade, @valorUnitario)",
             new { movimentacaoId, variacaoId, quantidade, valorUnitario });
     }
 
-    public async Task<int> InserirContaReceberAsync(int clienteId, int vendaId, string descricao, DateTime vencimento, decimal valor)
+    public async Task<int> InserirContaReceberAsync(int clienteId, int vendaId,
+        string descricao, DateTime vencimento, decimal valor)
     {
         using var conn = _factory.CreateConnection();
         var proximoId = await conn.ExecuteScalarAsync<int>(
