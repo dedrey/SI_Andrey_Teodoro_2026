@@ -48,4 +48,10 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
         if (tipo == "PJ" && d.Length == 14) return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
         return doc;
     }
+    private async Task Visualizar(int id)
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var param = new DialogParameters<ModalVisualizarCliente> { { x => x.Id, id } };
+        await DialogService.ShowAsync<ModalVisualizarCliente>("Detalhes do Cliente", param, opts);
+    }
 }

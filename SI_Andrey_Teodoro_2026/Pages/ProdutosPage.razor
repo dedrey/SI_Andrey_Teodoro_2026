@@ -10,10 +10,7 @@
         <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
         <MudText Typo="Typo.h5" Style="font-weight:700;">Produtos</MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="AbrirModalCadastro" Style="font-weight:700;">
-        Cadastrar
-    </MudButton>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirModalCadastro" Style="font-weight:700;">Cadastrar</MudButton>
 </div>
 
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
@@ -50,6 +47,7 @@
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(produto.TotalEstoque > 0 ? Color.Success : Color.Warning)">@produto.TotalEstoque un.</MudChip></MudTd>
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(produto.Ativo ? Color.Success : Color.Error)">@(produto.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
+                <MudTooltip Text="Visualizar"><MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(async ()=>await Visualizar(produto.Id))"/></MudTooltip>
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(async ()=>await Editar(produto.Id))"/>
                 <MudIconButton Icon="@(produto.Ativo ? Icons.Material.Filled.ToggleOn : Icons.Material.Filled.ToggleOff)" Color="@(produto.Ativo ? Color.Success : Color.Error)" Size="Size.Small" OnClick="@(async ()=>await AlterarStatus(produto.Id, produto.Produto, produto.Ativo))"/>
             </MudTd>
@@ -62,7 +60,7 @@
                     {
                         <div style="padding:10px 20px 14px 48px;">
                             <MudTable Items="@variacoes" Dense="true" Hover="true" Elevation="0" Style="border:0.5px solid #e0e0e0;border-radius:6px;background:white;">
-                                <HeaderContent><MudTh Style="font-weight:600;font-size:0.8rem;">Cor</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Tamanho</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Cód. Barras</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Preço</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Estoque</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Ações</MudTh></HeaderContent>
+                                <HeaderContent><MudTh Style="font-weight:600;font-size:0.8rem;">Cor</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Tamanho</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Cód. Barras</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Preço</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Estoque</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Status</MudTh></HeaderContent>
                                 <RowTemplate Context="v">
                                     <MudTd>@v.Cor</MudTd><MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@v.Tamanho</MudChip></MudTd><MudTd Style="color:#888;font-size:0.82rem;">@(string.IsNullOrEmpty(v.CodigoBarras) ? "—" : v.CodigoBarras)</MudTd><MudTd Style="text-align:right;font-weight:600;">R$ @v.Preco.ToString("N2")</MudTd>
                                     <MudTd Style="text-align:center;font-weight:600;">@v.QuantidadeEstoque un.</MudTd>
@@ -73,9 +71,7 @@
                     }
                     else
                     {
-                        <div style="padding:12px 48px;color:#bbb;font-size:0.85rem;">
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>Carregando variações...
-                        </div>
+                        <div style="padding:12px 48px;color:#bbb;font-size:0.85rem;"><MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>Carregando variações...</div>
                     }
                 </MudTd>
             }
