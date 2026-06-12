@@ -68,6 +68,14 @@
             <MudTd Style="text-align:center;">
                 @if (venda.StatusVenda == "ABERTA")
                 {
+                    <MudTooltip Text="Alterar Venda">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="@(async () => await AbrirEdicao(venda.Id))"/>
+                    </MudTooltip>
+                    <MudTooltip Text="Finalizar Venda">
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small"
+                                       OnClick="@(async () => await FinalizarVenda(venda.Id))"/>
+                    </MudTooltip>
                     <MudTooltip Text="Cancelar Venda">
                         <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small"
                                        OnClick="@(async () => await AbrirCancelamento(venda.Id))"/>
@@ -87,6 +95,16 @@
                                 <RowTemplate Context="item"><MudTd Style="font-weight:600;font-size:0.85rem;">@item.NomeProduto</MudTd><MudTd>@item.Cor / @item.Tamanho</MudTd><MudTd Style="text-align:center;font-weight:600;">@item.Quantidade un.</MudTd><MudTd Style="text-align:right;">R$ @item.ValorUnitario.ToString("N2")</MudTd><MudTd Style="text-align:right;font-weight:600;">R$ @item.ValorTotal.ToString("N2")</MudTd></RowTemplate>
                                 <NoRecordsContent><MudTd ColSpan="5" Style="text-align:center;color:#bbb;padding:12px;">Nenhum item.</MudTd></NoRecordsContent>
                             </MudTable>
+                            @if (context.StatusVenda == "CANCELADA" && !string.IsNullOrWhiteSpace(context.MotivoCancelamento))
+                            {
+                                <div style="margin-top:10px;padding:10px 14px;background:#fff3f3;border:1px solid #ffcdd2;border-radius:6px;display:flex;align-items:flex-start;gap:8px;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Style="color:#c62828;font-size:1.1rem;margin-top:2px;flex-shrink:0;"/>
+                                    <div>
+                                        <span style="font-size:0.7rem;color:#c62828;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;">Motivo do cancelamento</span>
+                                        <div style="font-size:0.88rem;color:#333;margin-top:2px;">@context.MotivoCancelamento</div>
+                                    </div>
+                                </div>
+                            }
                         </div>
                     }
                     else

@@ -12,4 +12,6 @@ public interface IMovimentacaoEstoqueRepository
     Task InserirItemAsync(MovimentacaoEstoqueItemDto item, int movimentacaoId);
     Task AtualizarEstoqueAsync(int variacaoId, int delta);
     Task<int> ObterEstoqueAtualAsync(int variacaoId);
+    Task AtualizarDataUltimaCompraAsync(int variacaoId, DateTime data);
+    Task AtualizarPrecoCustoAsync(int variacaoId, decimal precoCusto);
 }

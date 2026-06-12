@@ -27,7 +27,7 @@
                 }
                 <MudItem xs="@(_dto.IdOriginal != 0 ? 9 : 12)" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
                     <MudTextField Value="@_dto.Produto" ValueChanged="@((string v) => _dto.Produto = Cap(v))"
-                                  Label="Produto *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null)" />
                 </MudItem>
@@ -35,7 +35,7 @@
 
             <MudGrid Spacing="2" Class="mt-2">
                 <MudItem xs="10" sm="4" md="4">
-                    <MudSelect T="int" @bind-Value="_dto.CategoriaId" Label="Categoria *"
+                    <MudSelect T="int" @bind-Value="_dto.CategoriaId" Label="Categoria"
                                Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var c in _categorias)
@@ -48,7 +48,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCategoria" />
                 </MudItem>
                 <MudItem xs="10" sm="4" md="3">
-                    <MudSelect T="int" @bind-Value="_dto.MarcaId" Label="Marca *"
+                    <MudSelect T="int" @bind-Value="_dto.MarcaId" Label="Marca"
                                Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var m in _marcas)
@@ -61,7 +61,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalMarca" />
                 </MudItem>
                 <MudItem xs="10" sm="4" md="2">
-                    <MudSelect T="int" @bind-Value="_dto.UnidadeMedidaId" Label="Unidade *"
+                    <MudSelect T="int" @bind-Value="_dto.UnidadeMedidaId" Label="Unidade"
                                Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var u in _unidades)
@@ -91,7 +91,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
-                                  Label="Descrição" Placeholder="Opcional" Variant="Variant.Outlined"
+                                  Label="Descrição" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2" />
                 </MudItem>
             </MudGrid>

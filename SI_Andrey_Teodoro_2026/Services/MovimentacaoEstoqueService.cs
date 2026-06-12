@@ -64,17 +64,12 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                 if (dto.TipoMovimentacao == "AJUSTE")
                 {
                     if (item.QuantidadeReal < 0)
-                        return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: informe a quantidade real do inventário.", 0);
+                        return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: informe a quantidade real.", 0);
                     var estoqueAtual = await _repo.ObterEstoqueAtualAsync(item.ProdutoVariacaoId);
                     item.EstoqueAtual = estoqueAtual;
-                    var delta = item.QuantidadeReal - estoqueAtual;
-                    item.Quantidade = Math.Abs(delta) == 0 ? 0 : Math.Abs(delta);
-
-                    if (delta == 0)
-                    {
-                        item.Removido = true;
-                        continue;
-                    }
+                    var deltaCheck = item.QuantidadeReal - estoqueAtual;
+                    item.Quantidade = Math.Abs(deltaCheck) == 0 ? 0 : Math.Abs(deltaCheck);
+                    if (deltaCheck == 0) { item.Removido = true; continue; }
                 }
                 else
                 {
@@ -84,31 +79,35 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                     {
                         var estoqueAtual = await _repo.ObterEstoqueAtualAsync(item.ProdutoVariacaoId);
                         if (estoqueAtual < item.Quantidade)
-                            return (false,
-                                $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {estoqueAtual} un.", 0);
+                            return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {estoqueAtual} un.", 0);
                     }
                 }
             }
+
             var itensParaGravar = dto.Itens.Where(i => !i.Removido).ToList();
             if (itensParaGravar.Count == 0)
-                return (false, "Nenhum item com diferença de estoque encontrado. O estoque já está correto.", 0);
+                return (false, "Nenhum item com diferença de estoque encontrado.", 0);
+
             var movId = await _repo.InserirAsync(dto);
+
             foreach (var item in itensParaGravar)
             {
                 await _repo.InserirItemAsync(item, movId);
 
-                int delta;
-                if (dto.TipoMovimentacao == "AJUSTE")
-                {
-                    // Delta = diferença real (pode ser negativa)
-                    delta = item.QuantidadeReal - item.EstoqueAtual;
-                }
-                else
-                {
-                    delta = dto.TipoMovimentacao == "ENTRADA" ? +item.Quantidade : -item.Quantidade;
-                }
+                int delta = dto.TipoMovimentacao == "AJUSTE"
+                    ? item.QuantidadeReal - item.EstoqueAtual
+                    : dto.TipoMovimentacao == "ENTRADA" ? +item.Quantidade : -item.Quantidade;
 
                 await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, delta);
+                bool houvEntrada = dto.TipoMovimentacao == "ENTRADA" ||
+                                   (dto.TipoMovimentacao == "AJUSTE" && delta > 0);
+                if (houvEntrada)
+                {
+                    if (item.ValorUnitario > 0)
+                        await _repo.AtualizarPrecoCustoAsync(item.ProdutoVariacaoId, item.ValorUnitario);
+
+                    await _repo.AtualizarDataUltimaCompraAsync(item.ProdutoVariacaoId, DateTime.Today);
+                }
             }
 
             var tipo = dto.TipoMovimentacao switch
@@ -118,7 +117,6 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                 "AJUSTE" => "ajuste de inventário",
                 _ => dto.TipoMovimentacao.ToLower()
             };
-
             return (true, $"Movimentação de {tipo} registrada com sucesso!", movId);
         }
         catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }

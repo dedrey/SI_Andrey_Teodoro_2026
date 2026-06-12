@@ -12,6 +12,21 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
 
     protected override string NomeEntidade => "Venda";
 
+    // flag para recarregar na próxima passagem de render (contorna limitação do Blazor Server após dialog)
+    private bool _recarregarAposRender = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_recarregarAposRender)
+        {
+            _recarregarAposRender = false;
+            _itensCache.Clear();
+            _expandidos.Clear();
+            await Pesquisar();
+            StateHasChanged(); // ← obrigatório: avisa o Blazor que _resultado mudou
+        }
+    }
+
     private readonly HashSet<int> _expandidos = new();
     private readonly Dictionary<int, List<VendaItemListDto>?> _itensCache = new();
 
@@ -40,7 +55,17 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
         var param = new DialogParameters<ModalCancelamentoVenda> { { x => x.VendaId, id } };
         var dialog = await DialogService.ShowAsync<ModalCancelamentoVenda>("Cancelar Venda", param, opts);
-        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
+        var result = await dialog.Result;
+        if (result is { Canceled: false } && result.Data is string motivo)
+        {
+            var (sucesso, mensagem) = await VendaService.CancelarAsync(id, motivo);
+            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+            if (sucesso)
+            {
+                _recarregarAposRender = true; // OnAfterRenderAsync fará o reload no próximo ciclo
+                StateHasChanged();
+            }
+        }
     }
 
     private async Task FinalizarVenda(int id)

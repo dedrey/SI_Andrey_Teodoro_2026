@@ -1,58 +1,56 @@
-﻿@inject ISnackbar Snackbar
-@using MudBlazor
+﻿@inject IVendaService VendaService
+@inject ISnackbar Snackbar
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6" Style="color:#c62828;">
-            <MudIcon Icon="@Icons.Material.Filled.Cancel" Class="mr-2" />
-            Cancelar Venda #@VendaId
-        </MudText>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
+            <MudText Typo="Typo.h6">Cancelar Venda #@VendaId</MudText>
+        </div>
     </TitleContent>
     <DialogContent>
-        <MudText Typo="Typo.body2" Class="mb-3" Style="color:#666;">
-            @if (EraFinalizada)
-            {
-                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
-                    Esta venda já foi <strong>finalizada</strong>. O estoque será estornado automaticamente.
-                </MudAlert>
-            }
+        <MudText Class="mb-4" Style="color:#666;">
             Informe o motivo do cancelamento. Este registro ficará salvo para auditoria.
         </MudText>
-        <MudTextField @bind-Value="Motivo"
+        <MudTextField @bind-Value="_motivo"
                       Label="Motivo do cancelamento"
                       Variant="Variant.Outlined"
                       Lines="3"
                       MaxLength="255"
-                      FullWidth="true"
                       Counter="255"
-                      Immediate="true" />
+                      FullWidth="true"
+                      Immediate="true"
+                      Required="true"
+                      RequiredError="Informe o motivo" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancelar" Variant="Variant.Text">Voltar</MudButton>
-        <MudButton OnClick="Confirmar" Color="Color.Error" Variant="Variant.Filled"
-                   Disabled="@(string.IsNullOrWhiteSpace(Motivo))"
-                   StartIcon="@Icons.Material.Filled.Cancel">
-            Confirmar Cancelamento
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_cancelando">Voltar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Cancel"
+                   OnClick="Confirmar"
+                   Disabled="@(_cancelando || string.IsNullOrWhiteSpace(_motivo))"
+                   Style="font-weight:700;">
+            @(_cancelando ? "Cancelando..." : "Confirmar Cancelamento")
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public int VendaId { get; set; }
-    [Parameter] public bool EraFinalizada { get; set; }
 
-    public string Motivo { get; set; } = "";
+    private string _motivo = string.Empty;
+    private bool _cancelando;
 
-    private void Confirmar()
+    private async Task Confirmar()
     {
-        if (string.IsNullOrWhiteSpace(Motivo))
-        {
-            Snackbar.Add("Informe o motivo do cancelamento.", Severity.Warning);
-            return;
-        }
-        MudDialog.Close(DialogResult.Ok(Motivo.Trim()));
+        if (string.IsNullOrWhiteSpace(_motivo)) return;
+        _cancelando = true;
+        var (sucesso, mensagem) = await VendaService.CancelarAsync(VendaId, _motivo.Trim());
+        _cancelando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Cancelar() => MudDialog.Cancel();
+    private void Fechar() => MudDialog.Cancel();
 }

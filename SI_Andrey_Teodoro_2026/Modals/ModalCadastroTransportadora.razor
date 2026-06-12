@@ -14,7 +14,7 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => _dto.RazaoSocial = Cap(v))" Label="Razão Social *" Immediate="true"
+                    <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => _dto.RazaoSocial = Cap(v))" Label="Razão Social" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" />
                 </MudItem>
@@ -23,10 +23,9 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_dto.Cnpj" Label="CNPJ *"
+                    <MudTextField @bind-Value="_dto.Cnpj" Label="CNPJ"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true"
-                                  Placeholder="00.000.000/0000-00" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField @bind-Value="_dto.InscricaoEstadual" Label="Inscrição Estadual"
@@ -40,28 +39,23 @@
                                      ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} — {c.Uf}")"
                                      Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
                                      FullWidth="true" Clearable="true" ResetValueOnEmptyText="true"
-                                     CoerceText="false" Placeholder="Digite para buscar..." />
+                                     CoerceText="false" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-center">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
                                    Size="Size.Medium" OnClick="AbrirModalCidade" />
                 </MudItem>
-
-                <!-- Telefone / E-mail -->
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_dto.Telefone" Label="Telefone *"
+                    <MudTextField @bind-Value="_dto.Telefone" Label="Telefone"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true"
-                                  Placeholder="(00) 00000-0000" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_dto.Email" Label="E-mail *"
+                    <MudTextField @bind-Value="_dto.Email" Label="E-mail"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true"
                                   InputType="InputType.Email" />
                 </MudItem>
-
-                <!-- Seção Endereço -->
                 <MudItem xs="12">
                     <MudDivider />
                     <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-top:8px;">
@@ -69,7 +63,7 @@
                     </MudText>
                 </MudItem>
                 <MudItem xs="12" sm="7">
-                    <MudTextField @bind-Value="_dto.Endereco" Label="Rua / Logradouro"
+                    <MudTextField @bind-Value="_dto.Endereco" Label="Rua"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
@@ -78,7 +72,6 @@
                 </MudItem>
                 <MudItem xs="12">
                     <MudTextField @bind-Value="_dto.Complemento" Label="Complemento"
-                                  Placeholder="Apto, Bloco, Sala..."
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
                 </MudItem>
             </MudGrid>

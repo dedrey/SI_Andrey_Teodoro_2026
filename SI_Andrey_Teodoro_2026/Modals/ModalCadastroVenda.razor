@@ -9,7 +9,7 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(DtoEdicao != null ? "Alterar Venda" : "Nova Venda")</MudText>
+            <MudText Typo="Typo.h6">Nova Venda</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -17,7 +17,7 @@
             <MudGrid Spacing="2">
                 <MudItem xs="10" sm="5">
                     <MudSelect T="int?" Value="_dto.ClienteId" ValueChanged="@((int? v) => { _dto.ClienteId = v; RecalcularTotais(); })"
-                               Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                               Label="Cliente *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                Required="true" RequiredError="Selecione um cliente">
                         <MudSelectItem T="int?" Value="@((int?)null)" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var c in _clientes)
@@ -31,7 +31,7 @@
                 </MudItem>
                 <MudItem xs="10" sm="5">
                     <MudSelect T="int?" Value="_dto.CondicaoPagamentoId" ValueChanged="@((int? v) => { _dto.CondicaoPagamentoId = v; RecalcularTotais(); })"
-                               Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                               Label="Condição de Pagamento *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                Required="true" RequiredError="Selecione uma condição">
                         <MudSelectItem T="int?" Value="@((int?)null)" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var cp in _condicoes)
@@ -112,7 +112,15 @@
                         <MudTd>
                             <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          Adornment="Adornment.Start" AdornmentText="R$" />
+                                          Adornment="Adornment.Start" AdornmentText="R$"
+                                          Error="@(GetAlertaFastFashion(context) == "bloquear")"
+                                          ErrorText="@(_custoPorItem.TryGetValue(context, out var c2) ? $"Abaixo do custo (R$ {c2:N2})" : "")" />
+                            @if (GetAlertaFastFashion(context) == "aviso")
+                            {
+                                <MudText Style="font-size:0.7rem;color:#f59e0b;font-weight:600;">
+                                    ⚡ Fast Fashion — venda abaixo do custo permitida
+                                </MudText>
+                            }
                         </MudTd>
                         <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorTotal.ToString("N2")</MudTd>
                         <MudTd Style="text-align:center;">
@@ -173,17 +181,6 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public VendaDto? DtoEdicao { get; set; }
 
-    private MudForm? _form;
-    private bool _formValido;
-    private bool _salvando;
-    private VendaDto _dto = new();
-    private List<ClienteListDto> _clientes = new();
-    private List<CondicaoPagamentoListDto> _condicoes = new();
-    private List<ProdutoListDto> _produtos = new();
-    private readonly Dictionary<VendaItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
-    private readonly Dictionary<VendaItemDto, ProdutoListDto?> _produtosSelecionados = new();
-    private readonly Dictionary<VendaItemDto, string> _valorTextos = new();
-
     protected override async Task OnInitializedAsync()
     {
         _dto = DtoEdicao ?? new VendaDto();
@@ -196,16 +193,45 @@
             );
         }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
-
-        // reconstrói os dicionários para itens já existentes (modo edição)
         foreach (var item in _dto.Itens)
         {
-            _produtosSelecionados[item] = _produtos.FirstOrDefault(p => p.Produto == item.NomeProduto);
-            _variacoesPorItem[item] = new();
+            var produtoMatch = _produtos.FirstOrDefault(p => p.Produto == item.NomeProduto);
+            _produtosSelecionados[item] = produtoMatch;
             _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
+            _custoPorItem[item] = 0;
+            _dataCompraPorItem[item] = null;
+            if (produtoMatch != null)
+            {
+                var prodDto = await ProdutoService.ObterPorIdAsync(produtoMatch.Id);
+                _variacoesPorItem[item] = prodDto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+                var varSelecionada = _variacoesPorItem[item]
+                    .FirstOrDefault(v => v.IdOriginal == item.ProdutoVariacaoId);
+                if (varSelecionada != null)
+                {
+                    _custoPorItem[item] = varSelecionada.PrecoCusto;
+                    _dataCompraPorItem[item] = varSelecionada.DataUltimaCompra;
+                }
+            }
+            else
+            {
+                _variacoesPorItem[item] = new();
+            }
         }
         RecalcularTotais();
     }
+
+    private MudForm? _form;
+    private bool _formValido;
+    private bool _salvando;
+    private VendaDto _dto = new();
+    private List<ClienteListDto> _clientes = new();
+    private List<CondicaoPagamentoListDto> _condicoes = new();
+    private List<ProdutoListDto> _produtos = new();
+    private readonly Dictionary<VendaItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
+    private readonly Dictionary<VendaItemDto, ProdutoListDto?> _produtosSelecionados = new();
+    private readonly Dictionary<VendaItemDto, string> _valorTextos = new();
+    private readonly Dictionary<VendaItemDto, decimal> _custoPorItem = new();
+    private readonly Dictionary<VendaItemDto, DateTime?> _dataCompraPorItem = new();
 
     private static int GetEstoqueVar(List<ProdutoVariacaoDto> vars, int id)
         => vars.FirstOrDefault(v => v.IdOriginal == id)?.QuantidadeEstoque ?? 0;
@@ -243,7 +269,13 @@
         if (_variacoesPorItem.TryGetValue(item, out var vars))
         {
             var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
-            if (v != null) { item.ValorUnitario = v.Preco; _valorTextos[item] = v.Preco.ToString("N2"); }
+            if (v != null)
+            {
+                item.ValorUnitario = v.Preco;
+                _valorTextos[item] = v.Preco.ToString("N2");
+                _custoPorItem[item] = v.PrecoCusto;
+                _dataCompraPorItem[item] = v.DataUltimaCompra;
+            }
         }
         RecalcularTotais();
         StateHasChanged();
@@ -275,7 +307,6 @@
         if (cond != null) { var desc = _dto.ValorSubtotal * (cond.DescontoPercentual / 100m); var acr = _dto.ValorSubtotal * (cond.AcrescimoPercentual / 100m); _dto.ValorDesconto = desc - acr; }
         else _dto.ValorDesconto = 0;
         _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto;
-        StateHasChanged();
     }
 
     private async Task AbrirModalCliente()
@@ -293,10 +324,32 @@
         if ((await dialog.Result) is { Canceled: false })
             _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
     }
+    private string? GetAlertaFastFashion(VendaItemDto item)
+    {
+        if (!_custoPorItem.TryGetValue(item, out var custo) || custo <= 0) return null;
+        if (item.ValorUnitario <= 0 || item.ValorUnitario >= custo) return null;
+        _dataCompraPorItem.TryGetValue(item, out var dataCompra);
+        bool fastFashion = dataCompra.HasValue && (DateTime.Today - dataCompra.Value).TotalDays > 90;
+        return fastFashion ? "aviso" : "bloquear";
+    }
 
     private async Task Salvar()
     {
         if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
+        foreach (var item in _dto.Itens)
+        {
+            var alerta = GetAlertaFastFashion(item);
+            if (alerta == "bloquear")
+            {
+                _custoPorItem.TryGetValue(item, out var custo);
+                Snackbar.Add(
+                    $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: preço de venda (R$ {item.ValorUnitario:N2}) " +
+                    $"abaixo do custo (R$ {custo:N2}). Produto com menos de 90 dias no estoque.",
+                    Severity.Error);
+                return;
+            }
+        }
+
         _salvando = true;
         var (sucesso, mensagem, _) = await VendaService.SalvarAsync(_dto);
         _salvando = false;

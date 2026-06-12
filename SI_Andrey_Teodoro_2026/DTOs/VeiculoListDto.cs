@@ -9,4 +9,5 @@ public class VeiculoListDto
     public string Uf { get; set; } = string.Empty;
     public bool Ativo { get; set; }
     public DateTime CriadoEm { get; set; }
+    public string? MotivoCancelamento { get; set; }
 }
