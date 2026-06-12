@@ -5,262 +5,28 @@
 <PageTitle>Movimentações de Estoque</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
-<div class="d-flex align-center mb-4">
-    <MudIcon Icon="@Icons.Material.Filled.SwapVert" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
-    <MudText Typo="Typo.h5" Style="font-weight:700;">Movimentações de Estoque</MudText>
-</div>
-
-<MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:8px;">
-    <div class="d-flex align-center justify-space-between mb-3">
-        <MudText Typo="Typo.subtitle1" Style="font-weight:600;">Nova Movimentação</MudText>
+<div class="d-flex align-center justify-space-between mb-4">
+    <div class="d-flex align-center">
+        <MudIcon Icon="@Icons.Material.Filled.SwapVert" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+        <MudText Typo="Typo.h5" Style="font-weight:700;">Movimentações de Estoque</MudText>
     </div>
-
-    <MudForm @ref="_form" @bind-IsValid="_formValido">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="4" md="3">
-                <MudSelect T="string" @bind-Value="_dto.TipoMovimentacao"
-                           Label="Tipo *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                    <MudSelectItem T="string" Value="@("ENTRADA")">
-                        <div class="d-flex align-center gap-2">
-                            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Success" Size="Size.Small" />
-                            Entrada
-                        </div>
-                    </MudSelectItem>
-                    <MudSelectItem T="string" Value="@("SAIDA")">
-                        <div class="d-flex align-center gap-2">
-                            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Error" Size="Size.Small" />
-                            Saída
-                        </div>
-                    </MudSelectItem>
-                    <MudSelectItem T="string" Value="@("AJUSTE")">
-                        <div class="d-flex align-center gap-2">
-                            <MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Warning" Size="Size.Small" />
-                            Ajuste
-                        </div>
-                    </MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="12" sm="8" md="9">
-                <MudTextField @bind-Value="_dto.Observacao"
-                              Label="Observação (opcional)"
-                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                              MaxLength="200" FullWidth="true" />
-            </MudItem>
-        </MudGrid>
-
-        <MudDivider Class="my-4" />
-        <div class="d-flex align-center justify-space-between mb-3">
-            <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
-                <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-1" />
-                Itens da Movimentação
-            </MudText>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                       StartIcon="@Icons.Material.Filled.AddCircleOutline"
-                       OnClick="AdicionarItem">
-                Adicionar Item
-            </MudButton>
-        </div>
-
-        @if (_dto.Itens.Any(i => !i.Removido))
-        {
-            <MudTable Items="@_dto.Itens.Where(i => !i.Removido)" Dense="true" Hover="false"
-                      Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
-                <HeaderContent>
-                    <MudTh Style="font-weight:600;">Produto</MudTh>
-                    <MudTh Style="font-weight:600;">Variação (Cor/Tamanho)</MudTh>
-                    <MudTh Style="font-weight:600;text-align:center;">Estoque Atual</MudTh>
-                    <MudTh Style="font-weight:600;text-align:center;">
-                        @(_dto.TipoMovimentacao == "AJUSTE" ? "Qtd. Real (inventário)" : "Quantidade")
-                    </MudTh>
-                    @if (_dto.TipoMovimentacao == "AJUSTE")
-                    {
-                        <MudTh Style="font-weight:600;text-align:center;">Diferença</MudTh>
-                    }
-                    <MudTh Style="font-weight:600;text-align:right;">Valor Unit. (R$)</MudTh>
-                    <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
-                    <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        <MudAutocomplete T="ProdutoListDto"
-                                         Value="_produtosSelecionados.GetValueOrDefault(context)"
-                                         ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
-                                         SearchFunc="PesquisarProduto"
-                                         ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense"
-                                         FullWidth="true" Clearable="true"
-                                         ResetValueOnEmptyText="true" CoerceText="false"
-                                         Placeholder="Buscar produto..." />
-                    </MudTd>
-                    <MudTd>
-                        <MudSelect T="int" Value="context.ProdutoVariacaoId"
-                                   ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   FullWidth="true"
-                                   Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
-                            <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                            @if (_variacoesPorItem.TryGetValue(context, out var vars))
-                            {
-                                @foreach (var v in vars)
-                                {
-                                    <MudSelectItem T="int" Value="@v.IdOriginal">
-                                        @v.Cor / @v.Tamanho
-                                        <span style="color:#888;font-size:0.8rem;margin-left:8px;">
-                                            (@v.QuantidadeEstoque un. estoque)
-                                        </span>
-                                    </MudSelectItem>
-                                }
-                            }
-                        </MudSelect>
-                    </MudTd>
-                    <MudTd Style="text-align:center;">
-                        <MudChip T="string" Size="Size.Small"
-                                 Color="@(context.EstoqueAtual > 0 ? Color.Success : Color.Warning)">
-                            @context.EstoqueAtual un.
-                        </MudChip>
-                    </MudTd>
-                    <MudTd Style="text-align:center;">
-                        @if (_dto.TipoMovimentacao == "AJUSTE")
-                        {
-                            <MudTextField Value="@GetQtdRealTexto(context)"
-                                          ValueChanged="@((string v) => OnQtdRealAlterada(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                                          Immediate="true" Style="max-width:90px;"
-                                          Placeholder="Ex: 7" />
-                        }
-                        else
-                        {
-                            <MudTextField Value="@context.Quantidade.ToString()"
-                                          ValueChanged="@((string v) => OnQtdAlterada(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                                          Immediate="true" Style="max-width:80px;" />
-                        }
-                    </MudTd>
-                    @if (_dto.TipoMovimentacao == "AJUSTE")
-                    {
-                        <MudTd Style="text-align:center;">
-                            @{
-                                var diff = context.QuantidadeReal >= 0
-                                ? context.QuantidadeReal - context.EstoqueAtual
-                                : (int?)null;
-                            }
-                            @if (diff.HasValue)
-                            {
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@(diff == 0 ? Color.Default : diff > 0 ? Color.Success : Color.Error)">
-                                    @(diff > 0 ? $"+{diff}" : diff.ToString()) un.
-                                </MudChip>
-                            }
-                            else
-                            {
-                                <span style="color:#ccc;">—</span>
-                            }
-                        </MudTd>
-                    }
-                    <MudTd>
-                        <MudTextField Value="@GetValorTexto(context)"
-                                      ValueChanged="@((string v) => OnValorAlterado(context, v))"
-                                      Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      Immediate="true" Adornment="Adornment.Start" AdornmentText="R$" />
-                    </MudTd>
-                    <MudTd Style="text-align:right;font-weight:600;">
-                        R$ @((context.Quantidade * context.ValorUnitario).ToString("N2"))
-                    </MudTd>
-                    <MudTd Style="text-align:center;">
-                        <MudTooltip Text="Remover item">
-                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
-                                           Color="Color.Error" Size="Size.Small"
-                                           OnClick="@(() => RemoverItem(context))" />
-                        </MudTooltip>
-                    </MudTd>
-                </RowTemplate>
-                <FooterContent>
-                    @{
-                        var totalGeral = _dto.Itens.Where(i => !i.Removido)
-                        .Sum(i => i.Quantidade * i.ValorUnitario);
-                        var totalQtd = _dto.TipoMovimentacao == "AJUSTE"
-                        ? _dto.Itens.Where(i => !i.Removido && i.QuantidadeReal >= 0)
-                        .Sum(i => Math.Abs(i.QuantidadeReal - i.EstoqueAtual))
-                        : _dto.Itens.Where(i => !i.Removido).Sum(i => i.Quantidade);
-                    }
-                    <MudTd ColSpan="@(_dto.TipoMovimentacao == "AJUSTE" ? 4 : 3)"
-                           Style="text-align:right;font-weight:600;font-size:0.9rem;padding:8px 12px;">
-                        @(_dto.TipoMovimentacao == "AJUSTE" ? "Total diferença:" : "Total geral:")
-                    </MudTd>
-                    <MudTd Style="text-align:center;font-weight:700;">@totalQtd un.</MudTd>
-                    <MudTd></MudTd>
-                    <MudTd Style="text-align:right;font-weight:700;color:#1a237e;">
-                        R$ @totalGeral.ToString("N2")
-                    </MudTd>
-                    <MudTd></MudTd>
-                </FooterContent>
-            </MudTable>
-        }
-        else
-        {
-            <div class="d-flex align-center justify-center pa-4"
-                 style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
-                <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" />
-                <MudText Typo="Typo.body2">Clique em "Adicionar Item" para incluir produtos nesta movimentação.</MudText>
-            </div>
-        }
-
-        <MudGrid Spacing="2" Class="mt-3">
-            <MudItem xs="12" Class="d-flex justify-end gap-2">
-                <MudButton Variant="Variant.Outlined" OnClick="LimparFormulario" Style="height:40px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Clear" Size="Size.Small" Class="mr-1" />
-                    Limpar
-                </MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                           Disabled="_salvando" Style="height:40px;font-weight:700;min-width:150px;">
-                    @(_salvando ? "Registrando..." : "REGISTRAR")
-                </MudButton>
-            </MudItem>
-        </MudGrid>
-    </MudForm>
-</MudPaper>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="AbrirModalCadastro" Style="font-weight:700;">
+        Registrar
+    </MudButton>
+</div>
 
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="5" md="5">
-            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..."
-                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          Immediate="true"
-                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                <MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem>
-                <MudSelectItem T="string" Value="@("ENTRADA")">Entrada</MudSelectItem>
-                <MudSelectItem T="string" Value="@("SAIDA")">Saída</MudSelectItem>
-                <MudSelectItem T="string" Value="@("AJUSTE")">Ajuste</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                <MudSelectItem T="string" Value="@("data")">Data (recente)</MudSelectItem>
-                <MudSelectItem T="string" Value="@("tipo")">Tipo</MudSelectItem>
-                <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;">
-                <MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" />
-            </MudButton>
-        </MudItem>
+        <MudItem xs="12" sm="5" md="5"><MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" /></MudItem>
+        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem><MudSelectItem T="string" Value="@("ENTRADA")">Entrada</MudSelectItem><MudSelectItem T="string" Value="@("SAIDA")">Saída</MudSelectItem><MudSelectItem T="string" Value="@("AJUSTE")">Ajuste</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("data")">Data (recente)</MudSelectItem><MudSelectItem T="string" Value="@("id")">ID</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton><MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" /></MudButton></MudItem>
     </MudGrid>
 </MudPaper>
 
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;" Class="mb-4">
-    <div class="pa-3" style="border-bottom:1px solid #f0f0f0;">
-        <MudText Typo="Typo.subtitle2" Style="font-weight:600;">Resumo das Movimentações</MudText>
-    </div>
-    <MudTable T="MovimentacaoEstoqueListDto"
-              Items="@(_resultado?.Itens ?? new())"
-              Dense="true" Hover="true"
-              Loading="_carregando" LoadingProgressColor="Color.Primary">
+    <MudTable T="MovimentacaoEstoqueListDto" Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
         <HeaderContent>
             <MudTh Style="width:36px;"></MudTh>
             <MudTh Style="font-weight:600;">ID</MudTh>
@@ -272,43 +38,14 @@
             <MudTh Style="font-weight:600;">Observação</MudTh>
         </HeaderContent>
         <RowTemplate Context="mov">
-            <MudTd Style="padding:4px 8px;">
-                <MudIconButton Icon="@(_expandidos.Contains(mov.Id) ? Icons.Material.Filled.KeyboardArrowDown : Icons.Material.Filled.KeyboardArrowRight)"
-                               Size="Size.Small"
-                               OnClick="@(() => ToggleDetalhe(mov.Id))" />
-            </MudTd>
+            <MudTd Style="padding:4px 8px;"><MudIconButton Icon="@(_expandidos.Contains(mov.Id)?Icons.Material.Filled.KeyboardArrowDown:Icons.Material.Filled.KeyboardArrowRight)" Size="Size.Small" OnClick="@(async ()=>await ToggleDetalhe(mov.Id))"/></MudTd>
             <MudTd Style="color:#888;font-size:0.85rem;">@mov.Id</MudTd>
-            <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small"
-                         Color="@(mov.TipoMovimentacao == "ENTRADA" ? Color.Success : mov.TipoMovimentacao == "SAIDA" ? Color.Error : Color.Warning)">
-                    @(mov.TipoMovimentacao == "ENTRADA" ? "↓ Entrada" : mov.TipoMovimentacao == "SAIDA" ? "↑ Saída" : "⇅ Ajuste")
-                </MudChip>
-            </MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(mov.TipoMovimentacao=="ENTRADA"?Color.Success:mov.TipoMovimentacao=="SAIDA"?Color.Error:Color.Warning)">@(mov.TipoMovimentacao=="ENTRADA"?"↓ Entrada":mov.TipoMovimentacao=="SAIDA"?"↑ Saída":"⇅ Ajuste")</MudChip></MudTd>
             <MudTd>@mov.CriadoEm.ToString("dd/MM/yyyy HH:mm")</MudTd>
-            <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="Color.Info">@mov.TotalItens @(mov.TotalItens == 1 ? "item" : "itens")</MudChip>
-            </MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Info">@mov.TotalItens @(mov.TotalItens==1?"item":"itens")</MudChip></MudTd>
             <MudTd Style="text-align:center;font-weight:600;">@mov.TotalQuantidade un.</MudTd>
-            <MudTd Style="text-align:right;font-weight:600;">
-                @if (mov.ValorTotal > 0)
-                {
-                    <span>R$ @mov.ValorTotal.ToString("N2")</span>
-                }
-                else
-                {
-                    <span style="color:#bbb;">—</span>
-                }
-            </MudTd>
-            <MudTd Style="color:#888;font-size:0.85rem;">
-                @if (!string.IsNullOrWhiteSpace(mov.Observacao))
-                {
-                    @(mov.Observacao.Length > 50 ? mov.Observacao[..50] + "…" : mov.Observacao)
-                }
-                else
-                {
-                    <span style="color:#ccc;">—</span>
-                }
-            </MudTd>
+            <MudTd Style="text-align:right;font-weight:600;">@if(mov.ValorTotal>0){<span>R$ @mov.ValorTotal.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd>
+            <MudTd Style="color:#888;font-size:0.85rem;">@if(!string.IsNullOrWhiteSpace(mov.Observacao)){@(mov.Observacao.Length>50?mov.Observacao[..50]+"…":mov.Observacao)}else{<span style="color:#ccc;">—</span>}</MudTd>
         </RowTemplate>
         <ChildRowContent>
             @if (_expandidos.Contains(context.Id))
@@ -317,206 +54,25 @@
                     @if (_detalhesCache.TryGetValue(context.Id, out var itens) && itens != null)
                     {
                         <div style="padding:10px 20px 14px 48px;">
-                            <MudText Typo="Typo.caption"
-                                     Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;display:block;margin-bottom:6px;">
-                                Itens da movimentação #@context.Id
-                            </MudText>
-                            <MudTable Items="@itens" Dense="true" Hover="true" Elevation="0"
-                                      Style="border:0.5px solid #e0e0e0;border-radius:6px;background:white;">
-                                <HeaderContent>
-                                    <MudTh Style="font-weight:600;font-size:0.8rem;">Produto</MudTh>
-                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Cor</MudTh>
-                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Tamanho</MudTh>
-                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Quantidade</MudTh>
-                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Valor Unit.</MudTh>
-                                    <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Total</MudTh>
-                                </HeaderContent>
-                                <RowTemplate Context="item">
-                                    <MudTd Style="font-weight:600;font-size:0.85rem;">@item.NomeProduto</MudTd>
-                                    <MudTd Style="text-align:center;">@item.Cor</MudTd>
-                                    <MudTd Style="text-align:center;">
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@item.Tamanho</MudChip>
-                                    </MudTd>
-                                    <MudTd Style="text-align:center;font-weight:600;">@item.Quantidade un.</MudTd>
-                                    <MudTd Style="text-align:right;">
-                                        @if (item.ValorUnitario > 0)
-                                        {
-                                            <span>R$ @item.ValorUnitario.ToString("N2")</span>
-                                        }
-                                        else
-                                        {
-                                            <span style="color:#bbb;">—</span>
-                                        }
-                                    </MudTd>
-                                    <MudTd Style="text-align:right;font-weight:600;">
-                                        @if (item.ValorTotal > 0)
-                                        {
-                                            <span>R$ @item.ValorTotal.ToString("N2")</span>
-                                        }
-                                        else
-                                        {
-                                            <span style="color:#bbb;">—</span>
-                                        }
-                                    </MudTd>
-                                </RowTemplate>
-                                <NoRecordsContent>
-                                    <MudTd ColSpan="6" Style="text-align:center;color:#bbb;padding:12px;">Nenhum item.</MudTd>
-                                </NoRecordsContent>
+                            <MudTable Items="@itens" Dense="true" Hover="true" Elevation="0" Style="border:0.5px solid #e0e0e0;border-radius:6px;background:white;">
+                                <HeaderContent><MudTh Style="font-weight:600;font-size:0.8rem;">Produto</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Cor</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Tamanho</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Quantidade</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Valor Unit.</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Total</MudTh></HeaderContent>
+                                <RowTemplate Context="item"><MudTd Style="font-weight:600;font-size:0.85rem;">@item.NomeProduto</MudTd><MudTd Style="text-align:center;">@item.Cor</MudTd><MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@item.Tamanho</MudChip></MudTd><MudTd Style="text-align:center;font-weight:600;">@item.Quantidade un.</MudTd><MudTd Style="text-align:right;">@if(item.ValorUnitario>0){<span>R$ @item.ValorUnitario.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd><MudTd Style="text-align:right;font-weight:600;">@if(item.ValorTotal>0){<span>R$ @item.ValorTotal.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd></RowTemplate>
+                                <NoRecordsContent><MudTd ColSpan="6" Style="text-align:center;color:#bbb;padding:12px;">Nenhum item.</MudTd></NoRecordsContent>
                             </MudTable>
                         </div>
                     }
                     else
                     {
                         <div style="padding:12px 48px;color:#bbb;font-size:0.85rem;">
-                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                            Carregando itens...
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2"/>Carregando itens...
                         </div>
                     }
                 </MudTd>
             }
         </ChildRowContent>
-        <NoRecordsContent>
-            <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
-                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
-                <MudText Typo="Typo.body1">Nenhuma movimentação encontrada.</MudText>
-            </div>
-        </NoRecordsContent>
+        <NoRecordsContent><div class="d-flex flex-column align-center pa-6" style="color:#bbb;"><MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;"/><MudText Typo="Typo.body1">Nenhuma movimentação encontrada.</MudText></div></NoRecordsContent>
     </MudTable>
-    @if (_resultado != null)
-    {
-        <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas"
-                                TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
-        </div>
-    }
+    @if (_resultado != null) { <div class="pa-2" style="border-top:1px solid #f0f0f0;"><PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" /></div> }
 </MudPaper>
 
-@code {
-    private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _valorTextos = new();
-    private readonly Dictionary<MovimentacaoEstoqueItemDto, ProdutoListDto?> _produtosSelecionados = new();
-    private readonly Dictionary<MovimentacaoEstoqueItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
-    private readonly HashSet<int> _expandidos = new();
-    private readonly Dictionary<int, List<MovimentacaoEstoqueItemListDto>?> _detalhesCache = new();
-
-    private List<ProdutoListDto> _todosProdutos = new();
-
-    private void AdicionarItem()
-    {
-        var item = new MovimentacaoEstoqueItemDto();
-        _dto.Itens.Add(item);
-        _produtosSelecionados[item] = null;
-        _variacoesPorItem[item] = new();
-        _valorTextos[item] = "";
-        StateHasChanged();
-    }
-
-    private void RemoverItem(MovimentacaoEstoqueItemDto item)
-    {
-        _dto.Itens.Remove(item);
-        _produtosSelecionados.Remove(item);
-        _variacoesPorItem.Remove(item);
-        _valorTextos.Remove(item);
-        StateHasChanged();
-    }
-
-    private async Task OnProdutoAlterado(MovimentacaoEstoqueItemDto item, ProdutoListDto? produto)
-    {
-        _produtosSelecionados[item] = produto;
-        item.ProdutoVariacaoId = 0;
-        item.NomeProduto = produto?.Produto ?? "";
-        item.ProdutoId = produto?.Id ?? 0;
-        item.EstoqueAtual = 0;
-
-        if (produto != null)
-        {
-            var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
-            _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
-        }
-        else
-        {
-            _variacoesPorItem[item] = new();
-        }
-        StateHasChanged();
-    }
-
-    private void OnVariacaoAlterada(MovimentacaoEstoqueItemDto item, int variacaoId)
-    {
-        item.ProdutoVariacaoId = variacaoId;
-        if (_variacoesPorItem.TryGetValue(item, out var vars))
-        {
-            var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
-            if (v != null)
-            {
-                item.Cor = v.Cor;
-                item.Tamanho = v.Tamanho;
-                item.EstoqueAtual = v.QuantidadeEstoque;
-                // pré-preenche valor unitário com preço da variação se ainda não foi preenchido
-                if (item.ValorUnitario == 0)
-                {
-                    item.ValorUnitario = v.Preco;
-                    _valorTextos[item] = v.Preco.ToString("N2");
-                }
-            }
-        }
-        StateHasChanged();
-    }
-
-    private void OnQtdAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    {
-        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
-        item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
-    }
-
-    private string GetQtdRealTexto(MovimentacaoEstoqueItemDto item)
-    {
-        if (!_qtdRealTextos.ContainsKey(item))
-            _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : "";
-        return _qtdRealTextos[item];
-    }
-
-    private void OnQtdRealAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    {
-        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
-        _qtdRealTextos[item] = d;
-        item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1;
-        StateHasChanged();
-    }
-
-    private string GetValorTexto(MovimentacaoEstoqueItemDto item)
-    {
-        if (!_valorTextos.ContainsKey(item))
-            _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
-        return _valorTextos[item];
-    }
-
-    private void OnValorAlterado(MovimentacaoEstoqueItemDto item, string? texto)
-    {
-        if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; return; }
-        var filtrado = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _valorTextos[item] = filtrado;
-        item.ValorUnitario = decimal.TryParse(filtrado.Replace(",", "."),
-            System.Globalization.NumberStyles.Any,
-            System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
-    }
-
-    private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
-    {
-        var r = string.IsNullOrWhiteSpace(busca)
-            ? _todosProdutos.Take(50)
-            : _todosProdutos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
-        return Task.FromResult(r);
-    }
-
-    private async Task ToggleDetalhe(int movId)
-    {
-        if (_expandidos.Contains(movId)) { _expandidos.Remove(movId); return; }
-        _expandidos.Add(movId);
-        if (!_detalhesCache.ContainsKey(movId))
-        {
-            _detalhesCache[movId] = null;
-            StateHasChanged();
-            _detalhesCache[movId] = await MovimentacaoService.ObterItensAsync(movId);
-            StateHasChanged();
-        }
-    }
-}
+@code { }

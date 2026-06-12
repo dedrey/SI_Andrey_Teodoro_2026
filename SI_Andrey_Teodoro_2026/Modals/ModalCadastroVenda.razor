@@ -1,0 +1,307 @@
+﻿@inject IVendaService VendaService
+@inject IClienteService ClienteService
+@inject ICondicaoPagamentoService CondicaoPagamentoService
+@inject IProdutoService ProdutoService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">@(DtoEdicao != null ? "Alterar Venda" : "Nova Venda")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <MudGrid Spacing="2">
+                <MudItem xs="10" sm="5">
+                    <MudSelect T="int?" Value="_dto.ClienteId" ValueChanged="@((int? v) => { _dto.ClienteId = v; RecalcularTotais(); })"
+                               Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                               Required="true" RequiredError="Selecione um cliente">
+                        <MudSelectItem T="int?" Value="@((int?)null)" Disabled="true">— Selecione —</MudSelectItem>
+                        @foreach (var c in _clientes)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)c.Id)">@c.NomeRazaoSocial</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCliente" />
+                </MudItem>
+                <MudItem xs="10" sm="5">
+                    <MudSelect T="int?" Value="_dto.CondicaoPagamentoId" ValueChanged="@((int? v) => { _dto.CondicaoPagamentoId = v; RecalcularTotais(); })"
+                               Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                               Required="true" RequiredError="Selecione uma condição">
+                        <MudSelectItem T="int?" Value="@((int?)null)" Disabled="true">— Selecione —</MudSelectItem>
+                        @foreach (var cp in _condicoes)
+                        {
+                            <MudSelectItem T="int?" Value="@((int?)cp.Id)">@cp.CondicaoPagamento</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCondicao" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+            <div class="d-flex align-center justify-space-between mb-3">
+                <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+                    <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Size="Size.Small" Class="mr-1" />Itens da Venda
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem">
+                    Adicionar Item
+                </MudButton>
+            </div>
+
+            @if (_dto.Itens.Count > 0)
+            {
+                <MudTable Items="@_dto.Itens" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                    <HeaderContent>
+                        <MudTh Style="font-weight:600;">Produto</MudTh>
+                        <MudTh Style="font-weight:600;">Variação</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Quantidade</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Valor Unit. (R$)</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudAutocomplete T="ProdutoListDto"
+                                             Value="_produtosSelecionados.GetValueOrDefault(context)"
+                                             ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
+                                             SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
+                                             Placeholder="Buscar produto..." />
+                        </MudTd>
+                        <MudTd>
+                            <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                       Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
+                                <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
+                                @if (_variacoesPorItem.TryGetValue(context, out var vars))
+                                {
+                                    @foreach (var v in vars)
+                                    {
+                                        <MudSelectItem T="int" Value="@v.IdOriginal">
+                                            @v.Cor / @v.Tamanho <span style="color:#888;font-size:0.8rem;margin-left:6px;">(@v.QuantidadeEstoque un.)</span>
+                                        </MudSelectItem>
+                                    }
+                                }
+                            </MudSelect>
+                        </MudTd>
+                        <MudTd Style="text-align:center;">
+                            @if (_variacoesPorItem.TryGetValue(context, out var vs) && context.ProdutoVariacaoId > 0)
+                            {
+                                var estoque = GetEstoqueVar(vs, context.ProdutoVariacaoId);
+                                <MudChip T="string" Size="Size.Small" Color="@(estoque > 0 ? Color.Success : Color.Error)">@estoque un.</MudChip>
+                            }
+                            else
+                            {
+                                <span style="color:#ccc;">—</span>
+                            }
+                        </MudTd>
+                        <MudTd Style="text-align:center;">
+                            <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                          Adornment="Adornment.Start" AdornmentText="R$" />
+                        </MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorTotal.ToString("N2")</MudTd>
+                        <MudTd Style="text-align:center;">
+                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                    <FooterContent>
+                        <MudTd ColSpan="4" Style="text-align:right;font-weight:600;padding:8px 12px;">Subtotal:</MudTd>
+                        <MudTd></MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;">R$ @_dto.ValorSubtotal.ToString("N2")</MudTd>
+                        <MudTd></MudTd>
+                    </FooterContent>
+                </MudTable>
+
+                <div class="d-flex justify-end mt-2 pa-2" style="border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
+                    <div style="min-width:280px;">
+                        <div class="d-flex justify-space-between mb-1">
+                            <MudText Typo="Typo.body2">Subtotal</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight:600;">R$ @_dto.ValorSubtotal.ToString("N2")</MudText>
+                        </div>
+                        @if (_dto.ValorDesconto != 0)
+                        {
+                            var ajusteCor = _dto.ValorDesconto > 0 ? "#2e7d32" : "#c62828";
+                            var ajusteLabel = _dto.ValorDesconto > 0 ? "Desconto" : "Acréscimo";
+                            var ajusteSinal = _dto.ValorDesconto > 0 ? "-" : "+";
+                            <div class="d-flex justify-space-between mb-1">
+                                <MudText Typo="Typo.body2" Style="@($"color:{ajusteCor};")">@ajusteLabel</MudText>
+                                <MudText Typo="Typo.body2" Style="@($"font-weight:600;color:{ajusteCor};")">@ajusteSinal R$ @Math.Abs(_dto.ValorDesconto).ToString("N2")</MudText>
+                            </div>
+                        }
+                        <MudDivider Class="my-1" />
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">Total</MudText>
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                    <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Clique em "Adicionar Item" para incluir produtos na venda.</MudText>
+                </div>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                   Disabled="_salvando" Style="height:40px;font-weight:700;min-width:160px;">
+            @(_salvando ? "Salvando..." : "FINALIZAR VENDA")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public VendaDto? DtoEdicao { get; set; }
+
+    private MudForm? _form;
+    private bool _formValido;
+    private bool _salvando;
+    private VendaDto _dto = new();
+    private List<ClienteListDto> _clientes = new();
+    private List<CondicaoPagamentoListDto> _condicoes = new();
+    private List<ProdutoListDto> _produtos = new();
+    private readonly Dictionary<VendaItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
+    private readonly Dictionary<VendaItemDto, ProdutoListDto?> _produtosSelecionados = new();
+    private readonly Dictionary<VendaItemDto, string> _valorTextos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dto = DtoEdicao ?? new VendaDto();
+        try
+        {
+            await Task.WhenAll(
+                Task.Run(async () => _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList()),
+                Task.Run(async () => _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList()),
+                Task.Run(async () => _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList())
+            );
+        }
+        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+
+        // reconstrói os dicionários para itens já existentes (modo edição)
+        foreach (var item in _dto.Itens)
+        {
+            _produtosSelecionados[item] = _produtos.FirstOrDefault(p => p.Produto == item.NomeProduto);
+            _variacoesPorItem[item] = new();
+            _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
+        }
+        RecalcularTotais();
+    }
+
+    private static int GetEstoqueVar(List<ProdutoVariacaoDto> vars, int id)
+        => vars.FirstOrDefault(v => v.IdOriginal == id)?.QuantidadeEstoque ?? 0;
+
+    private void AdicionarItem()
+    {
+        var item = new VendaItemDto();
+        _dto.Itens.Add(item);
+        _produtosSelecionados[item] = null;
+        _variacoesPorItem[item] = new();
+        _valorTextos[item] = "";
+        StateHasChanged();
+    }
+    private void RemoverItem(VendaItemDto item)
+    {
+        _dto.Itens.Remove(item);
+        _produtosSelecionados.Remove(item);
+        _variacoesPorItem.Remove(item);
+        _valorTextos.Remove(item);
+        RecalcularTotais();
+        StateHasChanged();
+    }
+
+    private async Task OnProdutoAlterado(VendaItemDto item, ProdutoListDto? produto)
+    {
+        _produtosSelecionados[item] = produto;
+        item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? "";
+        if (produto != null) { var dto = await ProdutoService.ObterPorIdAsync(produto.Id); _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo && v.QuantidadeEstoque > 0).ToList() ?? new(); }
+        else _variacoesPorItem[item] = new();
+        StateHasChanged();
+    }
+    private void OnVariacaoAlterada(VendaItemDto item, int variacaoId)
+    {
+        item.ProdutoVariacaoId = variacaoId;
+        if (_variacoesPorItem.TryGetValue(item, out var vars))
+        {
+            var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
+            if (v != null) { item.ValorUnitario = v.Preco; _valorTextos[item] = v.Preco.ToString("N2"); }
+        }
+        RecalcularTotais();
+        StateHasChanged();
+    }
+    private void OnQtdAlterada(VendaItemDto item, string? v)
+    {
+        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
+        item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
+        RecalcularTotais();
+    }
+    private string GetValorTexto(VendaItemDto item) { if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : ""; return _valorTextos[item]; }
+    private void OnValorAlterado(VendaItemDto item, string? texto)
+    {
+        if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; return; }
+        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _valorTextos[item] = f;
+        item.ValorUnitario = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        RecalcularTotais();
+    }
+    private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca) ? _produtos.Take(50) : _produtos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(r);
+    }
+    private void RecalcularTotais()
+    {
+        _dto.ValorSubtotal = _dto.Itens.Sum(i => i.ValorTotal);
+        var cond = _condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId);
+        if (cond != null) { var desc = _dto.ValorSubtotal * (cond.DescontoPercentual / 100m); var acr = _dto.ValorSubtotal * (cond.AcrescimoPercentual / 100m); _dto.ValorDesconto = desc - acr; }
+        else _dto.ValorDesconto = 0;
+        _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto;
+        StateHasChanged();
+    }
+
+    private async Task AbrirModalCliente()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
+    }
+
+    private async Task AbrirModalCondicao()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
+    }
+
+    private async Task Salvar()
+    {
+        if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
+        _salvando = true;
+        var (sucesso, mensagem, _) = await VendaService.SalvarAsync(_dto);
+        _salvando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+    private void Fechar() => MudDialog.Cancel();
+}

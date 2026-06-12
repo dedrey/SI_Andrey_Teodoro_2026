@@ -399,84 +399,84 @@ CREATE TABLE nfes_produtos (
 -- ================================================================
 -- 11. VENDAS
 -- ================================================================
-CREATE TABLE vendas (
-  id                    INT           AUTO_INCREMENT PRIMARY KEY,
-  emitente_id           INT NULL,
-  cliente_id            INT NULL,
-  movimentacao_id       INT NULL      UNIQUE,
-  nfe_id                INT NULL      UNIQUE,
-  condicao_pagamento_id INT NULL,
-  valor_subtotal        DECIMAL(14,2) NOT NULL DEFAULT 0,
-  valor_desconto        DECIMAL(14,2) NOT NULL DEFAULT 0,
-  valor_total           DECIMAL(14,2) NOT NULL DEFAULT 0,
-  status_venda          ENUM('ABERTA','FINALIZADA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
-  motivo_cancelamento   VARCHAR(255) NULL,
-  criado_em             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  criado_por            INT NULL,
-  atualizado_em         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  atualizado_por        INT NULL,
-  CONSTRAINT fk_vendas_emitente         FOREIGN KEY (emitente_id)           REFERENCES emitentes(id)              ON DELETE SET NULL,
-  CONSTRAINT fk_vendas_cliente          FOREIGN KEY (cliente_id)            REFERENCES clientes(id)               ON DELETE SET NULL,
-  CONSTRAINT fk_vendas_movimentacao     FOREIGN KEY (movimentacao_id)       REFERENCES movimentacoes_estoque(id)  ON DELETE SET NULL,
-  CONSTRAINT fk_vendas_nfe              FOREIGN KEY (nfe_id)                REFERENCES nfes(id)                   ON DELETE SET NULL,
-  CONSTRAINT fk_vendas_condicao         FOREIGN KEY (condicao_pagamento_id) REFERENCES condicoes_pagamentos(id)   ON DELETE SET NULL,
-  CONSTRAINT fk_vendas_criado_por       FOREIGN KEY (criado_por)            REFERENCES usuarios(id)               ON DELETE SET NULL,
-  CONSTRAINT fk_vendas_atualizado_por   FOREIGN KEY (atualizado_por)        REFERENCES usuarios(id)               ON DELETE SET NULL
-) ENGINE=InnoDB;
+    CREATE TABLE vendas (
+      id                    INT           AUTO_INCREMENT PRIMARY KEY,
+      emitente_id           INT NULL,
+      cliente_id            INT NULL,
+      movimentacao_id       INT NULL      UNIQUE,
+      nfe_id                INT NULL      UNIQUE,
+      condicao_pagamento_id INT NULL,
+      valor_subtotal        DECIMAL(14,2) NOT NULL DEFAULT 0,
+      valor_desconto        DECIMAL(14,2) NOT NULL DEFAULT 0,
+      valor_total           DECIMAL(14,2) NOT NULL DEFAULT 0,
+      status_venda          ENUM('ABERTA','FINALIZADA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
+      motivo_cancelamento   VARCHAR(255) NULL,
+      criado_em             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      criado_por            INT NULL,
+      atualizado_em         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      atualizado_por        INT NULL,
+      CONSTRAINT fk_vendas_emitente         FOREIGN KEY (emitente_id)           REFERENCES emitentes(id)              ON DELETE SET NULL,
+      CONSTRAINT fk_vendas_cliente          FOREIGN KEY (cliente_id)            REFERENCES clientes(id)               ON DELETE SET NULL,
+      CONSTRAINT fk_vendas_movimentacao     FOREIGN KEY (movimentacao_id)       REFERENCES movimentacoes_estoque(id)  ON DELETE SET NULL,
+      CONSTRAINT fk_vendas_nfe              FOREIGN KEY (nfe_id)                REFERENCES nfes(id)                   ON DELETE SET NULL,
+      CONSTRAINT fk_vendas_condicao         FOREIGN KEY (condicao_pagamento_id) REFERENCES condicoes_pagamentos(id)   ON DELETE SET NULL,
+      CONSTRAINT fk_vendas_criado_por       FOREIGN KEY (criado_por)            REFERENCES usuarios(id)               ON DELETE SET NULL,
+      CONSTRAINT fk_vendas_atualizado_por   FOREIGN KEY (atualizado_por)        REFERENCES usuarios(id)               ON DELETE SET NULL
+    ) ENGINE=InnoDB;
 
-CREATE TABLE vendas_itens (
-  id                  INT           AUTO_INCREMENT PRIMARY KEY,
-  venda_id            INT           NOT NULL,
-  produto_variacao_id INT           NOT NULL,
-  quantidade          INT           NOT NULL,
-  valor_unitario      DECIMAL(14,2) NOT NULL,
-  valor_desconto      DECIMAL(14,2) NOT NULL DEFAULT 0,
-  valor_total         DECIMAL(14,2) NOT NULL,
-  criado_em           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_vendas_itens_venda    FOREIGN KEY (venda_id)            REFERENCES vendas(id)            ON DELETE NO ACTION,
-  CONSTRAINT fk_vendas_itens_variacao FOREIGN KEY (produto_variacao_id) REFERENCES produto_variacoes(id) ON DELETE NO ACTION,
-  CONSTRAINT chk_qtd_venda_positiva   CHECK (quantidade > 0)
-) ENGINE=InnoDB;
+    CREATE TABLE vendas_itens (
+      id                  INT           AUTO_INCREMENT PRIMARY KEY,
+      venda_id            INT           NOT NULL,
+      produto_variacao_id INT           NOT NULL,
+      quantidade          INT           NOT NULL,
+      valor_unitario      DECIMAL(14,2) NOT NULL,
+      valor_desconto      DECIMAL(14,2) NOT NULL DEFAULT 0,
+      valor_total         DECIMAL(14,2) NOT NULL,
+      criado_em           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT fk_vendas_itens_venda    FOREIGN KEY (venda_id)            REFERENCES vendas(id)            ON DELETE NO ACTION,
+      CONSTRAINT fk_vendas_itens_variacao FOREIGN KEY (produto_variacao_id) REFERENCES produto_variacoes(id) ON DELETE NO ACTION,
+      CONSTRAINT chk_qtd_venda_positiva   CHECK (quantidade > 0)
+    ) ENGINE=InnoDB;
 
--- ================================================================
--- 12. CONTAS
--- ================================================================
-CREATE TABLE contas_pagar (
-  id              INT           AUTO_INCREMENT PRIMARY KEY,
-  fornecedor_id   INT           NOT NULL,
-  nfe_id          INT NULL,
-  descricao       VARCHAR(100),
-  data_vencimento DATE          NOT NULL,
-  valor_original  DECIMAL(14,2) NOT NULL,
-  valor_saldo     DECIMAL(14,2) NOT NULL,
-  status          ENUM('ABERTA','PAGA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
-  criado_em       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  criado_por      INT NULL,
-  atualizado_em   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  atualizado_por  INT NULL,
-  CONSTRAINT fk_cpagar_fornecedor       FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE NO ACTION,
-  CONSTRAINT fk_cpagar_nfe             FOREIGN KEY (nfe_id)         REFERENCES nfes(id)         ON DELETE SET NULL,
-  CONSTRAINT fk_cpagar_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id)     ON DELETE SET NULL,
-  CONSTRAINT fk_cpagar_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id)     ON DELETE SET NULL
-) ENGINE=InnoDB;
+    -- ================================================================
+    -- 12. CONTAS
+    -- ================================================================
+    CREATE TABLE contas_pagar (
+      id              INT           AUTO_INCREMENT PRIMARY KEY,
+      fornecedor_id   INT           NOT NULL,
+      nfe_id          INT NULL,
+      descricao       VARCHAR(100),
+      data_vencimento DATE          NOT NULL,
+      valor_original  DECIMAL(14,2) NOT NULL,
+      valor_saldo     DECIMAL(14,2) NOT NULL,
+      status          ENUM('ABERTA','PAGA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
+      criado_em       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      criado_por      INT NULL,
+      atualizado_em   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      atualizado_por  INT NULL,
+      CONSTRAINT fk_cpagar_fornecedor       FOREIGN KEY (fornecedor_id) REFERENCES fornecedores(id) ON DELETE NO ACTION,
+      CONSTRAINT fk_cpagar_nfe             FOREIGN KEY (nfe_id)         REFERENCES nfes(id)         ON DELETE SET NULL,
+      CONSTRAINT fk_cpagar_criado_por      FOREIGN KEY (criado_por)     REFERENCES usuarios(id)     ON DELETE SET NULL,
+      CONSTRAINT fk_cpagar_atualizado_por  FOREIGN KEY (atualizado_por) REFERENCES usuarios(id)     ON DELETE SET NULL
+    ) ENGINE=InnoDB;
 
-CREATE TABLE contas_receber (
-  id              INT           AUTO_INCREMENT PRIMARY KEY,
-  cliente_id      INT           NOT NULL,
-  venda_id        INT NULL,
-  nfe_id          INT NULL,
-  descricao       VARCHAR(100),
-  data_vencimento DATE          NOT NULL,
-  valor_original  DECIMAL(14,2) NOT NULL,
-  valor_saldo     DECIMAL(14,2) NOT NULL,
-  status          ENUM('ABERTA','RECEBIDA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
-  criado_em       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  criado_por      INT NULL,
-  atualizado_em   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  atualizado_por  INT NULL,
-  CONSTRAINT fk_creceber_cliente        FOREIGN KEY (cliente_id)  REFERENCES clientes(id)  ON DELETE NO ACTION,
-  CONSTRAINT fk_creceber_venda          FOREIGN KEY (venda_id)    REFERENCES vendas(id)    ON DELETE SET NULL,
-  CONSTRAINT fk_creceber_nfe            FOREIGN KEY (nfe_id)      REFERENCES nfes(id)      ON DELETE SET NULL,
-  CONSTRAINT fk_creceber_criado_por     FOREIGN KEY (criado_por)  REFERENCES usuarios(id)  ON DELETE SET NULL,
-  CONSTRAINT fk_creceber_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
-) ENGINE=InnoDB;
+    CREATE TABLE contas_receber (
+      id              INT           AUTO_INCREMENT PRIMARY KEY,
+      cliente_id      INT           NOT NULL,
+      venda_id        INT NULL,
+      nfe_id          INT NULL,
+      descricao       VARCHAR(100),
+      data_vencimento DATE          NOT NULL,
+      valor_original  DECIMAL(14,2) NOT NULL,
+      valor_saldo     DECIMAL(14,2) NOT NULL,
+      status          ENUM('ABERTA','RECEBIDA','CANCELADA') NOT NULL DEFAULT 'ABERTA',
+      criado_em       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      criado_por      INT NULL,
+      atualizado_em   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      atualizado_por  INT NULL,
+      CONSTRAINT fk_creceber_cliente        FOREIGN KEY (cliente_id)  REFERENCES clientes(id)  ON DELETE NO ACTION,
+      CONSTRAINT fk_creceber_venda          FOREIGN KEY (venda_id)    REFERENCES vendas(id)    ON DELETE SET NULL,
+      CONSTRAINT fk_creceber_nfe            FOREIGN KEY (nfe_id)      REFERENCES nfes(id)      ON DELETE SET NULL,
+      CONSTRAINT fk_creceber_criado_por     FOREIGN KEY (criado_por)  REFERENCES usuarios(id)  ON DELETE SET NULL,
+      CONSTRAINT fk_creceber_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB;
