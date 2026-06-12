@@ -60,7 +60,23 @@
                             <MudTd>@context.Cor</MudTd>
                             <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
                             <MudTd Style="color:#888;font-size:0.8rem;">@(string.IsNullOrEmpty(context.CodigoBarras) ? "—" : context.CodigoBarras)</MudTd>
-                            <MudTd Style="text-align:right;color:#888;font-size:0.85rem;">@(context.PrecoCusto > 0 ? $"R$ {context.PrecoCusto:N2}" : "—")</MudTd>
+                            <MudTd Style="text-align:right;color:#888;font-size:0.85rem;">
+                                @if (context.PrecoCusto > 0)
+                                {
+                                    <span>R$ @context.PrecoCusto.ToString("N2")</span>
+                                    @if (context.Preco < context.PrecoCusto)
+                                    {
+                                        <MudTooltip Text="@(context.PermiteVendaAbaixoCusto ? "Fast Fashion — venda abaixo do custo permitida" : "Atenção: preço de venda abaixo do custo!")">
+                                            <MudIcon Icon="@(context.PermiteVendaAbaixoCusto? Icons.Material.Filled.Bolt : Icons.Material.Filled.Warning)"
+                                                     Style="@($"font-size:0.85rem;color:{(context.PermiteVendaAbaixoCusto ? "#f59e0b" : "#c62828")};margin-left:2px;")" />
+                                        </MudTooltip>
+                                    }
+                                }
+                                else
+                                {
+                                    <span style="color:#ccc;">—</span>
+                                }
+                            </MudTd>
                             <MudTd Style="text-align:right;font-weight:600;">R$ @context.Preco.ToString("N2")</MudTd>
                             <MudTd Style="text-align:center;">
                                 <MudChip T="string" Size="Size.Small" Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)">
