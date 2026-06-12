@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
 namespace SI_Andrey_Teodoro_2026.DTOs;
 
 public class TransportadoraDto
@@ -19,11 +18,12 @@ public class TransportadoraDto
     [MaxLength(18)]
     public string Cnpj { get; set; } = string.Empty;
 
-    [MaxLength(20)]
+    [MaxLength(30)]
     public string? InscricaoEstadual { get; set; }
 
     public int? CidadeId { get; set; }
 
+    // ← Campos de endereço adicionados
     [MaxLength(100)]
     public string? Endereco { get; set; }
 
@@ -38,7 +38,8 @@ public class TransportadoraDto
     public string Telefone { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "E-mail é obrigatório")]
-    [MaxLength(50)]
+    [MaxLength(100)]
+    [EmailAddress(ErrorMessage = "E-mail inválido")]
     public string Email { get; set; } = string.Empty;
 
     public bool Ativo { get; set; } = true;

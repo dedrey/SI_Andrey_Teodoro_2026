@@ -112,11 +112,11 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO transportadoras
-                (id, razaosocial, nome_fantasia, cnpj, inscricao_estadual,
-                 cidade_id, endereco, complemento, bairro, telefone, email, ativo)
-              VALUES
-                (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @InscricaoEstadual,
-                 @CidadeId, @Endereco, @Complemento, @Bairro, @Telefone, @Email, @Ativo)",
+                (id, razaosocial, nomefantasia, cnpj, inscricao_estadual, cidade_id,
+                endereco, complemento, bairro, telefone, email, ativo)
+            VALUES
+                (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @InscricaoEstadual, @CidadeId,
+                @Endereco, @Complemento, @Bairro, @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,

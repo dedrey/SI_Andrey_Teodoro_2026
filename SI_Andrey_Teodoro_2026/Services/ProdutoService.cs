@@ -22,9 +22,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
     {
         var p = await _repo.ObterPorIdAsync(id);
         if (p == null) return null;
-
         var variacoes = await _repo.ObterVariacoesPorProdutoAsync(id);
-
         return new ProdutoDto
         {
             Id = p.Id,
@@ -34,6 +32,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             CategoriaId = p.CategoriaId,
             MarcaId = p.MarcaId,
             UnidadeMedidaId = p.UnidadeMedidaId,
+            FornecedorId = p.FornecedorId,
             Ativo = p.Ativo,
             AtualizadoEm = p.AtualizadoEm,
             NomeAtualizadoPor = p.NomeAtualizadoPor,
@@ -45,7 +44,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
     {
         try
         {
-            dto.Produto = CapitalizarPrimeira(dto.Produto.Trim());
+            dto.Produto = dto.Produto.Trim();
             dto.Descricao = dto.Descricao?.Trim();
 
             if (dto.CategoriaId == 0) return (false, "Selecione uma categoria.", 0);
@@ -59,17 +58,22 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             var variacoesValidas = dto.Variacoes.Where(v => !v.Removida).ToList();
             foreach (var v in variacoesValidas)
             {
-                v.Cor = CapitalizarPrimeira(v.Cor.Trim());
-                v.Tamanho = v.Tamanho.Trim().ToUpper();
+                if (v.CorId == 0) return (false, $"Selecione a cor de uma variação.", 0);
+                if (v.TamanhoId == 0) return (false, $"Selecione o tamanho de uma variação.", 0);
+                if (v.Preco <= 0) return (false, $"Variação: preço de venda deve ser maior que zero.", 0);
+                if (v.PrecoCusto < 0) return (false, $"Variação: preço de custo não pode ser negativo.", 0);
 
-                if (v.Preco <= 0)
-                    return (false, $"Variação {v.Cor}/{v.Tamanho}: preço deve ser maior que zero.", 0);
+                // Valida: preço de venda não pode ser menor que custo (exceto Fast Fashion)
+                if (v.PrecoCusto > 0 && v.Preco < v.PrecoCusto && !v.PermiteVendaAbaixoCusto)
+                    return (false,
+                        $"Preço de venda (R$ {v.Preco:N2}) não pode ser menor que o custo " +
+                        $"(R$ {v.PrecoCusto:N2}). O produto tem menos de 90 dias sem venda.", 0);
 
                 int? ignorarVar = v.IdOriginal > 0 ? v.IdOriginal : null;
                 int produtoIdRef = dto.IdOriginal > 0 ? dto.IdOriginal : -1;
 
-                if (await _repo.ExisteVariacaoAsync(produtoIdRef, v.Cor, v.Tamanho, ignorarVar))
-                    return (false, $"Já existe a variação {v.Cor}/{v.Tamanho} neste produto.", 0);
+                if (await _repo.ExisteVariacaoAsync(produtoIdRef, v.CorId, v.TamanhoId, ignorarVar))
+                    return (false, $"Já existe uma variação com essa cor e tamanho neste produto.", 0);
 
                 if (!string.IsNullOrWhiteSpace(v.CodigoBarras))
                 {
@@ -97,9 +101,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
                     await _repo.InserirEstoqueAsync(novoVarId);
                 }
                 else
-                {
                     await _repo.AtualizarVariacaoAsync(v);
-                }
             }
 
             return (true, dto.IdOriginal == 0
@@ -111,11 +113,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
 
     public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
     {
-        try
-        {
-            await _repo.AlterarStatusAsync(id, ativar);
-            return SucessoStatus(ativar);
-        }
+        try { await _repo.AlterarStatusAsync(id, ativar); return SucessoStatus(ativar); }
         catch (Exception ex) { return ErroStatus(ex); }
     }
 
@@ -126,7 +124,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             await _repo.AlterarStatusVariacaoAsync(id, ativar);
             return (true, $"Variação {(ativar ? "ativada" : "desativada")} com sucesso!");
         }
-        catch (Exception ex) { return (false, $"Erro ao alterar status da variação: {ex.Message}"); }
+        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AtualizarEstoqueAsync(int variacaoId, int quantidade)
@@ -137,9 +135,6 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             await _repo.AtualizarEstoqueAsync(variacaoId, quantidade);
             return (true, "Estoque atualizado com sucesso!");
         }
-        catch (Exception ex) { return (false, $"Erro ao atualizar estoque: {ex.Message}"); }
+        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
     }
-
-    private static string CapitalizarPrimeira(string v)
-        => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

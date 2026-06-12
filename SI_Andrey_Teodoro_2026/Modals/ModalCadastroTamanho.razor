@@ -1,0 +1,60 @@
+﻿@inject ITamanhoService TamanhoService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Straighten" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">@(_dto.IdOriginal == 0 ? "Novo Tamanho" : "Editar Tamanho")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <MudGrid Spacing="2">
+                <MudItem xs="8">
+                    <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = v.Trim().ToUpper())"
+                                  Label="Nome do Tamanho *" Placeholder="Ex: M, GG, 42"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true"
+                                  Immediate="true" Autofocus="true" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="_dto.Ordem" Label="Ordem"
+                                     Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="999"
+                                     HelperText="Menor = primeiro" FullWidth="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                   Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+            @(_salvando ? "Salvando..." : "Salvar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public TamanhoDto? DtoEdicao { get; set; }
+
+    private MudForm? _form;
+    private bool _formValido, _salvando;
+    private TamanhoDto _dto = new();
+
+    protected override void OnInitialized()
+        => _dto = DtoEdicao ?? new TamanhoDto();
+
+    private async Task Salvar()
+    {
+        await _form!.Validate();
+        if (!_formValido) return;
+        _salvando = true;
+        var (sucesso, msg, id) = await TamanhoService.SalvarAsync(_dto);
+        _salvando = false;
+        Snackbar.Add(msg, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(id));
+    }
+    private void Fechar() => MudDialog.Cancel();
+}

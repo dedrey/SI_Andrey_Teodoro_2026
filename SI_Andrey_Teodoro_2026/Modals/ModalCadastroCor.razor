@@ -1,0 +1,58 @@
+﻿@* ModalCadastroCor.razor *@
+@inject ICorService CorService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Palette" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">@(_dto.IdOriginal == 0 ? "Nova Cor" : "Editar Cor")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = Cap(v))"
+                          Label="Nome da Cor *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true"
+                          Immediate="true" Autofocus="true" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                   Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+            @(_salvando ? "Salvando..." : "Salvar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public CorDto? DtoEdicao { get; set; }
+
+    private MudForm? _form;
+    private bool _formValido, _salvando;
+    private CorDto _dto = new();
+
+    protected override void OnInitialized()
+        => _dto = DtoEdicao ?? new CorDto();
+
+    private async Task Salvar()
+    {
+        await _form!.Validate();
+        if (!_formValido) return;
+        _salvando = true;
+        var (sucesso, msg, id) = await CorService.SalvarAsync(_dto);
+        _salvando = false;
+        Snackbar.Add(msg, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(id));
+    }
+    private void Fechar() => MudDialog.Cancel();
+
+    private static string Cap(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return v ?? "";
+        return string.Join(" ", v.Trim().Split(' ')
+            .Select((w, i) => w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
+    }
+}

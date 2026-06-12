@@ -15,4 +15,5 @@ public class Produto
     public DateTime CriadoEm { get; set; } = DateTime.Now;
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
+    public int? FornecedorId { get; set; }
 }
