@@ -43,4 +43,10 @@ public partial class FornecedoresPage : BasePage<FornecedorListDto, FornecedorDt
 
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual, FornecedorService.AlterarStatusAsync, CarregarDados);
+    private async Task Visualizar(int id)
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var param = new DialogParameters<ModalVisualizarFornecedor> { { x => x.Id, id } };
+        await DialogService.ShowAsync<ModalVisualizarFornecedor>("Detalhes do Fornecedor", param, opts);
+    }
 }

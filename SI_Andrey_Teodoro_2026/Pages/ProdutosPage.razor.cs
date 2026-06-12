@@ -62,4 +62,11 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
             async (i, a) => await ProdutoService.AlterarStatusAsync(i, a), CarregarDados);
+    private async Task Visualizar(int id)
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var param = new DialogParameters<ModalVisualizarProduto> { { x => x.Id, id } };
+        await DialogService.ShowAsync<ModalVisualizarProduto>("Detalhes do Produto", param, opts);
+    }
+
 }

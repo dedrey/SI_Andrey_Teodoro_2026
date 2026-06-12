@@ -32,8 +32,6 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         }
         finally { _carregando = false; }
     }
-
-    // ── Abre modal em modo INSERÇÃO ─────────────────────────────
     private async Task AbrirModalCadastro()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
@@ -42,8 +40,6 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         if (result is { Canceled: false })
             await CarregarDados();
     }
-
-    // ── Abre modal em modo EDIÇÃO ───────────────────────────────
     private async Task Editar(int id)
     {
         var dto = await TransportadoraService.ObterPorIdAsync(id);
@@ -63,4 +59,10 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
                TransportadoraService.AlterarStatusAsync, CarregarDados);
+    private async Task Visualizar(int id)
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var param = new DialogParameters<ModalVisualizarTransportadora> { { x => x.Id, id } };
+        await DialogService.ShowAsync<ModalVisualizarTransportadora>("Detalhes da Transportadora", param, opts);
+    }
 }
