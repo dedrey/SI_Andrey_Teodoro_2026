@@ -13,18 +13,15 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <!-- Razão Social / Nome Fantasia -->
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_dto.RazaoSocial" Label="Razão Social *"
+                    <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => _dto.RazaoSocial = Cap(v))" Label="Razão Social *" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_dto.NomeFantasia" Label="Nome Fantasia"
+                    <MudTextField Value="@_dto.NomeFantasia" ValueChanged="@((string? v) => _dto.NomeFantasia = v == null ? null : Cap(v))" Label="Nome Fantasia" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" />
                 </MudItem>
-
-                <!-- CNPJ / Inscrição Estadual -->
                 <MudItem xs="12" sm="6">
                     <MudTextField @bind-Value="_dto.Cnpj" Label="CNPJ *"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -35,8 +32,6 @@
                     <MudTextField @bind-Value="_dto.InscricaoEstadual" Label="Inscrição Estadual"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="30" FullWidth="true" />
                 </MudItem>
-
-                <!-- Cidade -->
                 <MudItem xs="10" sm="5">
                     <MudAutocomplete T="CidadeListDto"
                                      Value="_cidadeSelecionada"
@@ -152,4 +147,16 @@
     }
 
     private void Fechar() => MudDialog.Cancel();
+
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
+        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
+
+    private static string Cap(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
+        return string.Join(" ", s.Trim().Split(' ')
+            .Select((w, i) => i > 0 && _prep.Contains(w)
+                ? w.ToLower()
+                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
+    }
 }

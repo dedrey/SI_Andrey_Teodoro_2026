@@ -2,12 +2,12 @@
 
 <MudDialog>
     <TitleContent>
-        <div class="d-flex align-center">
-            <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Info" Class="mr-2" />
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Info" />
             <MudText Typo="Typo.h6">Detalhes do Produto</MudText>
             @if (_dto != null)
             {
-                <MudChip T="string" Size="Size.Small" Color="@(_dto.Ativo? Color.Success: Color.Error)" Class="ml-3">
+                <MudChip T="string" Size="Size.Small" Color="@(_dto.Ativo? Color.Success: Color.Error)">
                     @(_dto.Ativo ? "Ativo" : "Inativo")
                 </MudChip>
             }
@@ -16,7 +16,7 @@
     <DialogContent>
         @if (_carregando)
         {
-            <div class="d-flex justify-center pa-6"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+            <div class="d-flex justify-center pa-8"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
         }
         else if (_dto == null)
         {
@@ -24,105 +24,107 @@
         }
         else
         {
-            <MudGrid Spacing="2">
-                <MudItem xs="12"><MudText Typo="Typo.caption" Class="section-label">Identificação</MudText><MudDivider Class="mb-3 mt-1" /></MudItem>
-                <MudItem xs="3" sm="1"><div class="info-field"><span class="info-label">ID</span><span class="info-value">@_dto.Id</span></div></MudItem>
-                <MudItem xs="9" sm="7"><div class="info-field"><span class="info-label">Produto</span><span class="info-value" style="font-size:1.05rem;font-weight:700;">@_dto.Produto</span></div></MudItem>
-                <MudItem xs="12" sm="4">
-                    <div class="info-field"><span class="info-label">Categoria</span><span class="info-value">@(_nomeCategoria ?? "—")</span></div>
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <div class="info-field"><span class="info-label">Marca</span><span class="info-value">@(_nomeMarca ?? "—")</span></div>
-                </MudItem>
-                <MudItem xs="12" sm="2">
-                    <div class="info-field"><span class="info-label">Unidade</span><span class="info-value">@(_siglaUnidade ?? "—")</span></div>
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <div class="info-field"><span class="info-label">Fornecedor</span><span class="info-value">@(_nomeFornecedor ?? "—")</span></div>
-                </MudItem>
-                @if (!string.IsNullOrWhiteSpace(_dto.Descricao))
+            <div class="vis-section">
+                <div class="vis-section-title">Identificação</div>
+                <MudGrid Spacing="3">
+                    <MudItem xs="2" sm="1"><div class="vis-field"><span class="vis-label">ID</span><span class="vis-value">@_dto.Id</span></div></MudItem>
+                    <MudItem xs="10" sm="7"><div class="vis-field"><span class="vis-label">Produto</span><span class="vis-value" style="font-size:1.05rem;font-weight:700;">@_dto.Produto</span></div></MudItem>
+                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Categoria</span><span class="vis-value">@(_dto.NomeCategoria ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Marca</span><span class="vis-value">@(_dto.NomeMarca ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="2"><div class="vis-field"><span class="vis-label">Unidade</span><span class="vis-value">@(_dto.SiglaUnidade ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Fornecedor</span><span class="vis-value">@(_dto.NomeFornecedor ?? "—")</span></div></MudItem>
+                    @if (!string.IsNullOrWhiteSpace(_dto.Descricao))
+                    {
+                        <MudItem xs="12"><div class="vis-field"><span class="vis-label">Descrição</span><span class="vis-value">@_dto.Descricao</span></div></MudItem>
+                    }
+                </MudGrid>
+            </div>
+
+            <div class="vis-section" style="padding-bottom:8px;">
+                <div class="vis-section-title">Variações (@_dto.Variacoes.Count(v => !v.Removida))</div>
+                @if (_dto.Variacoes.Any(v => !v.Removida))
                 {
-                    <MudItem xs="12"><div class="info-field"><span class="info-label">Descrição</span><span class="info-value">@_dto.Descricao</span></div></MudItem>
+                    <MudTable Items="@_dto.Variacoes.Where(v => !v.Removida)" Dense="true" Elevation="0"
+                              Style="background:white;border-radius:6px;border:1px solid #e9ecef;">
+                        <HeaderContent>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;">Cor</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;">Tamanho</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;">Cód. Barras</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;text-align:right;">Custo</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;text-align:right;">Venda</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;text-align:center;">Estoque</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;">Última Compra</MudTh>
+                            <MudTh Style="font-weight:600;font-size:0.78rem;text-align:center;">Status</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Cor</MudTd>
+                            <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
+                            <MudTd Style="color:#888;font-size:0.8rem;">@(string.IsNullOrEmpty(context.CodigoBarras) ? "—" : context.CodigoBarras)</MudTd>
+                            <MudTd Style="text-align:right;color:#888;font-size:0.85rem;">@(context.PrecoCusto > 0 ? $"R$ {context.PrecoCusto:N2}" : "—")</MudTd>
+                            <MudTd Style="text-align:right;font-weight:600;">R$ @context.Preco.ToString("N2")</MudTd>
+                            <MudTd Style="text-align:center;">
+                                <MudChip T="string" Size="Size.Small" Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)">
+                                    @context.QuantidadeEstoque un.
+                                </MudChip>
+                            </MudTd>
+                            <MudTd Style="font-size:0.82rem;color:#888;">
+                                @(context.DataUltimaCompra.HasValue? context.DataUltimaCompra.Value.ToString("dd/MM/yyyy") : "—")
+                                @if (context.PermiteVendaAbaixoCusto)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-1">⚡ Fast Fashion</MudChip>
+                                }
+                            </MudTd>
+                            <MudTd Style="text-align:center;">
+                                <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)" Variant="Variant.Outlined">
+                                    @(context.Ativo ? "Ativo" : "Inativo")
+                                </MudChip>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
                 }
-                <MudItem xs="12" Class="mt-2"><MudText Typo="Typo.caption" Class="section-label">Variações (@_dto.Variacoes.Count(v => !v.Removida))</MudText><MudDivider Class="mb-2 mt-1" /></MudItem>
-                <MudItem xs="12">
-                    @if (_dto.Variacoes.Any(v => !v.Removida))
-                    {
-                        <MudTable Items="@_dto.Variacoes.Where(v => !v.Removida)" Dense="true" Elevation="0"
-                                  Style="border:1px solid #f0f0f0;border-radius:8px;">
-                            <HeaderContent>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;">Cor</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;">Tamanho</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;">Cód. Barras</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Custo</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Venda</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Estoque</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;">Última Compra</MudTh>
-                                <MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Status</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd>@context.Cor</MudTd>
-                                <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
-                                <MudTd Style="color:#888;font-size:0.82rem;">@(string.IsNullOrEmpty(context.CodigoBarras) ? "—" : context.CodigoBarras)</MudTd>
-                                <MudTd Style="text-align:right;color:#888;">@(context.PrecoCusto > 0 ? $"R$ {context.PrecoCusto:N2}" : "—")</MudTd>
-                                <MudTd Style="text-align:right;font-weight:600;">R$ @context.Preco.ToString("N2")</MudTd>
-                                <MudTd Style="text-align:center;">
-                                    <MudChip T="string" Size="Size.Small" Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)">
-                                        @context.QuantidadeEstoque un.
-                                    </MudChip>
-                                </MudTd>
-                                <MudTd Style="font-size:0.82rem;color:#888;">
-                                    @(context.DataUltimaCompra.HasValue? context.DataUltimaCompra.Value.ToString("dd/MM/yyyy") : "—")
-                                    @if (context.PermiteVendaAbaixoCusto)
-                                    {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-1">⚡ Fast Fashion</MudChip>
-                                    }
-                                </MudTd>
-                                <MudTd Style="text-align:center;">
-                                    <MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)" Variant="Variant.Outlined">
-                                        @(context.Ativo ? "Ativo" : "Inativo")
-                                    </MudChip>
-                                </MudTd>
-                            </RowTemplate>
-                        </MudTable>
-                    }
-                    else
-                    {
-                        <MudText Style="color:#bbb;font-size:0.9rem;">Nenhuma variação cadastrada.</MudText>
-                    }
-                </MudItem>
-            </MudGrid>
+                else
+                {
+                    <MudText Style="color:#bbb;font-size:0.9rem;padding:8px 0;">Nenhuma variação cadastrada.</MudText>
+                }
+            </div>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="@(() => MudDialog.Cancel())">Fechar</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="@(() => MudDialog.Cancel())">Fechar</MudButton>
     </DialogActions>
 </MudDialog>
 
 <style>
-    .section-label {
+    .vis-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+
+    .vis-section-title {
+        font-size: 0.68rem;
         color: #9e9e9e;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
-        font-size: 0.7rem;
+        letter-spacing: 1.2px;
+        font-weight: 700;
+        margin-bottom: 10px;
     }
 
-    .info-field {
+    .vis-field {
         display: flex;
         flex-direction: column;
-        margin-bottom: 4px;
     }
 
-    .info-label {
-        font-size: 0.7rem;
+    .vis-label {
+        font-size: 0.68rem;
         color: #9e9e9e;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 2px;
     }
 
-    .info-value {
+    .vis-value {
         font-size: 0.92rem;
         font-weight: 500;
         color: #212121;
@@ -135,18 +137,10 @@
 
     private ProdutoDto? _dto;
     private bool _carregando = true;
-    private string? _nomeCategoria, _nomeMarca, _siglaUnidade, _nomeFornecedor;
 
     protected override async Task OnInitializedAsync()
     {
         _dto = await ProdutoService.ObterPorIdAsync(Id);
-        if (_dto != null)
-        {
-            _nomeCategoria = "—";
-            _nomeMarca = "—";
-            _siglaUnidade = "—";
-            _nomeFornecedor = "—";
-        }
         _carregando = false;
     }
 }

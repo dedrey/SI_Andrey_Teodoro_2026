@@ -2,12 +2,12 @@
 
 <MudDialog>
     <TitleContent>
-        <div class="d-flex align-center">
-            <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Info" Class="mr-2" />
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Info" />
             <MudText Typo="Typo.h6">Detalhes do Fornecedor</MudText>
             @if (_dto != null)
             {
-                <MudChip T="string" Size="Size.Small" Color="@(_dto.Ativo? Color.Success: Color.Error)" Class="ml-3">
+                <MudChip T="string" Size="Size.Small" Color="@(_dto.Ativo? Color.Success: Color.Error)">
                     @(_dto.Ativo ? "Ativo" : "Inativo")
                 </MudChip>
             }
@@ -16,7 +16,7 @@
     <DialogContent>
         @if (_carregando)
         {
-            <div class="d-flex justify-center pa-6"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+            <div class="d-flex justify-center pa-8"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
         }
         else if (_dto == null)
         {
@@ -24,66 +24,81 @@
         }
         else
         {
-            <MudGrid Spacing="2">
-                <MudItem xs="12"><MudText Typo="Typo.caption" Class="section-label">Identificação</MudText><MudDivider Class="mb-3 mt-1" /></MudItem>
-                <MudItem xs="3" sm="1"><div class="info-field"><span class="info-label">ID</span><span class="info-value">@_dto.Id</span></div></MudItem>
-                <MudItem xs="9" sm="5"><div class="info-field"><span class="info-label">Razão Social</span><span class="info-value">@_dto.RazaoSocial</span></div></MudItem>
-                <MudItem xs="12" sm="6"><div class="info-field"><span class="info-label">Nome Fantasia</span><span class="info-value">@(_dto.NomeFantasia ?? "—")</span></div></MudItem>
-                <MudItem xs="12" sm="6"><div class="info-field"><span class="info-label">CNPJ</span><span class="info-value">@FormatCnpj(_dto.Cnpj)</span></div></MudItem>
+            <div class="vis-section">
+                <div class="vis-section-title">Identificação</div>
+                <MudGrid Spacing="3">
+                    <MudItem xs="2" sm="1"><div class="vis-field"><span class="vis-label">ID</span><span class="vis-value">@_dto.Id</span></div></MudItem>
+                    <MudItem xs="10" sm="5"><div class="vis-field"><span class="vis-label">Razão Social</span><span class="vis-value">@_dto.RazaoSocial</span></div></MudItem>
+                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Nome Fantasia</span><span class="vis-value">@(_dto.NomeFantasia ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">CNPJ</span><span class="vis-value">@FormatCnpj(_dto.Cnpj)</span></div></MudItem>
+                </MudGrid>
+            </div>
 
-                <MudItem xs="12" Class="mt-2"><MudText Typo="Typo.caption" Class="section-label">Contato</MudText><MudDivider Class="mb-3 mt-1" /></MudItem>
-                <MudItem xs="12" sm="4"><div class="info-field"><span class="info-label">Telefone</span><span class="info-value">@(_dto.Telefone ?? "—")</span></div></MudItem>
-                <MudItem xs="12" sm="8"><div class="info-field"><span class="info-label">E-mail</span><span class="info-value">@(_dto.Email ?? "—")</span></div></MudItem>
+            <div class="vis-section">
+                <div class="vis-section-title">Contato</div>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Telefone</span><span class="vis-value">@(_dto.Telefone ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="8"><div class="vis-field"><span class="vis-label">E-mail</span><span class="vis-value">@(_dto.Email ?? "—")</span></div></MudItem>
+                </MudGrid>
+            </div>
 
-                <MudItem xs="12" Class="mt-2"><MudText Typo="Typo.caption" Class="section-label">Endereço</MudText><MudDivider Class="mb-3 mt-1" /></MudItem>
-                <MudItem xs="12" sm="7"><div class="info-field"><span class="info-label">Rua / Logradouro</span><span class="info-value">@(string.IsNullOrWhiteSpace(_dto.Endereco) ? "—" : _dto.Endereco)</span></div></MudItem>
-                <MudItem xs="12" sm="5"><div class="info-field"><span class="info-label">Bairro</span><span class="info-value">@(string.IsNullOrWhiteSpace(_dto.Bairro) ? "—" : _dto.Bairro)</span></div></MudItem>
-                <MudItem xs="12" sm="7"><div class="info-field"><span class="info-label">Complemento</span><span class="info-value">@(string.IsNullOrWhiteSpace(_dto.Complemento) ? "—" : _dto.Complemento)</span></div></MudItem>
+            <div class="vis-section">
+                <div class="vis-section-title">Endereço</div>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="7"><div class="vis-field"><span class="vis-label">Rua / Logradouro</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Endereco) ? "—" : _dto.Endereco)</span></div></MudItem>
+                    <MudItem xs="12" sm="5"><div class="vis-field"><span class="vis-label">Bairro</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Bairro) ? "—" : _dto.Bairro)</span></div></MudItem>
+                    <MudItem xs="12"><div class="vis-field"><span class="vis-label">Complemento</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Complemento) ? "—" : _dto.Complemento)</span></div></MudItem>
+                </MudGrid>
+            </div>
 
-                @if (_dto.AtualizadoEm.HasValue)
-                {
-                    <MudItem xs="12" Class="mt-1">
-                        <MudText Style="font-size:0.75rem;color:#bbb;">
-                            Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
-                            @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
-                            {
-                                <text> por @_dto.NomeAtualizadoPor</text>
-                            }
-                        </MudText>
-                    </MudItem>
-                }
-            </MudGrid>
+            @if (_dto.AtualizadoEm.HasValue)
+            {
+                <MudText Style="font-size:0.73rem;color:#bbb;">
+                    Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                    @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
+                    {
+                        <text> por @_dto.NomeAtualizadoPor</text>
+                    }
+                </MudText>
+            }
         }
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Default" OnClick="@(() => MudDialog.Cancel())">Fechar</MudButton>
+        <MudButton Variant="Variant.Filled" OnClick="@(() => MudDialog.Cancel())">Fechar</MudButton>
     </DialogActions>
 </MudDialog>
 
 <style>
-    .section-label {
+    .vis-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+
+    .vis-section-title {
+        font-size: 0.68rem;
         color: #9e9e9e;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
-        font-size: 0.7rem;
+        letter-spacing: 1.2px;
+        font-weight: 700;
+        margin-bottom: 10px;
     }
 
-    .info-field {
+    .vis-field {
         display: flex;
         flex-direction: column;
-        margin-bottom: 4px;
     }
 
-    .info-label {
-        font-size: 0.7rem;
+    .vis-label {
+        font-size: 0.68rem;
         color: #9e9e9e;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 2px;
     }
 
-    .info-value {
+    .vis-value {
         font-size: 0.92rem;
         font-weight: 500;
         color: #212121;

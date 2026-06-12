@@ -15,9 +15,16 @@ public class ProdutoDto
     public string? Descricao { get; set; }
 
     public int CategoriaId { get; set; }
+    public string? NomeCategoria { get; set; }
+
     public int MarcaId { get; set; }
+    public string? NomeMarca { get; set; }
+
     public int UnidadeMedidaId { get; set; }
+    public string? SiglaUnidade { get; set; }
+
     public int? FornecedorId { get; set; }
+    public string? NomeFornecedor { get; set; }
 
     public bool Ativo { get; set; } = true;
     public DateTime? AtualizadoEm { get; set; }

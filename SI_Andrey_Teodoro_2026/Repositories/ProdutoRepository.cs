@@ -114,6 +114,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      p.unidade_medida_id  AS UnidadeMedidaId,
                      u.unidade_medida     AS SiglaUnidade,
                      p.fornecedor_id      AS FornecedorId,
+                     f.razaosocial        AS NomeFornecedor,
                      p.ativo,
                      p.criado_em          AS CriadoEm,
                      p.atualizado_em      AS AtualizadoEm,
@@ -122,6 +123,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               INNER JOIN categorias      c  ON c.id  = p.categoria_id
               INNER JOIN marcas          m  ON m.id  = p.marca_id
               INNER JOIN unidades_medida u  ON u.id  = p.unidade_medida_id
+              LEFT  JOIN fornecedores    f  ON f.id  = p.fornecedor_id
               LEFT  JOIN usuarios        ua ON ua.id = p.atualizado_por
               WHERE p.id = @id", new { id });
     }
@@ -225,16 +227,18 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               WHERE seq NOT IN (SELECT id FROM produto_variacoes)");
         await conn.ExecuteAsync(
             @"INSERT INTO produto_variacoes
-                (id, produto_id, cor_id, tamanho_id, codigo_barras,
+                (id, produto_id, cor, cor_id, tamanho, tamanho_id, codigo_barras,
                  preco, preco_custo, ativo)
               VALUES
-                (@ProximoId, @ProdutoId, @CorId, @TamanhoId, @CodigoBarras,
+                (@ProximoId, @ProdutoId, @Cor, @CorId, @Tamanho, @TamanhoId, @CodigoBarras,
                  @Preco, @PrecoCusto, @Ativo)",
             new
             {
                 ProximoId = proximoId,
                 dto.ProdutoId,
+                dto.Cor,
                 dto.CorId,
+                dto.Tamanho,
                 dto.TamanhoId,
                 dto.CodigoBarras,
                 dto.Preco,
@@ -250,7 +254,9 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         await conn.ExecuteAsync(
             @"UPDATE produto_variacoes
               SET id            = @Id,
+                  cor           = @Cor,
                   cor_id        = @CorId,
+                  tamanho       = @Tamanho,
                   tamanho_id    = @TamanhoId,
                   codigo_barras = @CodigoBarras,
                   preco         = @Preco,
@@ -261,7 +267,9 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             {
                 dto.Id,
                 dto.IdOriginal,
+                dto.Cor,
                 dto.CorId,
+                dto.Tamanho,
                 dto.TamanhoId,
                 dto.CodigoBarras,
                 dto.Preco,

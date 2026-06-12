@@ -360,6 +360,21 @@ CREATE TABLE produto_variacoes (
     UNIQUE (produto_id, cor, tamanho)
 ) ENGINE=InnoDB;
 
+CREATE TABLE cores (
+  id        INT          AUTO_INCREMENT PRIMARY KEY,
+  nome      VARCHAR(30)  NOT NULL UNIQUE,
+  ativo     TINYINT(1)   NOT NULL DEFAULT 1,
+  criado_em DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE tamanhos (
+  id        INT          AUTO_INCREMENT PRIMARY KEY,
+  nome      VARCHAR(10)  NOT NULL UNIQUE,
+  ordem     INT          NOT NULL DEFAULT 99,
+  ativo     TINYINT(1)   NOT NULL DEFAULT 1,
+  criado_em DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 CREATE TABLE estoque (
   id                  INT      AUTO_INCREMENT PRIMARY KEY,
   produto_variacao_id INT      NOT NULL UNIQUE,
