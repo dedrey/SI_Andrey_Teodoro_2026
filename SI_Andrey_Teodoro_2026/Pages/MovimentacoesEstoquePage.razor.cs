@@ -15,7 +15,11 @@ public partial class MovimentacoesEstoquePage : BasePage<MovimentacaoEstoqueList
     private readonly HashSet<int> _expandidos = new();
     private readonly Dictionary<int, List<MovimentacaoEstoqueItemListDto>?> _detalhesCache = new();
 
-    protected override async Task OnInitializedAsync() => await CarregarDados();
+    protected override async Task OnInitializedAsync()
+    {
+        _filtro.StatusFiltro = "todos";
+        await CarregarDados();
+    }
 
     protected override async Task CarregarDados()
     {

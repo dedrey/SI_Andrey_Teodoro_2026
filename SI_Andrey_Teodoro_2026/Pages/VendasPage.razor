@@ -68,14 +68,6 @@
             <MudTd Style="text-align:center;">
                 @if (venda.StatusVenda == "ABERTA")
                 {
-                    <MudTooltip Text="Alterar Venda">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                       OnClick="@(async () => await AbrirEdicao(venda.Id))"/>
-                    </MudTooltip>
-                    <MudTooltip Text="Finalizar Venda">
-                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small"
-                                       OnClick="@(async () => await FinalizarVenda(venda.Id))"/>
-                    </MudTooltip>
                     <MudTooltip Text="Cancelar Venda">
                         <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small"
                                        OnClick="@(async () => await AbrirCancelamento(venda.Id))"/>

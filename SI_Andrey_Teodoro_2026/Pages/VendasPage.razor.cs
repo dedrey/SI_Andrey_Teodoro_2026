@@ -15,7 +15,11 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
     private readonly HashSet<int> _expandidos = new();
     private readonly Dictionary<int, List<VendaItemListDto>?> _itensCache = new();
 
-    protected override async Task OnInitializedAsync() => await CarregarDados();
+    protected override async Task OnInitializedAsync()
+    {
+        _filtro.StatusFiltro = "todos"; // inicia com "Todos" em vez de "Ativos"
+        await CarregarDados();
+    }
 
     protected override async Task CarregarDados()
     {
