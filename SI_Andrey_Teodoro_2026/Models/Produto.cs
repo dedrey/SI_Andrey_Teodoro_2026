@@ -10,10 +10,11 @@ public class Produto
     public int MarcaId { get; set; }
     public string? NomeMarca { get; set; }
     public int UnidadeMedidaId { get; set; }
-    public string? SiglaUnidade { get; set; }
-    public bool Ativo { get; set; } = true;
-    public DateTime CriadoEm { get; set; } = DateTime.Now;
+    public string? SiglaUnidade { get; set; }  
+    public int? FornecedorId { get; set; }
+    public string? NomeFornecedor { get; set; }
+    public bool Ativo { get; set; }
+    public DateTime CriadoEm { get; set; }
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
-    public int? FornecedorId { get; set; }
 }
