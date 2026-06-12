@@ -205,15 +205,14 @@ public class ClienteRepository : BaseRepository, IClienteRepository
             : "SELECT COUNT(*) FROM clientes WHERE cpf_cnpj = @cpfCnpj";
         return await conn.ExecuteScalarAsync<int>(sql, new { cpfCnpj, idOriginalIgnorar }) > 0;
     }
-
     public async Task<decimal> ObterSaldoDevidoAsync(int clienteId)
     {
         using var conn = _factory.CreateConnection();
         return await conn.ExecuteScalarAsync<decimal>(
-            @"SELECT COALESCE(SUM(valor), 0)
-              FROM contas_receber
-              WHERE cliente_id = @clienteId
-                AND status IN ('PENDENTE', 'VENCIDA')",
+            @"SELECT COALESCE(SUM(valor_saldo), 0)
+          FROM contas_receber
+          WHERE cliente_id = @clienteId
+            AND status = 'ABERTA'",
             new { clienteId });
     }
 }

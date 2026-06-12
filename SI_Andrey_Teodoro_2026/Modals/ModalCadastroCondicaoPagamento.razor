@@ -9,41 +9,21 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.RequestQuote" Class="mr-2" />
-            Cadastrar Nova Condição de Pagamento
+            @(_dto.IdOriginal == 0 ? "Cadastrar Nova Condição de Pagamento" : "Editar Condição de Pagamento")
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-
-                <MudItem xs="12" sm="7">
-                    <MudTextField Value="@_dto.CondicaoPagamento"
-                                  ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))"
-                                  Label="Condição de Pagamento"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório"
-                                  MaxLength="50" FullWidth="true" Immediate="true" />
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))"
+                                  Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
+                                  Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null)" />
                 </MudItem>
-                <MudItem xs="12" sm="2">
-                    <MudTextField Value="@_parcelasTexto"
-                                  ValueChanged="@((string v) => OnParcelasAlterado(v))"
-                                  Label="Nº Parcelas"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="3" FullWidth="true" Immediate="true" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_entradaTexto"
-                                  ValueChanged="@((string v) => { var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _entradaTexto = f; _dto.EntradaMinimaPercentual = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d0) ? d0 : 0; })"
-                                  Label="Entrada Mín. (%)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="6" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.End" AdornmentText="%" />
-                </MudItem>
-
-                <MudItem xs="10" sm="11">
+                <MudItem xs="10" sm="5">
                     <MudSelect T="int" @bind-Value="_dto.MetodoPagamentoId"
-                               Label="Método de Pagamento"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                               Label="Método de Pagamento *" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var m in _metodos)
                         {
@@ -52,83 +32,28 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Novo Método de Pagamento">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle"
-                                       Color="Color.Primary" Size="Size.Medium"
-                                       OnClick="AbrirModalMetodo" />
-                    </MudTooltip>
+                    <MudTooltip Text="Novo Método"><MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalMetodo" /></MudTooltip>
                 </MudItem>
+                <MudItem xs="6" sm="3">
+                    <MudTextField Value="@_parcelasTexto" ValueChanged="@((string v) => OnParcelasAlterado(v))"
+                                  Label="Nº Parcelas" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
+                                  Validation="@((string v) => !int.TryParse(v, out int n) || n < 1 || n > 999 ? "1 a 999" : null)" />
+                </MudItem>
+            </MudGrid>
 
-                <MudItem xs="12">
-                    <MudDivider Class="my-1" />
-                    <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;">
-                        Taxas e Percentuais
-                    </MudText>
-                </MudItem>
-
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_descontoTexto"
-                                  ValueChanged="@((string v) => { var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _descontoTexto = f; _dto.DescontoPercentual = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d1) ? d1 : 0; })"
-                                  Label="Desconto (%)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="6" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.End" AdornmentText="%" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_acrescimoTexto"
-                                  ValueChanged="@((string v) => { var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _acrescimoTexto = f; _dto.AcrescimoPercentual = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d2) ? d2 : 0; })"
-                                  Label="Acréscimo (%)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="6" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.End" AdornmentText="%" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_multaTexto"
-                                  ValueChanged="@((string v) => { var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _multaTexto = f; _dto.MultaPercentual = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d3) ? d3 : 0; })"
-                                  Label="Multa (%)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="6" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.End" AdornmentText="%" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_jurosTexto"
-                                  ValueChanged="@((string v) => { var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _jurosTexto = f; _dto.TaxaJurosPercentual = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d4) ? d4 : 0; })"
-                                  Label="Taxa de Juros (%)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="6" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.End" AdornmentText="%" />
-                </MudItem>
-
-                @if (_dto.DescontoPercentual > 0 || _dto.AcrescimoPercentual > 0 || _dto.TaxaJurosPercentual > 0)
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.caption" Style="color:#888;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Taxas e Percentuais</MudText>
+            <MudGrid Spacing="2" Class="mt-2">
+                @foreach (var campo in _campos)
                 {
-                    <MudItem xs="12">
-                        <MudPaper Elevation="0" Class="pa-2 rounded" Style="background:#f5f5f5;">
-                            <MudText Typo="Typo.caption" Style="color:#666;">
-                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" Style="vertical-align:middle;" />
-                                Exemplo sobre R$ 1.000,00:
-                                @if (_dto.DescontoPercentual > 0)
-                                {
-                                    <span style="color:#2e7d32;margin-left:8px;">
-                                        Desconto: - R$ @((1000m * _dto.DescontoPercentual / 100m).ToString("N2"))
-                                    </span>
-                                }
-                                @if (_dto.AcrescimoPercentual > 0)
-                                {
-                                    <span style="color:#1565c0;margin-left:8px;">
-                                        Acréscimo: + R$ @((1000m * _dto.AcrescimoPercentual / 100m).ToString("N2"))
-                                    </span>
-                                }
-                                @if (_dto.TaxaJurosPercentual > 0)
-                                {
-                                    <span style="color:#e65100;margin-left:8px;">
-                                        Juros (@_parcelasTexto@("x")): + R$ @((1000m * _dto.TaxaJurosPercentual / 100m * _dto.NumeroParcelas).ToString("N2"))
-                                    </span>
-                                }
-                            </MudText>
-                        </MudPaper>
+                    <MudItem xs="6" sm="4">
+                        <MudTextField Value="@campo.Texto" ValueChanged="@((string v) => OnPercentualAlterado(v, campo))"
+                                      Label="@campo.Label" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      MaxLength="10" FullWidth="true" Immediate="true"
+                                      Adornment="Adornment.End" AdornmentText="%" />
                     </MudItem>
                 }
-
             </MudGrid>
         </MudForm>
     </DialogContent>
@@ -143,48 +68,76 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public CondicaoPagamentoDto? DtoEdicao { get; set; }
 
     private CondicaoPagamentoDto _dto = new() { NumeroParcelas = 1 };
     private MudForm _form = null!;
-    private bool _formValido;
-    private bool _salvando;
-
+    private bool _formValido, _salvando;
     private string _parcelasTexto = "1";
-    private string _entradaTexto = "";
-    private string _descontoTexto = "";
-    private string _acrescimoTexto = "";
-    private string _multaTexto = "";
-    private string _jurosTexto = "";
-
     private List<MetodoPagamentoListDto> _metodos = new();
 
-    protected override async Task OnInitializedAsync()
-        => _metodos = (await MetodoPagamentoService.ObterTodosAtivosAsync()).ToList();
-
-    private void OnParcelasAlterado(string v)
+    private record CampoPercentual(string Label, string Key) { public string Texto { get; set; } = ""; }
+    private List<CampoPercentual> _campos = new()
     {
-        var d = new string(v.Where(char.IsDigit).ToArray());
-        _parcelasTexto = d;
-        _dto.NumeroParcelas = int.TryParse(d, out int n) && n >= 1 ? n : 1;
+        new("Entrada Mín. (%)", "entrada"), new("Desconto (%)", "desconto"),
+        new("Acréscimo (%)", "acrescimo"), new("Multa (%)", "multa"), new("Juros (%)", "juros")
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _metodos = (await MetodoPagamentoService.ObterTodosAtivosAsync()).ToList();
+        if (DtoEdicao is not null)
+        {
+            _dto = new CondicaoPagamentoDto
+            {
+                Id = DtoEdicao.Id,
+                IdOriginal = DtoEdicao.IdOriginal,
+                CondicaoPagamento = DtoEdicao.CondicaoPagamento,
+                MetodoPagamentoId = DtoEdicao.MetodoPagamentoId,
+                NumeroParcelas = DtoEdicao.NumeroParcelas,
+                EntradaMinimaPercentual = DtoEdicao.EntradaMinimaPercentual,
+                DescontoPercentual = DtoEdicao.DescontoPercentual,
+                AcrescimoPercentual = DtoEdicao.AcrescimoPercentual,
+                MultaPercentual = DtoEdicao.MultaPercentual,
+                TaxaJurosPercentual = DtoEdicao.TaxaJurosPercentual,
+                Ativo = DtoEdicao.Ativo
+            };
+            _parcelasTexto = DtoEdicao.NumeroParcelas.ToString();
+            _campos[0].Texto = DtoEdicao.EntradaMinimaPercentual > 0 ? DtoEdicao.EntradaMinimaPercentual.ToString("N2") : "";
+            _campos[1].Texto = DtoEdicao.DescontoPercentual > 0 ? DtoEdicao.DescontoPercentual.ToString("N2") : "";
+            _campos[2].Texto = DtoEdicao.AcrescimoPercentual > 0 ? DtoEdicao.AcrescimoPercentual.ToString("N2") : "";
+            _campos[3].Texto = DtoEdicao.MultaPercentual > 0 ? DtoEdicao.MultaPercentual.ToString("N2") : "";
+            _campos[4].Texto = DtoEdicao.TaxaJurosPercentual > 0 ? DtoEdicao.TaxaJurosPercentual.ToString("N2") : "";
+        }
+    }
+
+    private void OnParcelasAlterado(string? v) { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); _parcelasTexto = d; _dto.NumeroParcelas = int.TryParse(d, out int n) && n >= 1 ? n : 1; }
+    private void OnPercentualAlterado(string? v, CampoPercentual campo)
+    {
+        var f = string.IsNullOrEmpty(v) ? "" : new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        campo.Texto = f;
+        var val = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0m;
+        switch (campo.Key)
+        {
+            case "entrada": _dto.EntradaMinimaPercentual = val; break;
+            case "desconto": _dto.DescontoPercentual = val; break;
+            case "acrescimo": _dto.AcrescimoPercentual = val; break;
+            case "multa": _dto.MultaPercentual = val; break;
+            case "juros": _dto.TaxaJurosPercentual = val; break;
+        }
     }
 
     private async Task AbrirModalMetodo()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método de Pagamento", opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método", opts);
         var result = await dialog.Result;
-        _metodos = (await MetodoPagamentoService.ObterTodosAtivosAsync()).ToList();
-        if (result is { Canceled: false, Data: int novoId })
-            _dto.MetodoPagamentoId = novoId;
+        if (result is { Canceled: false }) { _metodos = (await MetodoPagamentoService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) _dto.MetodoPagamentoId = id; }
     }
 
     private async Task Salvar()
     {
-        if (_dto.MetodoPagamentoId == 0)
-        {
-            Snackbar.Add("Selecione um método de pagamento.", Severity.Warning);
-            return;
-        }
+        if (_dto.MetodoPagamentoId == 0) { Snackbar.Add("Selecione um Método de Pagamento.", Severity.Warning); return; }
         await _form.Validate();
         if (!_formValido) return;
         _salvando = true;
@@ -193,19 +146,7 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-
     private void Cancelar() => MudDialog.Cancel();
-
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-    { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "ao", "aos", "com", "por", "para" };
-
-    private string Cap(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return v ?? "";
-        var parts = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < parts.Length; i++)
-            if (i == 0 || i == parts.Length - 1 || !_prep.Contains(parts[i]))
-                parts[i] = char.ToUpper(parts[i][0]) + parts[i][1..];
-        return string.Join(" ", parts);
-    }
+    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) if (i == 0 || i == p.Length - 1 || !_min.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; return string.Join(" ", p); }
+    private static readonly HashSet<string> _min = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "com", "por", "para", "ao", "aos" };
 }
