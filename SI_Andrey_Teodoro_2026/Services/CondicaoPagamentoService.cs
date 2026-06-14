@@ -1,4 +1,4 @@
-﻿using SI_Andrey_Teodoro_2026.DTOs;
+﻿    using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -65,8 +65,8 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
                 return (false, "Taxa de juros deve ser entre 0% e 100%.", 0);
             if (dto.Parcelas.Count > 0 && dto.Parcelas.Count != dto.NumeroParcelas)
                 return (false, "O número de parcelas configuradas não bate com o campo 'Nº parcelas'.", 0);
-            if (dto.Parcelas.Any(p => p.DiasVencimento <= 0))
-                return (false, "Todos os prazos de vencimento devem ser maiores que zero.", 0);
+            if (dto.Parcelas.Any(p => p.DiasVencimento < 0))
+                return (false, "Dias de vencimento não pode ser negativo.", 0);
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
             if (await _repo.ExisteNomeAsync(dto.CondicaoPagamento, ignorar))

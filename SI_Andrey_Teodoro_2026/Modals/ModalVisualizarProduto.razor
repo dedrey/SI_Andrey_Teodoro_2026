@@ -32,7 +32,8 @@
                     <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Categoria</span><span class="vis-value">@(_dto.NomeCategoria ?? "—")</span></div></MudItem>
                     <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Marca</span><span class="vis-value">@(_dto.NomeMarca ?? "—")</span></div></MudItem>
                     <MudItem xs="12" sm="2"><div class="vis-field"><span class="vis-label">Unidade</span><span class="vis-value">@(_dto.SiglaUnidade ?? "—")</span></div></MudItem>
-                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Fornecedor</span><span class="vis-value">@(_dto.NomeFornecedor ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Último Fornecedor</span><span class="vis-value">@(_dto.NomeFornecedor ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Nota Fiscal de Entrada</span><span class="vis-value">@(_dto.NumeroNfUltimaEntrada ?? "—")</span></div></MudItem>
                     @if (!string.IsNullOrWhiteSpace(_dto.Descricao))
                     {
                         <MudItem xs="12"><div class="vis-field"><span class="vis-label">Descrição</span><span class="vis-value">@_dto.Descricao</span></div></MudItem>

@@ -19,7 +19,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add(@"(t.razaosocial   LIKE @Busca
-                      OR t.nome_fantasia LIKE @Busca
+                      OR t.nomefantasia LIKE @Busca
                       OR t.cnpj         LIKE @Busca
                       OR CAST(t.id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
@@ -50,7 +50,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         var itens = await conn.QueryAsync<TransportadoraListDto>(
             $@"SELECT t.id,
                       t.razaosocial       AS RazaoSocial,
-                      t.nome_fantasia     AS NomeFantasia,
+                      t.nomefantasia      AS NomeFantasia,
                       t.cnpj,
                       t.inscricao_estadual AS InscricaoEstadual,
                       c.cidade            AS NomeCidade,
@@ -77,7 +77,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<TransportadoraListDto>(
             @"SELECT t.id, t.razaosocial AS RazaoSocial,
-                     t.nome_fantasia AS NomeFantasia, t.cnpj
+                     t.nomefantasia AS NomeFantasia, t.cnpj
               FROM transportadoras t WHERE t.ativo = TRUE ORDER BY t.razaosocial");
     }
 
@@ -87,7 +87,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         return await conn.QueryFirstOrDefaultAsync<Transportadora>(
             @"SELECT t.id,
                      t.razaosocial       AS RazaoSocial,
-                     t.nome_fantasia     AS NomeFantasia,
+                     t.nomefantasia      AS NomeFantasia,
                      t.cnpj,
                      t.inscricao_estadual AS InscricaoEstadual,
                      t.cidade_id         AS CidadeId,
@@ -142,7 +142,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
             @"UPDATE transportadoras
               SET id                 = @Id,
                   razaosocial        = @RazaoSocial,
-                  nome_fantasia      = @NomeFantasia,
+                  nomefantasia       = @NomeFantasia,
                   cnpj               = @Cnpj,
                   inscricao_estadual = @InscricaoEstadual,
                   cidade_id          = @CidadeId,

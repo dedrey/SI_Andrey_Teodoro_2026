@@ -5,6 +5,8 @@ public class MovimentacaoEstoqueListDto
     public int Id { get; set; }
     public string TipoMovimentacao { get; set; } = string.Empty;
     public string? Observacao { get; set; }
+    public string? NumeroNf { get; set; }
+    public string? NomeFornecedor { get; set; }
     public int TotalItens { get; set; }
     public int TotalQuantidade { get; set; }
     public decimal ValorTotal { get; set; }

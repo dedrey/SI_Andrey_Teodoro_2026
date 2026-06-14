@@ -31,4 +31,6 @@ public class ProdutoDto
     public string? NomeAtualizadoPor { get; set; }
 
     public List<ProdutoVariacaoDto> Variacoes { get; set; } = new();
+    public string? NumeroNfUltimaEntrada { get; set; }
+
 }

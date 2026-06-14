@@ -27,6 +27,9 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
             IdOriginal = m.Id,
             TipoMovimentacao = m.TipoMovimentacao,
             Observacao = m.Observacao,
+            NumeroNf = m.NumeroNf,
+            FornecedorId = m.FornecedorId,
+            NomeFornecedor = m.NomeFornecedor,
             CriadoEm = m.CriadoEm,
             Itens = itens.Select(i => new MovimentacaoEstoqueItemDto
             {
@@ -50,9 +53,15 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
         try
         {
             var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
-
             if (itensValidos.Count == 0)
                 return (false, "Adicione pelo menos um item à movimentação.", 0);
+            if (dto.TipoMovimentacao == "ENTRADA")
+            {
+                if (string.IsNullOrWhiteSpace(dto.NumeroNf))
+                    return (false, "Informe o número da Nota Fiscal para entrada de estoque.", 0);
+                if (!dto.FornecedorId.HasValue)
+                    return (false, "Selecione o fornecedor para entrada de estoque.", 0);
+            }
 
             foreach (var item in itensValidos)
             {
@@ -99,13 +108,13 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                     : dto.TipoMovimentacao == "ENTRADA" ? +item.Quantidade : -item.Quantidade;
 
                 await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, delta);
+
                 bool houvEntrada = dto.TipoMovimentacao == "ENTRADA" ||
                                    (dto.TipoMovimentacao == "AJUSTE" && delta > 0);
                 if (houvEntrada)
                 {
                     if (item.ValorUnitario > 0)
                         await _repo.AtualizarPrecoCustoAsync(item.ProdutoVariacaoId, item.ValorUnitario);
-
                     await _repo.AtualizarDataUltimaCompraAsync(item.ProdutoVariacaoId, DateTime.Today);
                 }
             }

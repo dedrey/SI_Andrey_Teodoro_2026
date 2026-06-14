@@ -37,6 +37,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             SiglaUnidade = p.SiglaUnidade,
             FornecedorId = p.FornecedorId,
             NomeFornecedor = p.NomeFornecedor,
+            NumeroNfUltimaEntrada = p.NumeroNfUltimaEntrada,
             Ativo = p.Ativo,
             AtualizadoEm = p.AtualizadoEm,
             NomeAtualizadoPor = p.NomeAtualizadoPor,
@@ -66,8 +67,6 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
                 if (v.TamanhoId == 0) return (false, $"Selecione o tamanho de uma variação.", 0);
                 if (v.Preco <= 0) return (false, $"Variação: preço de venda deve ser maior que zero.", 0);
                 if (v.PrecoCusto < 0) return (false, $"Variação: preço de custo não pode ser negativo.", 0);
-
-                // Valida: preço de venda não pode ser menor que custo (exceto Fast Fashion)
                 if (v.PrecoCusto > 0 && v.Preco < v.PrecoCusto && !v.PermiteVendaAbaixoCusto)
                     return (false,
                         $"Preço de venda (R$ {v.Preco:N2}) não pode ser menor que o custo " +

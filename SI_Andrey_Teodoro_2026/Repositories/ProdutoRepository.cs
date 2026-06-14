@@ -28,12 +28,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             _ => "1=1"
         });
         var whereClause = "WHERE " + string.Join(" AND ", where);
-        var orderBy = filtro.OrdenarPor switch
-        {
-            "id" => "p.id",
-            "data" => "p.criado_em",
-            _ => "p.produto"
-        };
+        var orderBy = filtro.OrdenarPor switch { "id" => "p.id", "data" => "p.criado_em", _ => "p.produto" };
 
         var sqlCount = $@"SELECT COUNT(*)
                           FROM produtos p
@@ -51,8 +46,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                                  m.marca              AS NomeMarca,
                                  p.unidade_medida_id  AS UnidadeMedidaId,
                                  u.unidade_medida     AS SiglaUnidade,
-                                 p.fornecedor_id      AS FornecedorId,
-                                 f.razaosocial       AS NomeFornecedor,
                                  COUNT(DISTINCT pv.id)          AS TotalVariacoes,
                                  COALESCE(SUM(e.quantidade), 0) AS TotalEstoque,
                                  p.ativo,
@@ -61,13 +54,12 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                           INNER JOIN categorias      c  ON c.id  = p.categoria_id
                           INNER JOIN marcas          m  ON m.id  = p.marca_id
                           INNER JOIN unidades_medida u  ON u.id  = p.unidade_medida_id
-                          LEFT  JOIN fornecedores    f  ON f.id  = p.fornecedor_id
                           LEFT  JOIN produto_variacoes pv ON pv.produto_id = p.id AND pv.ativo = TRUE
                           LEFT  JOIN estoque          e  ON e.produto_variacao_id = pv.id
                           {whereClause}
                           GROUP BY p.id, p.produto, p.descricao, p.categoria_id, c.categoria,
                                    p.marca_id, m.marca, p.unidade_medida_id, u.unidade_medida,
-                                   p.fornecedor_id, f.razaosocial, p.ativo, p.criado_em
+                                   p.ativo, p.criado_em
                           ORDER BY {orderBy}
                           LIMIT @Limit OFFSET @Offset";
 
@@ -113,8 +105,24 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      m.marca              AS NomeMarca,
                      p.unidade_medida_id  AS UnidadeMedidaId,
                      u.unidade_medida     AS SiglaUnidade,
-                     p.fornecedor_id      AS FornecedorId,
-                     f.razaosocial        AS NomeFornecedor,
+                     -- Fornecedor e NF vêm da última entrada vinculada às variações do produto
+                     (SELECT f2.razaosocial
+                      FROM movimentacoes_estoque       me
+                      INNER JOIN movimentacoes_estoque_itens mei ON mei.movimentacao_id = me.id
+                      INNER JOIN produto_variacoes     pv2       ON pv2.id = mei.produto_variacao_id
+                      INNER JOIN fornecedores          f2        ON f2.id  = me.fornecedor_id
+                      WHERE pv2.produto_id = p.id
+                        AND me.tipo_movimentacao = 'ENTRADA'
+                        AND me.fornecedor_id IS NOT NULL
+                      ORDER BY me.criado_em DESC LIMIT 1) AS NomeFornecedor,
+                     (SELECT me2.numero_nf
+                      FROM movimentacoes_estoque       me2
+                      INNER JOIN movimentacoes_estoque_itens mei2 ON mei2.movimentacao_id = me2.id
+                      INNER JOIN produto_variacoes     pv3        ON pv3.id = mei2.produto_variacao_id
+                      WHERE pv3.produto_id = p.id
+                        AND me2.tipo_movimentacao = 'ENTRADA'
+                        AND me2.numero_nf IS NOT NULL
+                      ORDER BY me2.criado_em DESC LIMIT 1) AS NumeroNfUltimaEntrada,
                      p.ativo,
                      p.criado_em          AS CriadoEm,
                      p.atualizado_em      AS AtualizadoEm,
@@ -123,7 +131,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               INNER JOIN categorias      c  ON c.id  = p.categoria_id
               INNER JOIN marcas          m  ON m.id  = p.marca_id
               INNER JOIN unidades_medida u  ON u.id  = p.unidade_medida_id
-              LEFT  JOIN fornecedores    f  ON f.id  = p.fornecedor_id
               LEFT  JOIN usuarios        ua ON ua.id = p.atualizado_por
               WHERE p.id = @id", new { id });
     }
@@ -163,9 +170,9 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO produtos (id, produto, descricao, categoria_id, marca_id,
-                                    unidade_medida_id, fornecedor_id, ativo)
+                                    unidade_medida_id, ativo)
               VALUES (@ProximoId, @Produto, @Descricao, @CategoriaId, @MarcaId,
-                      @UnidadeMedidaId, @FornecedorId, @Ativo)",
+                      @UnidadeMedidaId, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -174,7 +181,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.CategoriaId,
                 dto.MarcaId,
                 dto.UnidadeMedidaId,
-                dto.FornecedorId,
                 dto.Ativo
             });
         return proximoId;
@@ -191,7 +197,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                   categoria_id      = @CategoriaId,
                   marca_id          = @MarcaId,
                   unidade_medida_id = @UnidadeMedidaId,
-                  fornecedor_id     = @FornecedorId,
                   atualizado_em     = NOW()
               WHERE id = @IdOriginal",
             new
@@ -202,13 +207,11 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.Descricao,
                 dto.CategoriaId,
                 dto.MarcaId,
-                dto.UnidadeMedidaId,
-                dto.FornecedorId
+                dto.UnidadeMedidaId
             });
     }
 
-    public Task AlterarStatusAsync(int id, bool ativo)
-        => AlterarStatusBaseAsync(id, ativo);
+    public Task AlterarStatusAsync(int id, bool ativo) => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
     {

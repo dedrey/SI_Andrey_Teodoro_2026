@@ -1,5 +1,7 @@
 ﻿@inject IMovimentacaoEstoqueService MovimentacaoService
 @inject IProdutoService ProdutoService
+@inject IFornecedorService FornecedorService
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -31,6 +33,44 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="200" FullWidth="true" />
                 </MudItem>
             </MudGrid>
+            @if (_dto.TipoMovimentacao == "ENTRADA")
+            {
+                <div style="background:#f0f7ff;border:1px solid #bbd6f7;border-radius:8px;padding:12px 14px;margin-top:14px;">
+                    <div style="font-size:0.68rem;color:#1565c0;text-transform:uppercase;font-weight:700;letter-spacing:1px;margin-bottom:10px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Receipt" Style="font-size:0.9rem;margin-right:4px;" />
+                        Nota Fiscal de Entrada
+                    </div>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="4">
+                            <MudTextField @bind-Value="_dto.NumeroNf"
+                                          Label="Número da NF *"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          MaxLength="60" FullWidth="true"
+                                          Placeholder="Ex: 000123456"
+                                          Required="true" RequiredError="Número da NF é obrigatório" />
+                        </MudItem>
+                        <MudItem xs="12" sm="8">
+                            <div class="d-flex align-center gap-1">
+                                <MudAutocomplete T="FornecedorListDto"
+                                                 Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
+                                                 ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
+                                                 SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                                 ToStringFunc="@(f => f?.RazaoSocial ?? "")"
+                                                 Label="Fornecedor *"
+                                                 Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                                 ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
+                                                 Placeholder="Pesquisar fornecedor..."
+                                                 Error="@(_mostrarErroFornecedor && !_dto.FornecedorId.HasValue)"
+                                                 ErrorText="Fornecedor é obrigatório" />
+                                <MudTooltip Text="Novo fornecedor">
+                                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                                   Size="Size.Medium" OnClick="AbrirModalFornecedor" />
+                                </MudTooltip>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            }
 
             <MudDivider Class="my-4" />
             <div class="d-flex align-center justify-space-between mb-3">
@@ -52,9 +92,7 @@
                         <MudTh Style="font-weight:600;">Variação</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">@(_dto.TipoMovimentacao == "AJUSTE" ? "Qtd. Real" : "Quantidade")</MudTh>
-                        <MudTh Style="font-weight:600;text-align:right;">
-                            @(_dto.TipoMovimentacao == "ENTRADA" ? "Custo Unit." : "Valor Unit.")
-                        </MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">@(_dto.TipoMovimentacao == "ENTRADA" ? "Custo Unit." : "Valor Unit.")</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
@@ -65,8 +103,7 @@
                                              ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
                                              SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
                                              Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
-                                             Placeholder="Buscar produto..." />
+                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
                         </MudTd>
                         <MudTd>
                             <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
@@ -78,7 +115,7 @@
                                     @foreach (var v in vars)
                                     {
                                         <MudSelectItem T="int" Value="@v.IdOriginal">
-                                            @v.Cor / @v.Tamanho <span style="color:#888;font-size:0.8rem;margin-left:6px;">(@v.QuantidadeEstoque un.)</span>
+                                            @v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)
                                         </MudSelectItem>
                                     }
                                 }
@@ -93,7 +130,7 @@
                             @if (_dto.TipoMovimentacao == "AJUSTE")
                             {
                                 <MudTextField Value="@GetQtdRealTexto(context)" ValueChanged="@((string v) => OnQtdRealAlterada(context, v))"
-                                              Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:90px;" Placeholder="Ex: 7" />
+                                              Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:90px;" />
                             }
                             else
                             {
@@ -148,10 +185,10 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
 
     private MudForm? _form;
-    private bool _formValido;
-    private bool _salvando;
+    private bool _formValido, _salvando, _mostrarErroFornecedor;
     private MovimentacaoEstoqueDto _dto = new();
     private List<ProdutoListDto> _todosProdutos = new();
+    private List<FornecedorListDto> _fornecedores = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _valorTextos = new();
@@ -160,8 +197,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try { _todosProdutos = (await ProdutoService.ObterTodosAtivosAsync()).ToList(); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar produtos: {ex.Message}", Severity.Error); }
+        try
+        {
+            await Task.WhenAll(
+                Task.Run(async () => _todosProdutos = (await ProdutoService.ObterTodosAtivosAsync()).ToList()),
+                Task.Run(async () => _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList())
+            );
+        }
+        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
     private void AdicionarItem()
@@ -190,11 +233,8 @@
     private async Task OnProdutoAlterado(MovimentacaoEstoqueItemDto item, ProdutoListDto? produto)
     {
         _produtosSelecionados[item] = produto;
-        item.ProdutoVariacaoId = 0;
-        item.NomeProduto = produto?.Produto ?? "";
-        item.EstoqueAtual = 0;
-        item.ValorUnitario = 0;
-        _valorTextos[item] = "";
+        item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? "";
+        item.EstoqueAtual = 0; item.ValorUnitario = 0; _valorTextos[item] = "";
         if (produto != null)
         {
             var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
@@ -212,55 +252,30 @@
             var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
             if (v != null)
             {
-                item.Cor = v.Cor;
-                item.Tamanho = v.Tamanho;
-                item.EstoqueAtual = v.QuantidadeEstoque;
-
+                item.Cor = v.Cor; item.Tamanho = v.Tamanho; item.EstoqueAtual = v.QuantidadeEstoque;
                 if (_dto.TipoMovimentacao == "ENTRADA")
                 {
-                    // Preenche com o último custo registrado (vem da entrada anterior)
-                    // Se nunca houve entrada, deixa em branco para o usuário digitar
                     item.ValorUnitario = v.PrecoCusto > 0 ? v.PrecoCusto : 0;
                     _valorTextos[item] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : "";
-                    _precoVendaPorItem[item] = v.Preco; // guarda preço de venda para comparar
-                }
-                else
-                {
-                    // SAÍDA e AJUSTE: valor unitário é opcional, deixa em branco
-                    item.ValorUnitario = 0;
-                    _valorTextos[item] = "";
                     _precoVendaPorItem[item] = v.Preco;
                 }
+                else { item.ValorUnitario = 0; _valorTextos[item] = ""; _precoVendaPorItem[item] = v.Preco; }
             }
         }
         StateHasChanged();
     }
 
     private void OnQtdAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    {
-        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
-        item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
-    }
+    { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0; }
 
     private string GetQtdRealTexto(MovimentacaoEstoqueItemDto item)
-    {
-        if (!_qtdRealTextos.ContainsKey(item)) _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : "";
-        return _qtdRealTextos[item];
-    }
+    { if (!_qtdRealTextos.ContainsKey(item)) _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : ""; return _qtdRealTextos[item]; }
 
     private void OnQtdRealAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    {
-        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
-        _qtdRealTextos[item] = d;
-        item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1;
-        StateHasChanged();
-    }
+    { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); _qtdRealTextos[item] = d; item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1; StateHasChanged(); }
 
     private string GetValorTexto(MovimentacaoEstoqueItemDto item)
-    {
-        if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
-        return _valorTextos[item];
-    }
+    { if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : ""; return _valorTextos[item]; }
 
     private void OnValorAlterado(MovimentacaoEstoqueItemDto item, string? texto)
     {
@@ -273,8 +288,7 @@
 
     private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
     {
-        var r = string.IsNullOrWhiteSpace(busca)
-            ? _todosProdutos.Take(50)
+        var r = string.IsNullOrWhiteSpace(busca) ? _todosProdutos.Take(50)
             : _todosProdutos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
     }
@@ -282,11 +296,27 @@
     private async Task Salvar()
     {
         if (!_dto.Itens.Any(i => !i.Removido)) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
+        if (_dto.TipoMovimentacao == "ENTRADA")
+        {
+            _mostrarErroFornecedor = !_dto.FornecedorId.HasValue;
+            if (string.IsNullOrWhiteSpace(_dto.NumeroNf))
+            { Snackbar.Add("Informe o número da Nota Fiscal.", Severity.Warning); return; }
+            if (!_dto.FornecedorId.HasValue)
+            { Snackbar.Add("Selecione o fornecedor da entrada.", Severity.Warning); StateHasChanged(); return; }
+        }
         _salvando = true;
         var (sucesso, mensagem, _) = await MovimentacaoService.SalvarAsync(_dto);
         _salvando = false;
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task AbrirModalFornecedor()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
     }
 
     private void Fechar() => MudDialog.Cancel();

@@ -17,4 +17,6 @@ public class Produto
     public DateTime CriadoEm { get; set; }
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
+    public string? NumeroNfUltimaEntrada { get; set; }
+
 }

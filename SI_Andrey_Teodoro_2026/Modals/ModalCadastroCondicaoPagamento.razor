@@ -14,19 +14,20 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="7">
-                    <MudTextField @bind-Value="_dto.CondicaoPagamento" Label="Condição de Pagamento"
+                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
                     <div class="d-flex align-center gap-1">
-                        <MudSelect T="int" @bind-Value="_dto.MetodoPagamentoId" Label="Método de Pagamento"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true">
-                            @foreach (var m in _metodos)
-                            {
-                                <MudSelectItem T="int" Value="@m.Id">@m.MetodoPagamento (@m.Codigo)</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <MudAutocomplete T="MetodoPagamentoListDto"
+                                         Value="@(_metodos.FirstOrDefault(m => m.Id == _dto.MetodoPagamentoId))"
+                                         ValueChanged="@((MetodoPagamentoListDto? m) => _dto.MetodoPagamentoId = m?.Id ?? 0)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _metodos.AsEnumerable() : _metodos.Where(m => m.MetodoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase) || m.Codigo.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(m => m == null ? "" : $"{m.MetodoPagamento} ({m.Codigo})")"
+                                         Label="Método de Pagamento"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false" />
                         <MudTooltip Text="Novo método de pagamento">
                             <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
                                            Size="Size.Medium" OnClick="AbrirNovoMetodo" />
@@ -74,12 +75,20 @@
                         <RowTemplate>
                             <MudTd Style="font-weight:600;">@context.NumeroParcela</MudTd>
                             <MudTd>
-                                <MudNumericField T="int" @bind-Value="context.DiasVencimento"
-                                                 Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                 Min="1" Max="3650" Style="max-width:120px;" />
+                                <MudTextField Value="@context.DiasVencimento.ToString()"
+                                              ValueChanged="@((string v) => { context.DiasVencimento = int.TryParse(v, out int d) && d >= 0 ? d : 0; StateHasChanged(); })"
+                                              Variant="Variant.Outlined" Margin="Margin.Dense"
+                                              Immediate="true" Style="max-width:120px;" Placeholder="0 = no ato" />
                             </MudTd>
                             <MudTd Style="color:#888;font-size:0.85rem;">
-                                @DateTime.Today.AddDays(context.DiasVencimento).ToString("dd/MM/yyyy")
+                                @if (context.DiasVencimento == 0)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">No ato</MudChip>
+                                }
+                                else
+                                {
+                                    @DateTime.Today.AddDays(context.DiasVencimento).ToString("dd/MM/yyyy")
+                                }
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
@@ -157,7 +166,10 @@
     {
         _dto.Parcelas = Enumerable.Range(1, _dto.NumeroParcelas)
             .Select(n => new CondicaoPagamentoParcelaDto
-            { NumeroParcela = n, DiasVencimento = 30 * n })
+            {
+                NumeroParcela = n,
+                DiasVencimento = _dto.NumeroParcelas == 1 ? 0 : 30 * n
+            })
             .ToList();
     }
 
@@ -186,6 +198,17 @@
             var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
             _metodos = metodos.ToList();
         }
+    }
+
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
+        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
+    private static string Cap(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
+        return string.Join(" ", s.Trim().Split(' ')
+            .Select((w, i) => i > 0 && _prep.Contains(w)
+                ? w.ToLower()
+                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
     }
 
     private void Fechar() => MudDialog.Cancel();
