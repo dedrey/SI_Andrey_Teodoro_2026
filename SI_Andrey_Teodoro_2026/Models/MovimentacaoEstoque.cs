@@ -8,6 +8,9 @@ public class MovimentacaoEstoque
     public DateTime CriadoEm { get; set; }
     public int? CriadoPor { get; set; }
     public string? NomeCriadoPor { get; set; }
+    public string? NumeroNf { get; set; }
+    public int? FornecedorId { get; set; }
+    public string? NomeFornecedor { get; set; }
 }
 
 public class MovimentacaoEstoqueItem

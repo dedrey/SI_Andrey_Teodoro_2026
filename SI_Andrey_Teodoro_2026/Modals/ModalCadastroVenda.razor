@@ -16,29 +16,27 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="10" sm="5">
-                    <MudSelect T="int?" Value="_dto.ClienteId" ValueChanged="@((int? v) => { _dto.ClienteId = v; RecalcularTotais(); })"
-                               Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                               Required="true" RequiredError="Selecione um cliente">
-                        <MudSelectItem T="int?" Value="@((int?)null)" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var c in _clientes)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)c.Id)">@c.NomeRazaoSocial</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="ClienteListDto"
+                                     Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
+                                     ValueChanged="@((ClienteListDto? c) => { _dto.ClienteId = c?.Id; RecalcularTotais(); })"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
+                                     Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     Required="true" RequiredError="Selecione um cliente"
+                                     ResetValueOnEmptyText="true" CoerceText="false" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCliente" />
                 </MudItem>
                 <MudItem xs="10" sm="5">
-                    <MudSelect T="int?" Value="_dto.CondicaoPagamentoId" ValueChanged="@((int? v) => { _dto.CondicaoPagamentoId = v; RecalcularTotais(); })"
-                               Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                               Required="true" RequiredError="Selecione uma condição">
-                        <MudSelectItem T="int?" Value="@((int?)null)" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var cp in _condicoes)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)cp.Id)">@cp.CondicaoPagamento</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="CondicaoPagamentoListDto"
+                                     Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
+                                     ValueChanged="@((CondicaoPagamentoListDto? c) => { _dto.CondicaoPagamentoId = c?.Id; RecalcularTotais(); })"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
+                                     Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     Required="true" RequiredError="Selecione uma condição"
+                                     ResetValueOnEmptyText="true" CoerceText="false" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCondicao" />
@@ -75,24 +73,17 @@
                                              ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
                                              SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
                                              Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
-                                             Placeholder="Buscar produto..." />
+                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
                         </MudTd>
                         <MudTd>
-                            <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                       Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
-                                <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                                @if (_variacoesPorItem.TryGetValue(context, out var vars))
-                                {
-                                    @foreach (var v in vars)
-                                    {
-                                        <MudSelectItem T="int" Value="@v.IdOriginal">
-                                            @v.Cor / @v.Tamanho <span style="color:#888;font-size:0.8rem;margin-left:6px;">(@v.QuantidadeEstoque un.)</span>
-                                        </MudSelectItem>
-                                    }
-                                }
-                            </MudSelect>
+                            <MudAutocomplete T="ProdutoVariacaoDto"
+                                             Value="@(_variacoesPorItem.TryGetValue(context, out var vs2) ? vs2.FirstOrDefault(v => v.IdOriginal == context.ProdutoVariacaoId) : null)"
+                                             ValueChanged="@((ProdutoVariacaoDto? v) => OnVariacaoAlterada(context, v?.IdOriginal ?? 0))"
+                                             SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
+                                             ToStringFunc="@(v => v == null ? "" : $"{v.Cor} / {v.Tamanho} ({v.QuantidadeEstoque} un.)")"
+                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                             Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
+                                             ResetValueOnEmptyText="true" CoerceText="false" />
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             @if (_variacoesPorItem.TryGetValue(context, out var vs) && context.ProdutoVariacaoId > 0)

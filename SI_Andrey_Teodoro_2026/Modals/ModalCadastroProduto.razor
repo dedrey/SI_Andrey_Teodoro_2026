@@ -2,7 +2,6 @@
 @inject ICategoriaService CategoriaService
 @inject IMarcaService MarcaService
 @inject IUnidadeMedidaService UnidadeMedidaService
-@inject IFornecedorService FornecedorService
 @inject ICorService CorService
 @inject ITamanhoService TamanhoService
 @inject IDialogService DialogService
@@ -35,40 +34,37 @@
 
             <MudGrid Spacing="2" Class="mt-2">
                 <MudItem xs="10" sm="4" md="4">
-                    <MudSelect T="int" @bind-Value="_dto.CategoriaId" Label="Categoria"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                        <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var c in _categorias)
-                        {
-                            <MudSelectItem T="int" Value="@c.Id">@c.NomeCategoria</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="CategoriaListDto"
+                                     Value="@(_categorias.FirstOrDefault(c => c.Id == _dto.CategoriaId))"
+                                     ValueChanged="@((CategoriaListDto? c) => _dto.CategoriaId = c?.Id ?? 0)"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _categorias.AsEnumerable() : _categorias.Where(c => c.NomeCategoria.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(c => c?.NomeCategoria ?? "")"
+                                     Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..." />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCategoria" />
                 </MudItem>
                 <MudItem xs="10" sm="4" md="3">
-                    <MudSelect T="int" @bind-Value="_dto.MarcaId" Label="Marca"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                        <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var m in _marcas)
-                        {
-                            <MudSelectItem T="int" Value="@m.Id">@m.NomeMarca</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="MarcaListDto"
+                                     Value="@(_marcas.FirstOrDefault(m => m.Id == _dto.MarcaId))"
+                                     ValueChanged="@((MarcaListDto? m) => _dto.MarcaId = m?.Id ?? 0)"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _marcas.AsEnumerable() : _marcas.Where(m => m.NomeMarca.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(m => m?.NomeMarca ?? "")"
+                                     Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..." />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalMarca" />
                 </MudItem>
                 <MudItem xs="10" sm="4" md="2">
-                    <MudSelect T="int" @bind-Value="_dto.UnidadeMedidaId" Label="Unidade"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                        <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var u in _unidades)
-                        {
-                            <MudSelectItem T="int" Value="@u.Id">@u.Sigla — @u.Descricao</MudSelectItem>
-                        }
-                    </MudSelect>
+                    <MudAutocomplete T="UnidadeMedidaListDto"
+                                     Value="@(_unidades.FirstOrDefault(u => u.Id == _dto.UnidadeMedidaId))"
+                                     ValueChanged="@((UnidadeMedidaListDto? u) => _dto.UnidadeMedidaId = u?.Id ?? 0)"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _unidades.AsEnumerable() : _unidades.Where(u => u.Sigla.Contains(s, StringComparison.OrdinalIgnoreCase) || u.Descricao.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(u => u == null ? "" : $"{u.Sigla} — {u.Descricao}")"
+                                     Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..." />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalUnidade" />
@@ -76,20 +72,7 @@
             </MudGrid>
 
             <MudGrid Spacing="2" Class="mt-2">
-                <MudItem xs="10" sm="5">
-                    <MudSelect T="int?" Value="_dto.FornecedorId" ValueChanged="@((int? v) => _dto.FornecedorId = v)"
-                               Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                        <MudSelectItem T="int?" Value="@((int?)null)">— Nenhum —</MudSelectItem>
-                        @foreach (var f in _fornecedores)
-                        {
-                            <MudSelectItem T="int?" Value="@((int?)f.Id)">@f.RazaoSocial</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-center">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalFornecedor" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
                                   Label="Descrição" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2" />
@@ -234,7 +217,6 @@
     private List<CategoriaListDto> _categorias = new();
     private List<MarcaListDto> _marcas = new();
     private List<UnidadeMedidaListDto> _unidades = new();
-    private List<FornecedorListDto> _fornecedores = new();
     private List<CorListDto> _cores = new();
     private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
@@ -261,7 +243,6 @@
             Task.Run(async () => _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList()),
-            Task.Run(async () => _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _cores = (await CorService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList())
         );
@@ -324,14 +305,6 @@
         if ((await dialog.Result) is { Canceled: false })
             _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList();
     }
-    private async Task AbrirModalFornecedor()
-    {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
-    }
-
     private async Task Salvar()
     {
         await _form!.Validate();
