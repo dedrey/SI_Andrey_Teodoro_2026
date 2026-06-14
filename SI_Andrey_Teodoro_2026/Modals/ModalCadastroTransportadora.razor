@@ -63,16 +63,21 @@
                     </MudText>
                 </MudItem>
                 <MudItem xs="12" sm="7">
-                    <MudTextField @bind-Value="_dto.Endereco" Label="Rua"
+                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string? v) => _dto.Endereco = v == null ? null : Cap(v))" Label="Rua" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
-                    <MudTextField @bind-Value="_dto.Bairro" Label="Bairro"
+                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string? v) => _dto.Bairro = v == null ? null : Cap(v))" Label="Bairro" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="60" FullWidth="true" />
                 </MudItem>
-                <MudItem xs="12">
-                    <MudTextField @bind-Value="_dto.Complemento" Label="Complemento"
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.Complemento" ValueChanged="@((string? v) => _dto.Complemento = v == null ? null : Cap(v))" Label="Complemento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string? v) => _dto.Cep = MascaraCep(v))"
+                                  Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Placeholder="00000-000" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -140,6 +145,14 @@
     }
 
     private void Fechar() => MudDialog.Cancel();
+
+    private string? MascaraCep(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return null;
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        if (d.Length > 8) d = d[..8];
+        return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
+    }
 
     private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
         { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };

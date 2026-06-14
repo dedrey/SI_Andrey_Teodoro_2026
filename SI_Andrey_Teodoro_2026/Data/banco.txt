@@ -82,6 +82,7 @@ CREATE TABLE fornecedores (
   endereco       VARCHAR(50),
   complemento    VARCHAR(50),
   bairro         VARCHAR(50),
+  cep            VARCHAR(9)   NULL COMMENT 'CEP no formato 00000-000',
   telefone       VARCHAR(15),
   email          VARCHAR(50),
   ativo          BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -89,9 +90,12 @@ CREATE TABLE fornecedores (
   criado_por     INT NULL,
   atualizado_em  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   atualizado_por INT NULL,
-  CONSTRAINT fk_fornecedores_cidade         FOREIGN KEY (cidade_id)      REFERENCES cidades(id)  ON DELETE SET NULL,
-  CONSTRAINT fk_fornecedores_criado_por     FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
-  CONSTRAINT fk_fornecedores_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+  CONSTRAINT fk_fornecedores_cidade
+    FOREIGN KEY (cidade_id) REFERENCES cidades(id) ON DELETE SET NULL,
+  CONSTRAINT fk_fornecedores_criado_por
+    FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_fornecedores_atualizado_por
+    FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ================================================================
@@ -160,6 +164,8 @@ CREATE TABLE clientes (
   nome_razaosocial      VARCHAR(100)     NOT NULL,
   cpf_cnpj              VARCHAR(14)      NULL UNIQUE,
   tipo_pessoa           ENUM('PF','PJ')  NOT NULL DEFAULT 'PF',
+  sexo                  ENUM('MASCULINO','FEMININO','OUTRO','NAO_INFORMAR')
+                        NOT NULL DEFAULT 'NAO_INFORMAR',
   estrangeiro           BOOLEAN          NOT NULL DEFAULT FALSE,
   documento_estrangeiro VARCHAR(30)      NULL,
   apelido_nomefantasia  VARCHAR(100),
@@ -167,6 +173,7 @@ CREATE TABLE clientes (
   endereco              VARCHAR(50),
   complemento           VARCHAR(50),
   bairro                VARCHAR(60),
+  cep                   VARCHAR(9)       NULL COMMENT 'CEP no formato 00000-000',
   telefone              VARCHAR(15),
   email                 VARCHAR(100),
   inscricao_estadual    VARCHAR(20),
@@ -177,9 +184,12 @@ CREATE TABLE clientes (
   criado_por            INT NULL,
   atualizado_em         DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   atualizado_por        INT NULL,
-  CONSTRAINT fk_clientes_cidade         FOREIGN KEY (cidade_id)      REFERENCES cidades(id)  ON DELETE SET NULL,
-  CONSTRAINT fk_clientes_criado_por     FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
-  CONSTRAINT fk_clientes_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+  CONSTRAINT fk_clientes_cidade
+    FOREIGN KEY (cidade_id) REFERENCES cidades(id) ON DELETE SET NULL,
+  CONSTRAINT fk_clientes_criado_por
+    FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_clientes_atualizado_por
+    FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE emitentes (
@@ -212,13 +222,14 @@ CREATE TABLE emitentes (
 CREATE TABLE transportadoras (
   id                 INT          AUTO_INCREMENT PRIMARY KEY,
   razaosocial        VARCHAR(100) NOT NULL UNIQUE,
-  nome_fantasia      VARCHAR(100) NULL,
+  nomefantasia       VARCHAR(100) NULL,
   cnpj               VARCHAR(14)  NOT NULL UNIQUE,
   inscricao_estadual VARCHAR(20)  NULL,
   cidade_id          INT          NULL,
   endereco           VARCHAR(100) NULL,
   complemento        VARCHAR(50)  NULL,
   bairro             VARCHAR(60)  NULL,
+  cep                VARCHAR(9)   NULL COMMENT 'CEP no formato 00000-000',
   telefone           VARCHAR(15)  NULL,
   email              VARCHAR(50)  NULL,
   ativo              BOOLEAN      NOT NULL DEFAULT TRUE,
@@ -226,9 +237,12 @@ CREATE TABLE transportadoras (
   criado_por         INT NULL,
   atualizado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   atualizado_por     INT NULL,
-  CONSTRAINT fk_transp_cidade         FOREIGN KEY (cidade_id)      REFERENCES cidades(id)  ON DELETE SET NULL,
-  CONSTRAINT fk_transp_criado_por     FOREIGN KEY (criado_por)     REFERENCES usuarios(id) ON DELETE SET NULL,
-  CONSTRAINT fk_transp_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+  CONSTRAINT fk_transp_cidade
+    FOREIGN KEY (cidade_id) REFERENCES cidades(id) ON DELETE SET NULL,
+  CONSTRAINT fk_transp_criado_por
+    FOREIGN KEY (criado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_transp_atualizado_por
+    FOREIGN KEY (atualizado_por) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE veiculos (

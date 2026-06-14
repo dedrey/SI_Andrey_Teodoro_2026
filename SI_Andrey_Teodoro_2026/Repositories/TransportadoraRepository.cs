@@ -95,6 +95,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                      t.endereco,
                      t.complemento,
                      t.bairro,
+                     t.cep,
                      t.telefone, t.email,
                      t.ativo,
                      t.criado_em         AS CriadoEm,
@@ -113,10 +114,10 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         await conn.ExecuteAsync(
             @"INSERT INTO transportadoras
                 (id, razaosocial, nomefantasia, cnpj, inscricao_estadual, cidade_id,
-                endereco, complemento, bairro, telefone, email, ativo)
+                endereco, complemento, bairro, cep, telefone, email, ativo)
             VALUES
                 (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @InscricaoEstadual, @CidadeId,
-                @Endereco, @Complemento, @Bairro, @Telefone, @Email, @Ativo)",
+                @Endereco, @Complemento, @Bairro, @Cep, @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -128,6 +129,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                 dto.Endereco,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email,
                 dto.Ativo
@@ -149,6 +151,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                   endereco           = @Endereco,
                   complemento        = @Complemento,
                   bairro             = @Bairro,
+                  cep                = @Cep,
                   telefone           = @Telefone,
                   email              = @Email,
                   atualizado_em      = NOW()

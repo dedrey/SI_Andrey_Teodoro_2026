@@ -78,7 +78,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                      f.cnpj,
                      f.cidade_id     AS CidadeId,
                      c.cidade        AS NomeCidade,
-                     f.endereco, f.complemento, f.bairro,
+                     f.endereco, f.complemento, f.bairro, f.cep,
                      f.telefone, f.email,
                      f.ativo,
                      f.criado_em     AS CriadoEm,
@@ -97,10 +97,10 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
         await conn.ExecuteAsync(
             @"INSERT INTO fornecedores
                 (id, razaosocial, nomefantasia, cnpj, cidade_id,
-                 endereco, complemento, bairro, telefone, email, ativo)
+                 endereco, complemento, bairro, cep, telefone, email, ativo)
               VALUES
                 (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @CidadeId,
-                 @Endereco, @Complemento, @Bairro, @Telefone, @Email, @Ativo)",
+                 @Endereco, @Complemento, @Bairro, @Cep, @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -111,6 +111,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                 dto.Endereco,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email,
                 dto.Ativo
@@ -131,6 +132,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                   endereco     = @Endereco,
                   complemento  = @Complemento,
                   bairro       = @Bairro,
+                  cep          = @Cep,
                   telefone     = @Telefone,
                   email        = @Email,
                   atualizado_em = NOW()
@@ -146,6 +148,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                 dto.Endereco,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email
             });
