@@ -15,14 +15,23 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="6" sm="4">
+                <MudItem xs="6" sm="3">
                     <MudSelect T="string" Value="@_dto.TipoPessoa" ValueChanged="OnTipoPessoaAlterado"
                                Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                         <MudSelectItem T="string" Value="@("PF")">Pessoa Física</MudSelectItem>
                         <MudSelectItem T="string" Value="@("PJ")">Pessoa Jurídica</MudSelectItem>
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="6" sm="4" Class="d-flex align-center">
+                <MudItem xs="6" sm="3">
+                    <MudSelect T="string" @bind-Value="_dto.Sexo" Label="Sexo"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                        <MudSelectItem T="string" Value="@("MASCULINO")">Masculino</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("FEMININO")">Feminino</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("OUTRO")">Outro</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("NAO_INFORMAR")">Não informar</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" Class="d-flex align-center">
                     <MudCheckBox T="bool" Value="@_dto.Estrangeiro" ValueChanged="OnEstrangeiroAlterado"
                                  Color="Color.Primary" Label="Estrangeiro" />
                 </MudItem>
@@ -92,19 +101,24 @@
                 <MudItem xs="12"><MudDivider /><MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Endereço</MudText></MudItem>
 
                 <MudItem xs="12" sm="7">
-                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string? v) => _dto.Endereco = v)"
+                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string? v) => _dto.Endereco = Cap(v))"
                                   Label="Rua" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="100" FullWidth="true" />
+                                  MaxLength="100" FullWidth="true" Immediate="true" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
-                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string? v) => _dto.Bairro = v)"
+                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string? v) => _dto.Bairro = Cap(v))"
                                   Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="60" FullWidth="true" />
+                                  MaxLength="60" FullWidth="true" Immediate="true" />
                 </MudItem>
-                <MudItem xs="12">
-                    <MudTextField Value="@_dto.Complemento" ValueChanged="@((string? v) => _dto.Complemento = v)"
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.Complemento" ValueChanged="@((string? v) => _dto.Complemento = Cap(v))"
                                   Label="Complemento"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Immediate="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string? v) => _dto.Cep = MascaraCep(v))"
+                                  Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Placeholder="00000-000" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
@@ -129,7 +143,7 @@
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public ClienteDto? DtoEdicao { get; set; }
 
-    private ClienteDto _dto = new() { TipoPessoa = "PF" };
+    private ClienteDto _dto = new() { TipoPessoa = "PF", Sexo = "NAO_INFORMAR" };
     private MudForm _form = null!;
     private bool _formValido, _salvando;
     private string _docTexto = "", _limiteCreditoTexto = "";
@@ -146,6 +160,7 @@
                 Id = DtoEdicao.Id,
                 IdOriginal = DtoEdicao.IdOriginal,
                 TipoPessoa = DtoEdicao.TipoPessoa,
+                Sexo = string.IsNullOrWhiteSpace(DtoEdicao.Sexo) ? "NAO_INFORMAR" : DtoEdicao.Sexo,
                 Estrangeiro = DtoEdicao.Estrangeiro,
                 NomeRazaoSocial = DtoEdicao.NomeRazaoSocial,
                 ApelidoNomeFantasia = DtoEdicao.ApelidoNomeFantasia,
@@ -155,6 +170,7 @@
                 Endereco = DtoEdicao.Endereco,
                 Complemento = DtoEdicao.Complemento,
                 Bairro = DtoEdicao.Bairro,
+                Cep = DtoEdicao.Cep,
                 Telefone = DtoEdicao.Telefone ?? "",
                 Email = DtoEdicao.Email ?? "",
                 InscricaoEstadual = DtoEdicao.InscricaoEstadual,
@@ -205,6 +221,13 @@
     private static string FormatarCpf(string d) { if (d.Length >= 11) d = d[..11]; return d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : d; }
     private static string FormatarCnpj(string d) { if (d.Length >= 14) d = d[..14]; return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d; }
     private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
+    private string? MascaraCep(string? v)
+    {
+        if (string.IsNullOrEmpty(v)) return null;
+        var d = new string(v.Where(char.IsDigit).ToArray());
+        if (d.Length > 8) d = d[..8];
+        return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
+    }
     private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) if (i == 0 || i == p.Length - 1 || !_min.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; return string.Join(" ", p); }
     private static readonly HashSet<string> _min = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "com", "por", "para", "ao", "aos" };
 }

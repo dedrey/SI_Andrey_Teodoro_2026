@@ -31,6 +31,7 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             Cnpj = FormatarCnpj(t.Cnpj),
             InscricaoEstadual = t.InscricaoEstadual,
             CidadeId = t.CidadeId,
+            Cep = t.Cep,
             Endereco = t.Endereco,
             Complemento = t.Complemento,
             Bairro = t.Bairro,

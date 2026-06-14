@@ -38,6 +38,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
         var sqlCount = $"SELECT COUNT(*) FROM clientes c {whereClause}";
         var sqlData = $@"SELECT c.id,
                                   c.tipo_pessoa            AS TipoPessoa,
+                                  c.sexo,
                                   c.estrangeiro,
                                   c.nome_razaosocial       AS NomeRazaoSocial,
                                   c.apelido_nomefantasia   AS ApelidoNomeFantasia,
@@ -89,6 +90,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
         return await conn.QueryFirstOrDefaultAsync<Cliente>(
             @"SELECT c.id,
                      c.tipo_pessoa            AS TipoPessoa,
+                     c.sexo,
                      c.estrangeiro,
                      c.nome_razaosocial       AS NomeRazaoSocial,
                      c.apelido_nomefantasia   AS ApelidoNomeFantasia,
@@ -96,7 +98,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                      c.documento_estrangeiro  AS DocumentoEstrangeiro,
                      c.cidade_id              AS CidadeId,
                      ci.cidade                AS NomeCidade,
-                     c.endereco, c.complemento, c.bairro,
+                     c.endereco, c.complemento, c.bairro, c.cep,
                      c.telefone, c.email,
                      c.inscricao_estadual     AS InscricaoEstadual,
                      c.inscricao_municipal    AS InscricaoMunicipal,
@@ -117,19 +119,20 @@ public class ClienteRepository : BaseRepository, IClienteRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO clientes
-                (id, tipo_pessoa, estrangeiro, nome_razaosocial, apelido_nomefantasia,
+                (id, tipo_pessoa, sexo, estrangeiro, nome_razaosocial, apelido_nomefantasia,
                  cpf_cnpj, documento_estrangeiro, cidade_id,
-                 endereco, complemento, bairro, telefone, email,
+                 endereco, complemento, bairro, cep, telefone, email,
                  inscricao_estadual, inscricao_municipal, limite_credito, ativo)
               VALUES
-                (@ProximoId, @TipoPessoa, @Estrangeiro, @NomeRazaoSocial, @ApelidoNomeFantasia,
+                (@ProximoId, @TipoPessoa, @Sexo, @Estrangeiro, @NomeRazaoSocial, @ApelidoNomeFantasia,
                  @CpfCnpj, @DocumentoEstrangeiro, @CidadeId,
-                 @Endereco, @Complemento, @Bairro, @Telefone, @Email,
+                 @Endereco, @Complemento, @Bairro, @Cep, @Telefone, @Email,
                  @InscricaoEstadual, @InscricaoMunicipal, @LimiteCredito, @Ativo)",
             new
             {
                 ProximoId = proximoId,
                 dto.TipoPessoa,
+                dto.Sexo,
                 dto.Estrangeiro,
                 NomeRazaoSocial = dto.NomeRazaoSocial,
                 ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
@@ -139,6 +142,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                 dto.Endereco,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email,
                 dto.InscricaoEstadual,
@@ -156,6 +160,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
             @"UPDATE clientes
               SET id                    = @Id,
                   tipo_pessoa           = @TipoPessoa,
+                  sexo                  = @Sexo,
                   estrangeiro           = @Estrangeiro,
                   nome_razaosocial      = @NomeRazaoSocial,
                   apelido_nomefantasia  = @ApelidoNomeFantasia,
@@ -165,6 +170,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                   endereco              = @Endereco,
                   complemento           = @Complemento,
                   bairro                = @Bairro,
+                  cep                   = @Cep,
                   telefone              = @Telefone,
                   email                 = @Email,
                   inscricao_estadual    = @InscricaoEstadual,
@@ -177,6 +183,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                 dto.Id,
                 dto.IdOriginal,
                 dto.TipoPessoa,
+                dto.Sexo,
                 dto.Estrangeiro,
                 NomeRazaoSocial = dto.NomeRazaoSocial,
                 ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
@@ -186,6 +193,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                 dto.Endereco,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email,
                 dto.InscricaoEstadual,

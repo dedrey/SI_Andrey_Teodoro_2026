@@ -9,6 +9,7 @@ public class Fornecedor
     public int? EstadoId { get; set; }
     public int? PaisId { get; set; }
     public string? NomeCidade { get; set; }
+    public string? Cep { get; set; }
     public string? Endereco { get; set; }
     public string? Complemento { get; set; }
     public string? Bairro { get; set; }
