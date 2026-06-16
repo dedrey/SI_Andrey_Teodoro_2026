@@ -46,9 +46,10 @@
                                    Size="Size.Medium" OnClick="AbrirModalCidade" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_dto.Telefone" Label="Telefone"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" />
+                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"
+                                  Label="Telefone" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
+                                  Validation="@((string v) => ValidarTel(v))" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField @bind-Value="_dto.Email" Label="E-mail"
@@ -145,6 +146,9 @@
     }
 
     private void Fechar() => MudDialog.Cancel();
+
+    private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
+    private string? ValidarTel(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }
 
     private string? MascaraCep(string? v)
     {

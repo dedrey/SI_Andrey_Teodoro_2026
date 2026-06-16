@@ -33,6 +33,7 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             ApelidoNomeFantasia = c.ApelidoNomeFantasia,
             CpfCnpj = FormatarDocumento(c.CpfCnpj, c.TipoPessoa),
             DocumentoEstrangeiro = c.DocumentoEstrangeiro,
+            NomeCidade = c.NomeCidade,
             CidadeId = c.CidadeId,
             Cep = c.Cep,
             Endereco = c.Endereco,

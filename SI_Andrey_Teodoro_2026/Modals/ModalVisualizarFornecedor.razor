@@ -26,34 +26,52 @@
         {
             <div class="vis-section">
                 <div class="vis-section-title">Identificação</div>
-                <MudGrid Spacing="3">
+                <MudGrid Spacing="3" Justify="Justify.Center">
                     <MudItem xs="2" sm="1"><div class="vis-field"><span class="vis-label">ID</span><span class="vis-value">@_dto.Id</span></div></MudItem>
-                    <MudItem xs="10" sm="5"><div class="vis-field"><span class="vis-label">Razão Social</span><span class="vis-value">@_dto.RazaoSocial</span></div></MudItem>
-                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Nome Fantasia</span><span class="vis-value">@(_dto.NomeFantasia ?? "—")</span></div></MudItem>
+                    <MudItem xs="10" sm="6"><div class="vis-field"><span class="vis-label">Razão Social</span><span class="vis-value" style="font-size:1.05rem;font-weight:700;">@_dto.RazaoSocial</span></div></MudItem>
+                    <MudItem xs="12" sm="5"><div class="vis-field"><span class="vis-label">Nome Fantasia</span><span class="vis-value">@(_dto.NomeFantasia ?? "—")</span></div></MudItem>
+
                     <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">CNPJ</span><span class="vis-value">@FormatCnpj(_dto.Cnpj)</span></div></MudItem>
                 </MudGrid>
             </div>
 
             <div class="vis-section">
                 <div class="vis-section-title">Contato</div>
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Telefone</span><span class="vis-value">@(_dto.Telefone ?? "—")</span></div></MudItem>
-                    <MudItem xs="12" sm="8"><div class="vis-field"><span class="vis-label">E-mail</span><span class="vis-value">@(_dto.Email ?? "—")</span></div></MudItem>
-                </MudGrid>
+                <div class="vis-row">
+                    <div class="vis-field"><span class="vis-label">Telefone</span><span class="vis-value">@(_dto.Telefone ?? "—")</span></div>
+                    <div class="vis-field"><span class="vis-label">E-mail</span><span class="vis-value">@(_dto.Email ?? "—")</span></div>
+                </div>
             </div>
 
             <div class="vis-section">
                 <div class="vis-section-title">Endereço</div>
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="7"><div class="vis-field"><span class="vis-label">Rua / Logradouro</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Endereco) ? "—" : _dto.Endereco)</span></div></MudItem>
-                    <MudItem xs="12" sm="5"><div class="vis-field"><span class="vis-label">Bairro</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Bairro) ? "—" : _dto.Bairro)</span></div></MudItem>
-                    <MudItem xs="12"><div class="vis-field"><span class="vis-label">Complemento</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Complemento) ? "—" : _dto.Complemento)</span></div></MudItem>
-                </MudGrid>
+                <div class="vis-row">
+                    <div class="vis-field">
+                        <span class="vis-label">Rua / Logradouro</span>
+                        <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Endereco) ? "—" : _dto.Endereco)</span>
+                    </div>
+                    <div class="vis-field">
+                        <span class="vis-label">Bairro</span>
+                        <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Bairro) ? "—" : _dto.Bairro)</span>
+                    </div>
+                    <div class="vis-field">
+                        <span class="vis-label">CEP</span>
+                        <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Cep) ? "—" : _dto.Cep)</span>
+                    </div>
+                    <div class="vis-field">
+                        <span class="vis-label">Cidade</span>
+                        <span class="vis-value">@(_dto.NomeCidade ?? "—")</span>
+                    </div>
+                    <div class="vis-field">
+                        <span class="vis-label">Complemento</span>
+                        <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Complemento) ? "—" : _dto.Complemento)</span>
+                    </div>
+                </div>
             </div>
 
             @if (_dto.AtualizadoEm.HasValue)
             {
-                <MudText Style="font-size:0.73rem;color:#bbb;">
+                <MudText Style="font-size:0.73rem;color:#bbb;text-align:center;display:block;">
                     Atualizado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
                     @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
                     {
@@ -83,12 +101,30 @@
         letter-spacing: 1.2px;
         font-weight: 700;
         margin-bottom: 10px;
+        text-align: center;
     }
 
     .vis-field {
         display: flex;
         flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
     }
+
+    .vis-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 32px;
+    }
+
+        .vis-row .vis-field {
+            width: auto;
+            min-width: 80px;
+            flex: 1 1 auto;
+            max-width: 240px;
+        }
 
     .vis-label {
         font-size: 0.68rem;
