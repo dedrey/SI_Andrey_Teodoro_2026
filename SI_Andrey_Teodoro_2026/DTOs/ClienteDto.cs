@@ -14,6 +14,8 @@ public class ClienteDto
     [MaxLength(14)] public string? CpfCnpj { get; set; }
     [MaxLength(30)] public string? DocumentoEstrangeiro { get; set; }
     [MaxLength(100)] public string? ApelidoNomeFantasia { get; set; }
+    public string? NomeCidade { get; set; }
+
     public int? CidadeId { get; set; }
     [Required(ErrorMessage = "Endereço é obrigatório")]
     [MinLength(5)]

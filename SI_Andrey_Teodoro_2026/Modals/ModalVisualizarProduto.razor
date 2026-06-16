@@ -26,14 +26,16 @@
         {
             <div class="vis-section">
                 <div class="vis-section-title">Identificação</div>
-                <MudGrid Spacing="3">
+                <MudGrid Spacing="3" Justify="Justify.Center">
                     <MudItem xs="2" sm="1"><div class="vis-field"><span class="vis-label">ID</span><span class="vis-value">@_dto.Id</span></div></MudItem>
-                    <MudItem xs="10" sm="7"><div class="vis-field"><span class="vis-label">Produto</span><span class="vis-value" style="font-size:1.05rem;font-weight:700;">@_dto.Produto</span></div></MudItem>
-                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Categoria</span><span class="vis-value">@(_dto.NomeCategoria ?? "—")</span></div></MudItem>
-                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Marca</span><span class="vis-value">@(_dto.NomeMarca ?? "—")</span></div></MudItem>
+                    <MudItem xs="10" sm="5"><div class="vis-field"><span class="vis-label">Produto</span><span class="vis-value" style="font-size:1.05rem;font-weight:700;">@_dto.Produto</span></div></MudItem>
+                    <MudItem xs="12" sm="2"><div class="vis-field"><span class="vis-label">Categoria</span><span class="vis-value">@(_dto.NomeCategoria ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="2"><div class="vis-field"><span class="vis-label">Marca</span><span class="vis-value">@(_dto.NomeMarca ?? "—")</span></div></MudItem>
                     <MudItem xs="12" sm="2"><div class="vis-field"><span class="vis-label">Unidade</span><span class="vis-value">@(_dto.SiglaUnidade ?? "—")</span></div></MudItem>
-                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Último Fornecedor</span><span class="vis-value">@(_dto.NomeFornecedor ?? "—")</span></div></MudItem>
-                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Nota Fiscal de Entrada</span><span class="vis-value">@(_dto.NumeroNfUltimaEntrada ?? "—")</span></div></MudItem>
+
+                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Último Fornecedor</span><span class="vis-value">@(_dto.NomeFornecedor ?? "—")</span></div></MudItem>
+                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Nota Fiscal de Entrada</span><span class="vis-value">@(_dto.NumeroNfUltimaEntrada ?? "—")</span></div></MudItem>
+
                     @if (!string.IsNullOrWhiteSpace(_dto.Descricao))
                     {
                         <MudItem xs="12"><div class="vis-field"><span class="vis-label">Descrição</span><span class="vis-value">@_dto.Descricao</span></div></MudItem>
@@ -126,11 +128,15 @@
         letter-spacing: 1.2px;
         font-weight: 700;
         margin-bottom: 10px;
+        text-align: center;
     }
 
     .vis-field {
         display: flex;
         flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;
     }
 
     .vis-label {

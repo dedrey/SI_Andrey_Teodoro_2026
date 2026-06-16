@@ -73,13 +73,14 @@
                 }
 
                 <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="CidadeListDto" Label="Cidade"
+                    <MudAutocomplete T="CidadeListDto" Label="Cidade *"
                                      Value="_cidadeSelecionada"
-                                     ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
+                                     ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; _erroCidade = c == null; })"
                                      SearchFunc="PesquisarCidade"
                                      ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} ({c.Uf})")"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
+                                     Error="@_erroCidade" ErrorText="Cidade é obrigatória" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCidade" />
@@ -145,7 +146,7 @@
 
     private ClienteDto _dto = new() { TipoPessoa = "PF", Sexo = "NAO_INFORMAR" };
     private MudForm _form = null!;
-    private bool _formValido, _salvando;
+    private bool _formValido, _salvando, _erroCidade;
     private string _docTexto = "", _limiteCreditoTexto = "";
     private List<CidadeListDto> _cidades = new();
     private CidadeListDto? _cidadeSelecionada;
@@ -207,7 +208,8 @@
     private async Task Salvar()
     {
         await _form.Validate();
-        if (!_formValido) return;
+        _erroCidade = !_dto.CidadeId.HasValue;
+        if (!_formValido || _erroCidade) return;
         _salvando = true;
         var (sucesso, mensagem, id) = await ClienteService.SalvarAsync(_dto);
         _salvando = false;

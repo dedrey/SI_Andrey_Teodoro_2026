@@ -15,6 +15,7 @@ public class TransportadoraDto
     public string Cnpj { get; set; } = string.Empty;
     [MaxLength(30)]
     public string? InscricaoEstadual { get; set; }
+    public string? NomeCidade { get; set; }
     public int? CidadeId { get; set; }
     [MaxLength(100)]
     public string? Endereco { get; set; }

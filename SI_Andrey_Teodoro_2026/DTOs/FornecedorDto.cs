@@ -15,6 +15,7 @@ public class FornecedorDto
     [MinLength(2)]
     [MaxLength(100)]
     public string NomeFantasia { get; set; } = string.Empty;
+    public string? NomeCidade { get; set; }
     public int? CidadeId { get; set; }
     [Required(ErrorMessage = "Endereço é obrigatório")]
     [MinLength(5)]
