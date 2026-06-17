@@ -9,6 +9,7 @@ public class MovimentacaoEstoqueDto
     public string? NumeroNf { get; set; }
     public int? FornecedorId { get; set; }
     public string? NomeFornecedor { get; set; }
+    public int? PrazoPagamentoDias { get; set; }
     public DateTime CriadoEm { get; set; }
     public List<MovimentacaoEstoqueItemDto> Itens { get; set; } = new();
 }

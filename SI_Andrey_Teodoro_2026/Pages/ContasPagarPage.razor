@@ -1,0 +1,138 @@
+﻿@page "/contas-pagar"
+@rendermode InteractiveServer
+
+<PageTitle>Contas a Pagar</PageTitle>
+<LoadingSpinner Visivel="_carregando" />
+
+<div class="d-flex align-center justify-space-between mb-4">
+    <div class="d-flex align-center">
+        <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+        <MudText Typo="Typo.h5" Style="font-weight:700;">Contas a Pagar</MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirModalCadastro" Style="font-weight:700;">Cadastrar</MudButton>
+</div>
+
+<MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="5" md="5">
+            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
+                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
+        </MudItem>
+        <MudItem xs="6" sm="3" md="2">
+            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                <MudSelectItem T="string" Value="@("todos")">Todas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("aberta")">Abertas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("vencidas")">Vencidas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("paga")">Pagas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("cancelada")">Canceladas</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="6" sm="3" md="2">
+            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                <MudSelectItem T="string" Value="@("vencimento")">Vencimento</MudSelectItem>
+                <MudSelectItem T="string" Value="@("valor")">Valor</MudSelectItem>
+                <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" /></MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
+    <MudTable Items="@(_resultado?.Itens ?? new())" Dense="true" Hover="true" Loading="_carregando" LoadingProgressColor="Color.Primary">
+        <HeaderContent>
+            <MudTh Style="font-weight:600;">ID</MudTh>
+            <MudTh Style="font-weight:600;">Descrição</MudTh>
+            <MudTh Style="font-weight:600;">Fornecedor</MudTh>
+            <MudTh Style="font-weight:600;">Origem</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Vencimento</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Pagamento</MudTh>
+            <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Status</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            @{
+                bool vencida = context.Status == "ABERTA" && context.DataVencimento.Date < DateTime.Today;
+            }
+            <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
+            <MudTd><strong>@context.Descricao</strong></MudTd>
+            <MudTd>@(context.NomeFornecedor ?? "—")</MudTd>
+            <MudTd>
+                @if (context.MovimentacaoId.HasValue)
+                {
+                    <MudTooltip Text="Gerada automaticamente de uma entrada de estoque">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Inventory2">
+                            @(string.IsNullOrWhiteSpace(context.NumeroNfMovimentacao) ? $"Mov. #{context.MovimentacaoId}" : $"NF {context.NumeroNfMovimentacao}")
+                        </MudChip>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <span style="color:#bbb;font-size:0.85rem;">Manual</span>
+                }
+            </MudTd>
+            <MudTd Style="text-align:center;">
+                <span style="@(vencida ? "color:#c62828;font-weight:600;" : "")">@context.DataVencimento.ToString("dd/MM/yyyy")</span>
+                @if (vencida)
+                {
+                    <MudTooltip Text="Conta vencida">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" Style="margin-left:4px;vertical-align:middle;" />
+                    </MudTooltip>
+                }
+            </MudTd>
+            <MudTd Style="text-align:center;color:#888;font-size:0.85rem;">
+                @(context.DataPagamento.HasValue? context.DataPagamento.Value.ToString("dd/MM/yyyy") : "—")
+                @if (!string.IsNullOrWhiteSpace(context.ComprovanteArquivo))
+                {
+                    <MudTooltip Text="Ver comprovante">
+                        <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small"
+                                       Href="@context.ComprovanteArquivo" Target="_blank" />
+                    </MudTooltip>
+                }
+            </MudTd>
+            <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
+            <MudTd Style="text-align:center;">
+                <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
+                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => vencida ? "Vencida" : "Aberta" })
+                </MudChip>
+            </MudTd>
+            <MudTd Style="text-align:center;">
+                @if (context.Status == "ABERTA")
+                {
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Finalizar pagamento">
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirFinalizarPagamento(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Cancelar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Text="Visualizar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
+                    </MudTooltip>
+                }
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <div class="d-flex flex-column align-center pa-6" style="color:#bbb;">
+                <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" />
+                <MudText Typo="Typo.body1">Nenhuma conta encontrada.</MudText>
+            </div>
+        </NoRecordsContent>
+    </MudTable>
+    @if (_resultado != null)
+    {
+        <div class="pa-2" style="border-top:1px solid #f0f0f0;">
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
+        </div>
+    }
+</MudPaper>
