@@ -43,10 +43,9 @@
                     <MudGrid Spacing="2">
                         <MudItem xs="12" sm="4">
                             <MudTextField @bind-Value="_dto.NumeroNf"
-                                          Label="Número da NF *"
+                                          Label="Número da NF"
                                           Variant="Variant.Outlined" Margin="Margin.Dense"
                                           MaxLength="60" FullWidth="true"
-                                          Placeholder="Ex: 000123456"
                                           Required="true" RequiredError="Número da NF é obrigatório" />
                         </MudItem>
                         <MudItem xs="12" sm="8">
@@ -56,10 +55,9 @@
                                                  ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
                                                  SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                                  ToStringFunc="@(f => f?.RazaoSocial ?? "")"
-                                                 Label="Fornecedor *"
+                                                 Label="Fornecedor"
                                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                                  ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
-                                                 Placeholder="Pesquisar fornecedor..."
                                                  Error="@(_mostrarErroFornecedor && !_dto.FornecedorId.HasValue)"
                                                  ErrorText="Fornecedor é obrigatório" />
                                 <MudTooltip Text="Novo fornecedor">
@@ -67,6 +65,13 @@
                                                    Size="Size.Medium" OnClick="AbrirModalFornecedor" />
                                 </MudTooltip>
                             </div>
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Value="@_prazoTexto" ValueChanged="@((string v) => OnPrazoAlterado(v))"
+                                          Label="Prazo de pagamento (opcional)"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true"
+                                          Adornment="Adornment.End" AdornmentText="dias"
+                                          HelperText="Se preenchido, gera conta a pagar automaticamente" />
                         </MudItem>
                     </MudGrid>
                 </div>
@@ -189,6 +194,8 @@
     private MovimentacaoEstoqueDto _dto = new();
     private List<ProdutoListDto> _todosProdutos = new();
     private List<FornecedorListDto> _fornecedores = new();
+    private string _prazoTexto = "";
+    private int? _prazoPagamentoDias;
     private readonly Dictionary<MovimentacaoEstoqueItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _valorTextos = new();
@@ -265,6 +272,13 @@
         StateHasChanged();
     }
 
+    private void OnPrazoAlterado(string? v)
+    {
+        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
+        _prazoTexto = d;
+        _prazoPagamentoDias = int.TryParse(d, out int n) && n > 0 ? n : null;
+    }
+
     private void OnQtdAlterada(MovimentacaoEstoqueItemDto item, string? v)
     { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0; }
 
@@ -304,6 +318,7 @@
             if (!_dto.FornecedorId.HasValue)
             { Snackbar.Add("Selecione o fornecedor da entrada.", Severity.Warning); StateHasChanged(); return; }
         }
+        _dto.PrazoPagamentoDias = _prazoPagamentoDias;
         _salvando = true;
         var (sucesso, mensagem, _) = await MovimentacaoService.SalvarAsync(_dto);
         _salvando = false;

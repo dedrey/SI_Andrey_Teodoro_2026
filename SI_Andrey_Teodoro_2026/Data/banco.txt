@@ -491,6 +491,8 @@ CREATE TABLE contas_pagar (
   movimentacao_id INT NULL,
   descricao       VARCHAR(150) NOT NULL,
   data_vencimento DATE          NOT NULL,
+  data_pagamento  DATE               NULL,
+  comprovante_arquivo VARCHAR(255) NULL,
   valor_original  DECIMAL(14,2) NOT NULL,
   valor_saldo     DECIMAL(14,2) NOT NULL,
   status          ENUM('ABERTA','PAGA','CANCELADA') NOT NULL DEFAULT 'ABERTA',

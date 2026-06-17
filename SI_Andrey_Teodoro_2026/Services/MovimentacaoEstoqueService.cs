@@ -8,8 +8,13 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
     IMovimentacaoEstoqueService
 {
     private readonly IMovimentacaoEstoqueRepository _repo;
+    private readonly IContaPagarService _contaPagarService;
 
-    public MovimentacaoEstoqueService(IMovimentacaoEstoqueRepository repo) => _repo = repo;
+    public MovimentacaoEstoqueService(IMovimentacaoEstoqueRepository repo, IContaPagarService contaPagarService)
+    {
+        _repo = repo;
+        _contaPagarService = contaPagarService;
+    }
 
     protected override string NomeEntidade => "Movimentação de estoque";
 
@@ -99,6 +104,8 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
 
             var movId = await _repo.InserirAsync(dto);
 
+            decimal valorTotalEntrada = 0;
+
             foreach (var item in itensParaGravar)
             {
                 await _repo.InserirItemAsync(item, movId);
@@ -116,7 +123,17 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                     if (item.ValorUnitario > 0)
                         await _repo.AtualizarPrecoCustoAsync(item.ProdutoVariacaoId, item.ValorUnitario);
                     await _repo.AtualizarDataUltimaCompraAsync(item.ProdutoVariacaoId, DateTime.Today);
+
+                    if (dto.TipoMovimentacao == "ENTRADA")
+                        valorTotalEntrada += item.Quantidade * item.ValorUnitario;
                 }
+            }
+            if (dto.TipoMovimentacao == "ENTRADA" && dto.PrazoPagamentoDias.HasValue && dto.PrazoPagamentoDias > 0
+                && valorTotalEntrada > 0)
+            {
+                await _contaPagarService.GerarContaAutomaticaAsync(
+                    dto.FornecedorId, movId, dto.NumeroNf ?? "", DateTime.Today,
+                    dto.PrazoPagamentoDias.Value, valorTotalEntrada);
             }
 
             var tipo = dto.TipoMovimentacao switch

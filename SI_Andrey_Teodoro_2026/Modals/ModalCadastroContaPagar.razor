@@ -1,0 +1,190 @@
+﻿@inject IContaPagarService ContaPagarService
+@inject IFornecedorService FornecedorService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">@(_dto.IdOriginal != 0 ? "Editar Conta a Pagar" : "Nova Conta a Pagar")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_dto.MovimentacaoId.HasValue)
+        {
+            <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Info" Size="Size.Small" />
+                    <MudText Typo="Typo.body2" Style="color:#1565c0;">
+                        Gerada automaticamente pela entrada de estoque
+                        @(string.IsNullOrWhiteSpace(_dto.NumeroNfMovimentacao) ? $"#{_dto.MovimentacaoId}" : $"(NF {_dto.NumeroNfMovimentacao})")
+                    </MudText>
+                </div>
+            </div>
+        }
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição *"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="150" FullWidth="true"
+                                  ReadOnly="@_somenteLeitura"
+                                  Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
+                </MudItem>
+                <MudItem xs="10" sm="8">
+                    <MudAutocomplete T="FornecedorListDto"
+                                     Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
+                                     ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(f => f?.RazaoSocial ?? "")"
+                                     Label="Fornecedor (opcional)"
+                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
+                                     Disabled="@_somenteLeitura"
+                                     Placeholder="Deixe vazio para despesas fixas (luz, água, aluguel...)" />
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudTooltip Text="Novo fornecedor">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                       Size="Size.Medium" OnClick="AbrirModalFornecedor" Disabled="@_somenteLeitura" />
+                    </MudTooltip>
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento *"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Required="true" RequiredError="Obrigatório" Editable="true"
+                                   DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" />
+                </MudItem>
+                @if (_dto.Status == "PAGA" && _dto.DataPagamento.HasValue)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@_dto.DataPagamento.Value.ToString("dd/MM/yyyy")" Label="Data de Pagamento"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
+                    </MudItem>
+                }
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
+                                  Label="Valor *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
+                                  Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@FormatarStatus(_dto.Status)" Label="Status"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar">@(_somenteLeitura ? "Fechar" : "Cancelar")</MudButton>
+        @if (!_somenteLeitura)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                       Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save" Style="font-weight:700;min-width:120px;">
+                @(_salvando ? "Salvando..." : "SALVAR")
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public ContaPagarDto? DtoEdicao { get; set; }
+
+    private MudForm? _form;
+    private bool _formValido, _salvando;
+    private ContaPagarDto _dto = new();
+    private DateTime? _dataVencimento;
+    private DateTime? _mesExibido = DateTime.Today;
+    private string _valorTexto = "";
+    private List<FornecedorListDto> _fornecedores = new();
+    private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
+
+        if (DtoEdicao is not null)
+        {
+            _dto = new ContaPagarDto
+            {
+                Id = DtoEdicao.Id,
+                IdOriginal = DtoEdicao.IdOriginal,
+                FornecedorId = DtoEdicao.FornecedorId,
+                NomeFornecedor = DtoEdicao.NomeFornecedor,
+                MovimentacaoId = DtoEdicao.MovimentacaoId,
+                NumeroNfMovimentacao = DtoEdicao.NumeroNfMovimentacao,
+                Descricao = DtoEdicao.Descricao,
+                DataVencimento = DtoEdicao.DataVencimento,
+                DataPagamento = DtoEdicao.DataPagamento,
+                ValorOriginal = DtoEdicao.ValorOriginal,
+                ValorSaldo = DtoEdicao.ValorSaldo,
+                Status = DtoEdicao.Status
+            };
+            _dataVencimento = DtoEdicao.DataVencimento;
+            _mesExibido = DtoEdicao.DataVencimento;
+            _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
+        }
+    }
+
+    private void OnValorAlterado(string? texto)
+    {
+        if (string.IsNullOrEmpty(texto)) { _valorTexto = ""; _dto.ValorOriginal = 0; return; }
+        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _valorTexto = f;
+        _dto.ValorOriginal = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                              System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+    }
+
+    private static string FormatarStatus(string status) => status switch
+    {
+        "PAGA" => "Paga",
+        "CANCELADA" => "Cancelada",
+        _ => "Aberta"
+    };
+
+    private async Task AbrirModalFornecedor()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
+            if (result.Data is int novoId)
+                _dto.FornecedorId = novoId;
+        }
+    }
+
+    private async Task Salvar()
+    {
+        await _form!.Validate();
+        if (!_formValido) return;
+        if (_dto.ValorOriginal <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
+        if (!_dataVencimento.HasValue) { Snackbar.Add("Informe a data de vencimento.", Severity.Warning); return; }
+
+        _dto.DataVencimento = _dataVencimento.Value;
+        _salvando = true;
+        var (sucesso, mensagem, _) = await ContaPagarService.SalvarAsync(_dto);
+        _salvando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Fechar() => MudDialog.Cancel();
+
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
+        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
+
+    private static string Cap(string? s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
+        return string.Join(" ", s.Trim().Split(' ')
+            .Select((w, i) => i > 0 && _prep.Contains(w)
+                ? w.ToLower()
+                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
+    }
+}
