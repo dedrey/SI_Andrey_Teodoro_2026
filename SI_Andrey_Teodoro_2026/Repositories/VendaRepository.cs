@@ -274,18 +274,34 @@ public class VendaRepository : BaseRepository, IVendaRepository
     }
 
     public async Task<int> InserirContaReceberAsync(int clienteId, int vendaId,
-        string descricao, DateTime vencimento, decimal valor)
+        string descricao, DateTime vencimento, decimal valor, bool jaRecebida = false)
     {
         using var conn = _factory.CreateConnection();
         var proximoId = await conn.ExecuteScalarAsync<int>(
             @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM contas_receber) t
               WHERE seq NOT IN (SELECT id FROM contas_receber)");
+
+        var status = jaRecebida ? "RECEBIDA" : "ABERTA";
+        var saldo = jaRecebida ? 0m : valor;
+
         await conn.ExecuteAsync(
             @"INSERT INTO contas_receber (id, cliente_id, venda_id, descricao,
                                           data_vencimento, valor_original, valor_saldo, status)
               VALUES (@proximoId, @clienteId, @vendaId, @descricao,
-                      @vencimento, @valor, @valor, 'ABERTA')",
-            new { proximoId, clienteId, vendaId, descricao, vencimento, valor });
+                      @vencimento, @valor, @saldo, @status)",
+            new { proximoId, clienteId, vendaId, descricao, vencimento, valor, saldo, status });
+        if (jaRecebida)
+        {
+            var proximoBaixaId = await conn.ExecuteScalarAsync<int>(
+                @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM contas_receber_baixas) t
+                  WHERE seq NOT IN (SELECT id FROM contas_receber_baixas)");
+            await conn.ExecuteAsync(
+                @"INSERT INTO contas_receber_baixas
+                    (id, conta_receber_id, data_recebimento, valor_recebido, observacao)
+                  VALUES (@proximoBaixaId, @proximoId, @vencimento, @valor, 'Pagamento instantâneo no ato da venda')",
+                new { proximoBaixaId, proximoId, vencimento, valor });
+        }
+
         return proximoId;
     }
 }

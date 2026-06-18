@@ -1,8 +1,6 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
-
 namespace SI_Andrey_Teodoro_2026.Repositories.Interfaces;
-
 public interface IVendaRepository
 {
     Task<PaginacaoDto<VendaListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
@@ -18,5 +16,6 @@ public interface IVendaRepository
     Task<int> ObterEstoqueAtualAsync(int variacaoId);
     Task<int> InserirMovimentacaoSaidaAsync(int vendaId);
     Task InserirMovimentacaoItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario);
-    Task<int> InserirContaReceberAsync(int clienteId, int vendaId, string descricao, DateTime vencimento, decimal valor);
+    Task<int> InserirContaReceberAsync(int clienteId, int vendaId, string descricao, DateTime vencimento,
+        decimal valor, bool jaRecebida = false);
 }

@@ -1,6 +1,5 @@
 ﻿@page "/contas-pagar"
 @rendermode InteractiveServer
-
 <PageTitle>Contas a Pagar</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
@@ -80,7 +79,7 @@
                 <span style="@(vencida ? "color:#c62828;font-weight:600;" : "")">@context.DataVencimento.ToString("dd/MM/yyyy")</span>
                 @if (vencida)
                 {
-                    <MudTooltip Text="Conta vencida">
+                    <MudTooltip Text="Conta em atraso — venceu e ainda não foi paga">
                         <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" Style="margin-left:4px;vertical-align:middle;" />
                     </MudTooltip>
                 }
@@ -94,11 +93,17 @@
                                        Href="@context.ComprovanteArquivo" Target="_blank" />
                     </MudTooltip>
                 }
+                @if (context.DataPagamento.HasValue && context.DataPagamento.Value.Date > context.DataVencimento.Date)
+                {
+                    <MudTooltip Text="@($"Pago com {(context.DataPagamento.Value.Date - context.DataVencimento.Date).Days} dia(s) de atraso")">
+                        <MudIcon Icon="@Icons.Material.Filled.WatchLater" Color="Color.Warning" Size="Size.Small" Style="margin-left:2px;vertical-align:middle;" />
+                    </MudTooltip>
+                }
             </MudTd>
             <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
             <MudTd Style="text-align:center;">
                 <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
-                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => vencida ? "Vencida" : "Aberta" })
+                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
                 </MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">

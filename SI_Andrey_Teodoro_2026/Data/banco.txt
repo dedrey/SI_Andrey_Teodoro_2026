@@ -526,3 +526,17 @@ CREATE TABLE contas_receber (
   CONSTRAINT fk_creceber_criado_por     FOREIGN KEY (criado_por)     REFERENCES usuarios(id)  ON DELETE SET NULL,
   CONSTRAINT fk_creceber_atualizado_por FOREIGN KEY (atualizado_por) REFERENCES usuarios(id)  ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+CREATE TABLE contas_receber_baixas (
+  id               INT           AUTO_INCREMENT PRIMARY KEY,
+  conta_receber_id INT           NOT NULL,
+  data_recebimento DATE          NOT NULL,
+  valor_recebido   DECIMAL(14,2) NOT NULL,
+  comprovante_arquivo VARCHAR(255) NULL,
+  observacao       VARCHAR(150)  NULL,
+  criado_em        DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  criado_por       INT NULL,
+  CONSTRAINT fk_crbaixas_conta      FOREIGN KEY (conta_receber_id) REFERENCES contas_receber(id) ON DELETE CASCADE,
+  CONSTRAINT fk_crbaixas_criado_por FOREIGN KEY (criado_por)       REFERENCES usuarios(id)        ON DELETE SET NULL,
+  CONSTRAINT chk_crbaixas_valor_positivo CHECK (valor_recebido > 0)
+) ENGINE=InnoDB;
