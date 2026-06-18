@@ -1,12 +1,13 @@
-﻿@page "/contas-pagar"
+﻿@page "/contas-receber"
 @rendermode InteractiveServer
-<PageTitle>Contas a Pagar</PageTitle>
+
+<PageTitle>Contas a Receber</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
 
 <div class="d-flex align-center justify-space-between mb-4">
     <div class="d-flex align-center">
-        <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
-        <MudText Typo="Typo.h5" Style="font-weight:700;">Contas a Pagar</MudText>
+        <MudIcon Icon="@Icons.Material.Filled.RequestQuote" Color="Color.Primary" Class="mr-2" Style="font-size:1.8rem;" />
+        <MudText Typo="Typo.h5" Style="font-weight:700;">Contas a Receber</MudText>
     </div>
     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AbrirModalCadastro" Style="font-weight:700;">Cadastrar</MudButton>
 </div>
@@ -23,7 +24,7 @@
                 <MudSelectItem T="string" Value="@("todos")">Todas</MudSelectItem>
                 <MudSelectItem T="string" Value="@("aberta")">Abertas</MudSelectItem>
                 <MudSelectItem T="string" Value="@("vencidas")">Vencidas</MudSelectItem>
-                <MudSelectItem T="string" Value="@("paga")">Pagas</MudSelectItem>
+                <MudSelectItem T="string" Value="@("recebida")">Recebidas</MudSelectItem>
                 <MudSelectItem T="string" Value="@("cancelada")">Canceladas</MudSelectItem>
             </MudSelect>
         </MudItem>
@@ -46,11 +47,13 @@
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
             <MudTh Style="font-weight:600;">Descrição</MudTh>
-            <MudTh Style="font-weight:600;">Fornecedor</MudTh>
+            <MudTh Style="font-weight:600;">Cliente</MudTh>
             <MudTh Style="font-weight:600;">Origem</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Vencimento</MudTh>
-            <MudTh Style="font-weight:600;text-align:center;">Pagamento</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Recebimento</MudTh>
             <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
+            <MudTh Style="font-weight:600;text-align:right;">Recebido</MudTh>
+            <MudTh Style="font-weight:600;text-align:right;">Saldo</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Status</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
@@ -60,13 +63,13 @@
             }
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
             <MudTd><strong>@context.Descricao</strong></MudTd>
-            <MudTd>@(context.NomeFornecedor ?? "—")</MudTd>
+            <MudTd>@(context.NomeCliente ?? "—")</MudTd>
             <MudTd>
-                @if (context.MovimentacaoId.HasValue)
+                @if (context.VendaId.HasValue)
                 {
-                    <MudTooltip Text="Gerada automaticamente de uma entrada de estoque">
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Inventory2">
-                            @(string.IsNullOrWhiteSpace(context.NumeroNfMovimentacao) ? $"Mov. #{context.MovimentacaoId}" : $"NF {context.NumeroNfMovimentacao}")
+                    <MudTooltip Text="Gerada automaticamente de uma venda finalizada">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.ShoppingCart">
+                            Venda #@context.VendaId
                         </MudChip>
                     </MudTooltip>
                 }
@@ -79,31 +82,30 @@
                 <span style="@(vencida ? "color:#c62828;font-weight:600;" : "")">@context.DataVencimento.ToString("dd/MM/yyyy")</span>
                 @if (vencida)
                 {
-                    <MudTooltip Text="Conta em atraso — venceu e ainda não foi paga">
+                    <MudTooltip Text="Conta em atraso — venceu e ainda não foi recebida">
                         <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" Size="Size.Small" Style="margin-left:4px;vertical-align:middle;" />
                     </MudTooltip>
                 }
             </MudTd>
             <MudTd Style="text-align:center;color:#888;font-size:0.85rem;">
-                @(context.DataPagamento.HasValue? context.DataPagamento.Value.ToString("dd/MM/yyyy") : "—")
-                @if (!string.IsNullOrWhiteSpace(context.ComprovanteArquivo))
+                @(context.DataUltimoRecebimento.HasValue? context.DataUltimoRecebimento.Value.ToString("dd/MM/yyyy") : "—")
+                @if (context.DataUltimoRecebimento.HasValue && context.DataUltimoRecebimento.Value.Date > context.DataVencimento.Date)
                 {
-                    <MudTooltip Text="Ver comprovante">
-                        <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small"
-                                       Href="@context.ComprovanteArquivo" Target="_blank" />
-                    </MudTooltip>
-                }
-                @if (context.DataPagamento.HasValue && context.DataPagamento.Value.Date > context.DataVencimento.Date)
-                {
-                    <MudTooltip Text="@($"Pago com {(context.DataPagamento.Value.Date - context.DataVencimento.Date).Days} dia(s) de atraso")">
+                    <MudTooltip Text="@($"Recebido com {(context.DataUltimoRecebimento.Value.Date - context.DataVencimento.Date).Days} dia(s) de atraso")">
                         <MudIcon Icon="@Icons.Material.Filled.WatchLater" Color="Color.Warning" Size="Size.Small" Style="margin-left:2px;vertical-align:middle;" />
                     </MudTooltip>
                 }
             </MudTd>
             <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
+            <MudTd Style="text-align:right;color:#2e7d32;">
+                @(context.ValorRecebido > 0 ? $"R$ {context.ValorRecebido:N2}" : "—")
+            </MudTd>
+            <MudTd Style="@($"text-align:right;font-weight:600;{(context.Status == "ABERTA" ? "color:#e65100;" : "")}")">
+                R$ @context.ValorSaldo.ToString("N2")
+            </MudTd>
             <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
-                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
+                <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "RECEBIDA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
+                    @(context.Status switch { "RECEBIDA" => "Recebida", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
                 </MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">
@@ -112,8 +114,8 @@
                     <MudTooltip Text="Editar">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
                     </MudTooltip>
-                    <MudTooltip Text="Finalizar pagamento">
-                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirFinalizarPagamento(context))" />
+                    <MudTooltip Text="Registrar recebimento">
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirRegistrarRecebimento(context))" />
                     </MudTooltip>
                     <MudTooltip Text="Cancelar">
                         <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />

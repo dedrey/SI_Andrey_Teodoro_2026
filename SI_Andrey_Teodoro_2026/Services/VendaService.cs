@@ -128,7 +128,6 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
             var itens = await _repo.ObterItensPorVendaAsync(vendaId);
             if (itens.Count == 0) return (false, "A venda não possui itens.");
 
-            // 1. Validar limite de crédito
             if (venda.ClienteId.HasValue)
             {
                 var cliente = await _clienteRepo.ObterPorIdAsync(venda.ClienteId.Value);
@@ -144,15 +143,12 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 }
             }
 
-            // 2. Validar estoque
             foreach (var item in itens)
             {
                 var estoque = await _repo.ObterEstoqueAtualAsync(item.ProdutoVariacaoId);
                 if (estoque < item.Quantidade)
                     return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {estoque} un.");
             }
-
-            // 3. Baixa estoque e cria movimentação de saída
             var movId = await _repo.InserirMovimentacaoSaidaAsync(vendaId);
             foreach (var item in itens)
             {
@@ -160,36 +156,46 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, -item.Quantidade);
             }
             await _repo.AtualizarStatusAsync(vendaId, "FINALIZADA", movId);
-
-            // 4. Gerar contas a receber usando prazos individuais das parcelas
             if (venda.ClienteId.HasValue && venda.CondicaoPagamentoId.HasValue)
             {
                 var condicao = await _condicaoRepo.ObterPorIdAsync(venda.CondicaoPagamentoId.Value);
                 if (condicao != null && condicao.NumeroParcelas > 0)
                 {
-                    var valorParcela = Math.Round(venda.ValorTotal / condicao.NumeroParcelas, 2);
-                    var diferenca = venda.ValorTotal - (valorParcela * condicao.NumeroParcelas);
+                    var valorRestante = venda.ValorTotal;
+                    if (condicao.EntradaMinimaPercentual > 0)
+                    {
+                        var valorEntrada = Math.Round(venda.ValorTotal * condicao.EntradaMinimaPercentual / 100, 2);
+                        valorRestante = venda.ValorTotal - valorEntrada;
 
-                    // Tenta usar prazos individuais cadastrados na condição
+                        var descricaoEntrada = $"Venda #{vendaId} — Entrada ({condicao.EntradaMinimaPercentual:N0}%)";
+                        await _repo.InserirContaReceberAsync(venda.ClienteId.Value, vendaId, descricaoEntrada,
+                            DateTime.Today, valorEntrada);
+                    }
+                    var valorParcela = Math.Round(valorRestante / condicao.NumeroParcelas, 2);
+                    var diferenca = valorRestante - (valorParcela * condicao.NumeroParcelas);
+
                     var parcelas = await _condicaoRepo.ObterParcelasAsync(venda.CondicaoPagamentoId.Value);
 
                     for (int p = 1; p <= condicao.NumeroParcelas; p++)
                     {
-                        // Usa dias individuais se existirem; senão, fallback mensal
                         var parcelaConfig = parcelas.FirstOrDefault(x => x.NumeroParcela == p);
+                        var diasVencimento = parcelaConfig?.DiasVencimento ?? 30;
                         var vencimento = parcelaConfig != null
                             ? DateTime.Today.AddDays(parcelaConfig.DiasVencimento)
                             : DateTime.Today.AddMonths(p);
 
                         var valor = p == condicao.NumeroParcelas
-                            ? valorParcela + diferenca  // última parcela absorve centavos de arredondamento
+                            ? valorParcela + diferenca
                             : valorParcela;
 
                         var descricao = condicao.NumeroParcelas == 1
-                            ? $"Venda #{vendaId}"
+                            ? $"Venda #{vendaId}" + (condicao.EntradaMinimaPercentual > 0 ? " — Saldo" : "")
                             : $"Venda #{vendaId} — Parcela {p}/{condicao.NumeroParcelas}";
+                        bool pagamentoInstantaneo = condicao.NumeroParcelas == 1
+                                                  && condicao.EntradaMinimaPercentual == 0
+                                                  && diasVencimento == 0;
 
-                        await _repo.InserirContaReceberAsync(venda.ClienteId.Value, vendaId, descricao, vencimento, valor);
+                        await _repo.InserirContaReceberAsync(venda.ClienteId.Value, vendaId, descricao, vencimento, valor, pagamentoInstantaneo);
                     }
                 }
             }

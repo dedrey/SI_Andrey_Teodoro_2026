@@ -9,6 +9,7 @@ public interface IContaPagarRepository
     Task<int> InserirAsync(ContaPagarDto dto);
     Task AtualizarAsync(ContaPagarDto dto);
     Task AtualizarStatusAsync(int id, string status, DateTime? dataPagamento = null, string? comprovanteArquivo = null);
+
     Task<int> InserirAutomaticaAsync(int? fornecedorId, int movimentacaoId, string descricao,
         DateTime dataVencimento, decimal valorOriginal);
 }

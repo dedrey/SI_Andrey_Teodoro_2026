@@ -1,0 +1,240 @@
+﻿@inject IContaReceberService ContaReceberService
+@inject ISnackbar Snackbar
+@inject IWebHostEnvironment Env
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="mr-2" />
+            <MudText Typo="Typo.h6">Registrar Recebimento</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div style="background:#f8f9fa;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+            <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Descrição</div>
+            <div style="font-size:1rem;font-weight:600;margin-bottom:10px;">@Descricao</div>
+            <div class="d-flex gap-4">
+                <div>
+                    <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Valor Original</div>
+                    <div style="font-size:0.95rem;font-weight:600;">R$ @ValorOriginal.ToString("N2")</div>
+                </div>
+                <div>
+                    <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Saldo Devido</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:#e65100;">R$ @ValorSaldo.ToString("N2")</div>
+                </div>
+            </div>
+        </div>
+
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento *"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Required="true" RequiredError="Obrigatório"
+                                   Editable="true" DateFormat="dd/MM/yyyy" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
+                                  Label="Valor Recebido *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
+                                  Adornment="Adornment.Start" AdornmentText="R$"
+                                  HelperText="Pode ser parcial — saldo restante fica aberto" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_observacao" Label="Observação (opcional)"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="150" FullWidth="true" />
+                </MudItem>
+            </MudGrid>
+
+            @if (_valorRecebidoPreview > 0 && _valorRecebidoPreview < ValorSaldo)
+            {
+                <div style="background:#fff8e1;border-radius:6px;padding:8px 12px;margin-top:8px;">
+                    <MudText Typo="Typo.body2" Style="color:#e65100;">
+                        Recebimento parcial: ficará um saldo de R$ @((ValorSaldo - _valorRecebidoPreview).ToString("N2")) em aberto.
+                    </MudText>
+                </div>
+            }
+
+            <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-top:16px;margin-bottom:8px;">
+                Comprovante (opcional)
+            </MudText>
+
+            @if (_nomeArquivoSelecionado != null)
+            {
+                <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Success" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">@_nomeArquivoSelecionado</MudText>
+                        <MudText Typo="Typo.caption" Style="color:#888;">(@FormatarTamanho(_tamanhoArquivo))</MudText>
+                    </div>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="RemoverArquivo" />
+                </div>
+            }
+            else
+            {
+                <div style="border:2px dashed #c5cae9;border-radius:8px;padding:18px;text-align:center;position:relative;cursor:pointer;">
+                    <InputFile OnChange="OnArquivoSelecionado" accept=".pdf,.jpg,.jpeg,.png"
+                               style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                    <MudIcon Icon="@Icons.Material.Filled.UploadFile" Color="Color.Primary" Style="font-size:1.8rem;" />
+                    <MudText Typo="Typo.body2" Style="color:#5c6bc0;font-weight:600;margin-top:4px;">
+                        Clique para anexar comprovante
+                    </MudText>
+                    <MudText Typo="Typo.caption" Style="color:#aaa;">PDF, JPG ou PNG — máx. 5 MB</MudText>
+                </div>
+            }
+            @if (_carregandoArquivo)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+            }
+            @if (_erroArquivo != null)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Error" Style="display:block;margin-top:4px;">@_erroArquivo</MudText>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Confirmar"
+                   Disabled="@(_salvando || _carregandoArquivo)" StartIcon="@Icons.Material.Filled.CheckCircle"
+                   Style="font-weight:700;min-width:180px;">
+            @(_salvando ? "Salvando..." : "CONFIRMAR RECEBIMENTO")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int ContaReceberId { get; set; }
+    [Parameter] public string Descricao { get; set; } = string.Empty;
+    [Parameter] public decimal ValorOriginal { get; set; }
+    [Parameter] public decimal ValorSaldo { get; set; }
+
+    private MudForm? _form;
+    private bool _formValido, _salvando, _carregandoArquivo;
+    private DateTime? _dataRecebimento = DateTime.Today;
+    private string _valorTexto = "";
+    private decimal _valorRecebidoPreview;
+    private string? _observacao;
+
+    private byte[]? _conteudoArquivo;
+    private string? _nomeArquivoSelecionado;
+    private string? _extensaoArquivo;
+    private long _tamanhoArquivo;
+    private string? _erroArquivo;
+
+    private const long TamanhoMaximoBytes = 5 * 1024 * 1024;
+
+    protected override void OnInitialized()
+    {
+        _valorTexto = ValorSaldo.ToString("N2");
+        _valorRecebidoPreview = ValorSaldo;
+    }
+
+    private void OnValorAlterado(string? texto)
+    {
+        if (string.IsNullOrEmpty(texto)) { _valorTexto = ""; _valorRecebidoPreview = 0; return; }
+        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _valorTexto = f;
+        _valorRecebidoPreview = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                                  System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+    }
+
+    private async Task OnArquivoSelecionado(InputFileChangeEventArgs e)
+    {
+        _erroArquivo = null;
+        var arquivo = e.File;
+        if (arquivo == null) return;
+
+        var ext = Path.GetExtension(arquivo.Name).ToLowerInvariant();
+        if (ext != ".pdf" && ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+        {
+            _erroArquivo = "Apenas arquivos PDF, JPG ou PNG são aceitos.";
+            return;
+        }
+        if (arquivo.Size > TamanhoMaximoBytes)
+        {
+            _erroArquivo = "Arquivo muito grande (máximo 5 MB).";
+            return;
+        }
+
+        _carregandoArquivo = true;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = arquivo.OpenReadStream(TamanhoMaximoBytes);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            _conteudoArquivo = ms.ToArray();
+            _nomeArquivoSelecionado = arquivo.Name;
+            _extensaoArquivo = ext;
+            _tamanhoArquivo = arquivo.Size;
+        }
+        catch (Exception ex)
+        {
+            _erroArquivo = $"Erro ao ler o arquivo: {ex.Message}";
+            _conteudoArquivo = null;
+            _nomeArquivoSelecionado = null;
+        }
+        finally
+        {
+            _carregandoArquivo = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoverArquivo()
+    {
+        _conteudoArquivo = null;
+        _nomeArquivoSelecionado = null;
+        _extensaoArquivo = null;
+        _erroArquivo = null;
+    }
+
+    private static string FormatarTamanho(long bytes)
+        => bytes < 1024 * 1024 ? $"{bytes / 1024.0:N0} KB" : $"{bytes / (1024.0 * 1024):N1} MB";
+
+    private async Task<string?> SalvarArquivoAsync()
+    {
+        if (_conteudoArquivo == null) return null;
+
+        var pastaDestino = Path.Combine(Env.WebRootPath, "uploads", "comprovantes");
+        Directory.CreateDirectory(pastaDestino);
+
+        var nomeArquivo = $"recebimento_{ContaReceberId}_{DateTime.Now:yyyyMMddHHmmss}{_extensaoArquivo}";
+        var caminhoCompleto = Path.Combine(pastaDestino, nomeArquivo);
+
+        await File.WriteAllBytesAsync(caminhoCompleto, _conteudoArquivo);
+
+        return $"/uploads/comprovantes/{nomeArquivo}";
+    }
+
+    private async Task Confirmar()
+    {
+        await _form!.Validate();
+        if (!_formValido || !_dataRecebimento.HasValue) return;
+        if (_valorRecebidoPreview <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
+        if (_valorRecebidoPreview > ValorSaldo) { Snackbar.Add($"Valor não pode ser maior que o saldo (R$ {ValorSaldo:N2}).", Severity.Warning); return; }
+
+        _salvando = true;
+        string? caminhoArquivo = null;
+        try
+        {
+            caminhoArquivo = await SalvarArquivoAsync();
+        }
+        catch (Exception ex)
+        {
+            _salvando = false;
+            Snackbar.Add($"Erro ao salvar o comprovante: {ex.Message}", Severity.Error);
+            return;
+        }
+
+        var (sucesso, mensagem) = await ContaReceberService.RegistrarRecebimentoAsync(
+            ContaReceberId, _dataRecebimento.Value, _valorRecebidoPreview, caminhoArquivo, _observacao);
+        _salvando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Fechar() => MudDialog.Cancel();
+}

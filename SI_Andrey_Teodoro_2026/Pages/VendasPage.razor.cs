@@ -11,8 +11,6 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
     [Inject] private IVendaService VendaService { get; set; } = null!;
 
     protected override string NomeEntidade => "Venda";
-
-    // flag para recarregar na próxima passagem de render (contorna limitação do Blazor Server após dialog)
     private bool _recarregarAposRender = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -23,7 +21,7 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
             _itensCache.Clear();
             _expandidos.Clear();
             await Pesquisar();
-            StateHasChanged(); // ← obrigatório: avisa o Blazor que _resultado mudou
+            StateHasChanged();
         }
     }
 
@@ -32,7 +30,7 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
 
     protected override async Task OnInitializedAsync()
     {
-        _filtro.StatusFiltro = "todos"; // inicia com "Todos" em vez de "Ativos"
+        _filtro.StatusFiltro = "todos";
         await CarregarDados();
     }
 
@@ -62,7 +60,7 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
             Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
             if (sucesso)
             {
-                _recarregarAposRender = true; // OnAfterRenderAsync fará o reload no próximo ciclo
+                _recarregarAposRender = true;
                 StateHasChanged();
             }
         }
