@@ -47,6 +47,7 @@ builder.Services.AddScoped<ICorRepository, CorRepository>();
 builder.Services.AddScoped<ITamanhoRepository, TamanhoRepository>();
 builder.Services.AddScoped<IContaPagarRepository, ContaPagarRepository>();
 builder.Services.AddScoped<IContaReceberRepository, ContaReceberRepository>();
+builder.Services.AddScoped<INfeRepository, NfeRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────
 builder.Services.AddScoped<IPaisService, PaisService>();
@@ -70,6 +71,7 @@ builder.Services.AddScoped<ICorService, CorService>();
 builder.Services.AddScoped<ITamanhoService, TamanhoService>();
 builder.Services.AddScoped<IContaPagarService, ContaPagarService>();
 builder.Services.AddScoped<IContaReceberService, ContaReceberService>();
+builder.Services.AddScoped<INfeService, NfeService>();
 
 
 var app = builder.Build();

@@ -1,0 +1,158 @@
+﻿@inject INfeService NfeService
+@inject IEmitenteService EmitenteService
+@inject ITransportadoraService TransportadoraService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">Gerar Nota Fiscal</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_carregandoListas)
+        {
+            <div class="d-flex justify-center pa-6"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+        }
+        else
+        {
+            <MudGrid Spacing="2">
+                <MudItem xs="12">
+                    <MudAutocomplete T="VendaParaNfeDto"
+                                     Value="_vendaSelecionada"
+                                     ValueChanged="@((VendaParaNfeDto? v) => _vendaSelecionada = v)"
+                                     SearchFunc="PesquisarVenda"
+                                     ToStringFunc="@(v => v == null ? "" : $"Venda #{v.Id} — {v.NomeCliente} — R$ {v.ValorTotal:N2}")"
+                                     Label="Venda Finalizada *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     FullWidth="true" Clearable="true"
+                                     ResetValueOnEmptyText="true" CoerceText="false"
+                                     HelperText="Apenas vendas finalizadas que ainda não possuem NF" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudAutocomplete T="EmitenteListDto"
+                                     Value="_emitenteSelecionado"
+                                     ValueChanged="@((EmitenteListDto? e) => _emitenteSelecionado = e)"
+                                     SearchFunc="PesquisarEmitente"
+                                     ToStringFunc="@(e => e?.NomeRazaoSocial ?? "")"
+                                     Label="Emitente *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     FullWidth="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudAutocomplete T="TransportadoraListDto"
+                                     Value="_transportadoraSelecionada"
+                                     ValueChanged="@((TransportadoraListDto? t) => _transportadoraSelecionada = t)"
+                                     SearchFunc="PesquisarTransportadora"
+                                     ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
+                                     Label="Transportadora (opcional)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     FullWidth="true" Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                </MudItem>
+
+                @if (_vendasDisponiveis.Count == 0)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info">Não há vendas finalizadas pendentes de Nota Fiscal no momento.</MudAlert>
+                    </MudItem>
+                }
+
+                @if (_vendaSelecionada != null)
+                {
+                    <MudItem xs="12">
+                        <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;">
+                            <div class="d-flex justify-space-between">
+                                <MudText Typo="Typo.body2">Subtotal</MudText>
+                                <MudText Typo="Typo.body2">R$ @_vendaSelecionada.ValorSubtotal.ToString("N2")</MudText>
+                            </div>
+                            @if (_vendaSelecionada.ValorDesconto != 0)
+                            {
+                                <div class="d-flex justify-space-between">
+                                    <MudText Typo="Typo.body2">@(_vendaSelecionada.ValorDesconto > 0 ? "Desconto" : "Acréscimo")</MudText>
+                                    <MudText Typo="Typo.body2">R$ @Math.Abs(_vendaSelecionada.ValorDesconto).ToString("N2")</MudText>
+                                </div>
+                            }
+                            <MudDivider Class="my-1" />
+                            <div class="d-flex justify-space-between">
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">Total</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;">R$ @_vendaSelecionada.ValorTotal.ToString("N2")</MudText>
+                            </div>
+                        </div>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_salvando">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Gerar"
+                   Disabled="@(_salvando || _vendaSelecionada == null || _emitenteSelecionado == null)"
+                   StartIcon="@Icons.Material.Filled.Receipt" Style="font-weight:700;min-width:170px;">
+            @(_salvando ? "Gerando..." : "GERAR NOTA FISCAL")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    private bool _carregandoListas = true, _salvando;
+    private List<VendaParaNfeDto> _vendasDisponiveis = new();
+    private List<EmitenteListDto> _emitentes = new();
+    private List<TransportadoraListDto> _transportadoras = new();
+
+    private VendaParaNfeDto? _vendaSelecionada;
+    private EmitenteListDto? _emitenteSelecionado;
+    private TransportadoraListDto? _transportadoraSelecionada;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await Task.WhenAll(
+                Task.Run(async () => _vendasDisponiveis = (await NfeService.ObterVendasDisponiveisAsync()).ToList()),
+                Task.Run(async () => _emitentes = (await EmitenteService.ObterTodosAtivosAsync()).ToList()),
+                Task.Run(async () => _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList())
+            );
+            if (_emitentes.Count == 1) _emitenteSelecionado = _emitentes[0];
+        }
+        finally { _carregandoListas = false; }
+    }
+
+    private Task<IEnumerable<VendaParaNfeDto>> PesquisarVenda(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca) ? _vendasDisponiveis.AsEnumerable()
+            : _vendasDisponiveis.Where(v => v.NomeCliente.Contains(busca, StringComparison.OrdinalIgnoreCase)
+                                          || v.Id.ToString() == busca.Trim());
+        return Task.FromResult(r);
+    }
+
+    private Task<IEnumerable<EmitenteListDto>> PesquisarEmitente(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca) ? _emitentes.AsEnumerable()
+            : _emitentes.Where(e => e.NomeRazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(r);
+    }
+
+    private Task<IEnumerable<TransportadoraListDto>> PesquisarTransportadora(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca) ? _transportadoras.Take(50)
+            : _transportadoras.Where(t => t.RazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase)
+                                        || (t.NomeFantasia ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(r);
+    }
+
+    private async Task Gerar()
+    {
+        if (_vendaSelecionada == null) { Snackbar.Add("Selecione uma venda.", Severity.Warning); return; }
+        if (_emitenteSelecionado == null) { Snackbar.Add("Selecione o emitente.", Severity.Warning); return; }
+
+        _salvando = true;
+        var (sucesso, mensagem, id) = await NfeService.GerarAsync(
+            _vendaSelecionada.Id, _emitenteSelecionado.Id, _transportadoraSelecionada?.Id);
+        _salvando = false;
+
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(id));
+    }
+
+    private void Fechar() => MudDialog.Cancel();
+}
