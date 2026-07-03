@@ -12,9 +12,10 @@
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
+            <!-- Nome + Método -->
             <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="7">
-                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento" Immediate="true"
+                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento **" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" />
                 </MudItem>
@@ -25,9 +26,10 @@
                                          ValueChanged="@((MetodoPagamentoListDto? m) => _dto.MetodoPagamentoId = m?.Id ?? 0)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _metodos.AsEnumerable() : _metodos.Where(m => m.MetodoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase) || m.Codigo.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(m => m == null ? "" : $"{m.MetodoPagamento} ({m.Codigo})")"
-                                         Label="Método de Pagamento"
+                                         Label="Método de Pagamento **"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
-                                         ResetValueOnEmptyText="true" CoerceText="false" />
+                                         ResetValueOnEmptyText="true" CoerceText="false"
+                                         Placeholder="Digite para pesquisar..." />
                         <MudTooltip Text="Novo método de pagamento">
                             <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
                                            Size="Size.Medium" OnClick="AbrirNovoMetodo" />
@@ -35,6 +37,8 @@
                     </div>
                 </MudItem>
             </MudGrid>
+
+            <!-- Taxas -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
                 <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Taxas e Percentuais</div>
                 <MudGrid Spacing="2">
@@ -45,6 +49,8 @@
                     <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.EntradaMinimaPercentual" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" /></MudItem>
                 </MudGrid>
             </div>
+
+            <!-- Parcelas -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;">
@@ -145,6 +151,8 @@
 
         var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
         _metodos = metodos.ToList();
+
+        // Se não tem parcelas salvas, gera automaticamente com padrão 30*n dias
         if (_dto.Parcelas.Count == 0 && _dto.NumeroParcelas > 0)
             GerarParcelas();
     }
@@ -152,6 +160,7 @@
     private void OnNumeroParcelas(int valor)
     {
         _dto.NumeroParcelas = valor;
+        // ajusta lista sem perder dias já configurados
         while (_dto.Parcelas.Count < valor)
         {
             var n = _dto.Parcelas.Count + 1;
@@ -168,7 +177,14 @@
             .Select(n => new CondicaoPagamentoParcelaDto
             {
                 NumeroParcela = n,
-                DiasVencimento = _dto.NumeroParcelas == 1 ? 0 : 30 * n
+                // Parcela única: 0 dias = pagamento no ato (Pix, Débito)
+                // Múltiplas parcelas: usa dias equivalentes a n meses a partir de hoje
+                // ex: 1 mês = ~30 dias, mas o cálculo real de vencimento no VendaService
+                // usa AddDays(DiasVencimento), então convertemos meses para dias aproximados
+                // usando a diferença real entre hoje e hoje+n meses
+                DiasVencimento = _dto.NumeroParcelas == 1
+                    ? 0
+                    : (DateTime.Today.AddMonths(n) - DateTime.Today).Days
             })
             .ToList();
     }
@@ -195,21 +211,13 @@
         var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método de Pagamento", opts);
         if ((await dialog.Result) is { Canceled: false })
         {
+            // recarrega a lista de métodos após cadastro
             var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
             _metodos = metodos.ToList();
         }
     }
 
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
-    private static string Cap(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
-        return string.Join(" ", s.Trim().Split(' ')
-            .Select((w, i) => i > 0 && _prep.Contains(w)
-                ? w.ToLower()
-                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
-    }
+    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 
     private void Fechar() => MudDialog.Cancel();
 }

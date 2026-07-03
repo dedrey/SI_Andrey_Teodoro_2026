@@ -25,69 +25,40 @@
 
         @if (_dto.IdOriginal != 0 && _contasDaVenda.Count > 1)
         {
+            <!-- Venda parcelada: mostra TODAS as parcelas/entrada da mesma venda -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
                 <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:8px;">
                     Histórico de Pagamentos da Venda
                 </div>
                 @foreach (var conta in _contasDaVenda)
                 {
-                    <div style="padding:6px 0;border-bottom:1px solid #eee;">
-                        <div class="d-flex align-center justify-space-between">
-                            <div style="flex:1;">
-                                <span style="font-size:0.85rem;font-weight:@(conta.Id == _dto.IdOriginal ? "700" : "500");color:@(conta.Id == _dto.IdOriginal ? "#1565c0" : "#555");">
-                                    @conta.Descricao
-                                </span>
-                                <div style="font-size:0.72rem;color:#aaa;">Venc. @conta.DataVencimento.ToString("dd/MM/yyyy")</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@(conta.Status == "RECEBIDA" ? Color.Success : conta.Status == "CANCELADA" ? Color.Default : Color.Warning)">
-                                    @(conta.Status == "RECEBIDA" ? "Recebida" : conta.Status == "CANCELADA" ? "Cancelada" : "Aberta")
-                                </MudChip>
-                                <div style="font-size:0.8rem;font-weight:600;margin-top:2px;">
-                                    R$ @conta.ValorOriginal.ToString("N2")
-                                    @if (conta.ValorRecebido > 0)
-                                    {
-                                        <span style="color:#2e7d32;font-size:0.72rem;"> (recebido R$ @conta.ValorRecebido.ToString("N2"))</span>
-                                    }
-                                </div>
-                            </div>
+                    <div class="d-flex align-center justify-space-between" style="padding:6px 0;border-bottom:1px solid #eee;">
+                        <div style="flex:1;">
+                            <span style="font-size:0.85rem;font-weight:@(conta.Id == _dto.IdOriginal ? "700" : "500");color:@(conta.Id == _dto.IdOriginal ? "#1565c0" : "#555");">
+                                @conta.Descricao
+                            </span>
+                            <div style="font-size:0.72rem;color:#aaa;">Venc. @conta.DataVencimento.ToString("dd/MM/yyyy")</div>
                         </div>
-
-                        @if (conta.Baixas.Count > 0)
-                        {
-                            <div style="margin-left:8px;margin-top:4px;padding-left:8px;border-left:2px solid #e0e0e0;">
-                                @foreach (var baixa in conta.Baixas)
+                        <div style="text-align:right;">
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@(conta.Status == "RECEBIDA" ? Color.Success : conta.Status == "CANCELADA" ? Color.Default : Color.Warning)">
+                                @(conta.Status == "RECEBIDA" ? "Recebida" : conta.Status == "CANCELADA" ? "Cancelada" : "Aberta")
+                            </MudChip>
+                            <div style="font-size:0.8rem;font-weight:600;margin-top:2px;">
+                                R$ @conta.ValorOriginal.ToString("N2")
+                                @if (conta.ValorRecebido > 0)
                                 {
-                                    <div class="d-flex align-center justify-space-between" style="padding:2px 0;">
-                                        <span style="font-size:0.78rem;color:#777;">
-                                            @baixa.DataRecebimento.ToString("dd/MM/yyyy") — R$ @baixa.ValorRecebido.ToString("N2")
-                                            @if (!string.IsNullOrWhiteSpace(baixa.Observacao))
-                                            {
-                                                <span style="color:#aaa;"> (@baixa.Observacao)</span>
-                                            }
-                                        </span>
-                                        @if (!string.IsNullOrWhiteSpace(baixa.ComprovanteArquivo))
-                                        {
-                                            <MudTooltip Text="Ver comprovante deste pagamento">
-                                                <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small"
-                                                               Href="@baixa.ComprovanteArquivo" Target="_blank" />
-                                            </MudTooltip>
-                                        }
-                                        else
-                                        {
-                                            <span style="color:#ccc;font-size:0.72rem;">sem comprovante</span>
-                                        }
-                                    </div>
+                                    <span style="color:#2e7d32;font-size:0.72rem;"> (recebido R$ @conta.ValorRecebido.ToString("N2"))</span>
                                 }
                             </div>
-                        }
+                        </div>
                     </div>
                 }
             </div>
         }
         else if (_dto.IdOriginal != 0 && _dto.Baixas.Any())
         {
+            <!-- Conta isolada (manual ou sem parcelamento): mostra só o histórico dela -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
                 <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:8px;">
                     Histórico de Recebimentos
@@ -110,46 +81,44 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12">
-                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição"
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição *"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true"
-                                  ReadOnly="@_somenteLeitura" />
+                                  ReadOnly="@_somenteLeitura"
+                                  Placeholder="Ex: Venda à vista, Acerto de dívida..." />
                 </MudItem>
-                <MudItem xs="12" sm="@(_dto.IdOriginal == 0 ? 8 : 12)">
+                <MudItem xs="12" sm="8">
                     <MudAutocomplete T="ClienteListDto"
                                      Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
                                      ValueChanged="@((ClienteListDto? c) => _dto.ClienteId = c?.Id ?? 0)"
                                      SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                      ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
-                                     Label="Cliente"
+                                     Label="Cliente *"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      Required="true" RequiredError="Selecione um cliente"
                                      ResetValueOnEmptyText="true" CoerceText="false"
-                                     Disabled="@(_somenteLeitura || _dto.IdOriginal != 0)" />
+                                     Disabled="@(_somenteLeitura || _dto.VendaId.HasValue)" />
                 </MudItem>
-                @if (_dto.IdOriginal == 0)
-                {
-                    <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                        <MudTooltip Text="Novo cliente">
-                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                           Size="Size.Medium" OnClick="AbrirModalCliente" />
-                        </MudTooltip>
-                    </MudItem>
-                }
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudTooltip Text="Novo cliente">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
+                                       Size="Size.Medium" OnClick="AbrirModalCliente" Disabled="@_somenteLeitura" />
+                    </MudTooltip>
+                </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
+                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento *"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="Valor Original" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Valor Original *" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$"
-                                  ReadOnly="@(_somenteLeitura || _dto.VendaId.HasValue || (_dto.IdOriginal != 0 && _dto.ValorRecebido > 0))"
-                                  HelperText="@(_dto.VendaId.HasValue ? "Valor calculado pela venda — não editável" : _dto.IdOriginal != 0 && _dto.ValorRecebido > 0 ? "Não editável após recebimentos" : null)" />
+                                  ReadOnly="@(_somenteLeitura || (_dto.IdOriginal != 0 && _dto.ValorRecebido > 0))"
+                                  HelperText="@(_dto.IdOriginal != 0 && _dto.ValorRecebido > 0 ? "Não editável após recebimentos" : null)" />
                 </MudItem>
 
                 @if (_dto.IdOriginal != 0)
@@ -227,6 +196,8 @@
             _dataVencimento = DtoEdicao.DataVencimento;
             _mesExibido = DtoEdicao.DataVencimento;
             _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
+
+            // Se a conta vem de uma venda, carrega todas as parcelas/entrada dessa mesma venda
             if (DtoEdicao.VendaId.HasValue)
                 _contasDaVenda = await ContaReceberService.ObterContasDaVendaAsync(DtoEdicao.VendaId.Value);
         }
@@ -279,15 +250,5 @@
 
     private void Fechar() => MudDialog.Cancel();
 
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
-
-    private static string Cap(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
-        return string.Join(" ", s.Trim().Split(' ')
-            .Select((w, i) => i > 0 && _prep.Contains(w)
-                ? w.ToLower()
-                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
-    }
+    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 }

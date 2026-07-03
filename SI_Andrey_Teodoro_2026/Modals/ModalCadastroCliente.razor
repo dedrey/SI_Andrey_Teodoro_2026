@@ -73,14 +73,13 @@
                 }
 
                 <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="CidadeListDto" Label="Cidade *"
+                    <MudAutocomplete T="CidadeListDto" Label="Cidade"
                                      Value="_cidadeSelecionada"
-                                     ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; _erroCidade = c == null; })"
+                                     ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
                                      SearchFunc="PesquisarCidade"
                                      ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} ({c.Uf})")"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
-                                     Error="@_erroCidade" ErrorText="Cidade é obrigatória" />
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCidade" />
@@ -122,12 +121,7 @@
                                   MaxLength="9" FullWidth="true" Immediate="true" Placeholder="00000-000" />
                 </MudItem>
 
-                <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_limiteCreditoTexto" ValueChanged="@((string v) => OnLimiteCreditoAlterado(v))"
-                                  Label="Limite de Crédito (R$)" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="15" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.Start" AdornmentText="R$" />
-                </MudItem>
+
             </MudGrid>
         </MudForm>
     </DialogContent>
@@ -146,8 +140,8 @@
 
     private ClienteDto _dto = new() { TipoPessoa = "PF", Sexo = "NAO_INFORMAR" };
     private MudForm _form = null!;
-    private bool _formValido, _salvando, _erroCidade;
-    private string _docTexto = "", _limiteCreditoTexto = "";
+    private bool _formValido, _salvando;
+    private string _docTexto = "";
     private List<CidadeListDto> _cidades = new();
     private CidadeListDto? _cidadeSelecionada;
 
@@ -180,7 +174,7 @@
                 Ativo = DtoEdicao.Ativo
             };
             _docTexto = DtoEdicao.CpfCnpj ?? "";
-            _limiteCreditoTexto = DtoEdicao.LimiteCredito > 0 ? DtoEdicao.LimiteCredito.ToString("N2") : "";
+
             if (_dto.CidadeId.HasValue) _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
         }
     }
@@ -188,7 +182,7 @@
     private void OnTipoPessoaAlterado(string tipo) { _dto.TipoPessoa = tipo; _docTexto = ""; _dto.CpfCnpj = ""; }
     private void OnEstrangeiroAlterado(bool v) { _dto.Estrangeiro = v; _dto.CidadeId = null; _dto.DocumentoEstrangeiro = null; _docTexto = ""; _dto.CpfCnpj = null; }
     private void OnDocAlterado(string? v) { if (string.IsNullOrEmpty(v)) { _docTexto = ""; _dto.CpfCnpj = ""; return; } var limpo = new string(v.Where(char.IsDigit).ToArray()); _docTexto = _dto.TipoPessoa == "PF" ? FormatarCpf(limpo) : FormatarCnpj(limpo); _dto.CpfCnpj = limpo; }
-    private void OnLimiteCreditoAlterado(string? v) { if (string.IsNullOrEmpty(v)) { _limiteCreditoTexto = ""; _dto.LimiteCredito = 0; return; } var f = new string(v.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray()); _limiteCreditoTexto = f; _dto.LimiteCredito = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0m; }
+
 
     private Task<IEnumerable<CidadeListDto>> PesquisarCidade(string? busca, CancellationToken ct)
     {
@@ -208,8 +202,7 @@
     private async Task Salvar()
     {
         await _form.Validate();
-        _erroCidade = !_dto.CidadeId.HasValue;
-        if (!_formValido || _erroCidade) return;
+        if (!_formValido) return;
         _salvando = true;
         var (sucesso, mensagem, id) = await ClienteService.SalvarAsync(_dto);
         _salvando = false;
@@ -230,6 +223,6 @@
         if (d.Length > 8) d = d[..8];
         return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
     }
-    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) if (i == 0 || i == p.Length - 1 || !_min.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; return string.Join(" ", p); }
-    private static readonly HashSet<string> _min = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "com", "por", "para", "ao", "aos" };
+    private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
+
 }

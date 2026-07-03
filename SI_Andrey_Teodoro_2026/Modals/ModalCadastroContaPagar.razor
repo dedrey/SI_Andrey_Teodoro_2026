@@ -101,6 +101,8 @@
     private DateTime? _mesExibido = DateTime.Today;
     private string _valorTexto = "";
     private List<FornecedorListDto> _fornecedores = new();
+
+    // Somente leitura quando a conta já está paga/cancelada
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
 
     protected override async Task OnInitializedAsync()
@@ -176,15 +178,5 @@
 
     private void Fechar() => MudDialog.Cancel();
 
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
-
-    private static string Cap(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
-        return string.Join(" ", s.Trim().Split(' ')
-            .Select((w, i) => i > 0 && _prep.Contains(w)
-                ? w.ToLower()
-                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
-    }
+    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 }

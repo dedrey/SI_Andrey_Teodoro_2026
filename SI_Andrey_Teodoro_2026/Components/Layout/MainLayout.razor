@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
+
 <MudThemeProvider Theme="_theme" />
 <MudPopoverProvider />
 <MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" />
@@ -59,6 +60,9 @@
                 <MudNavLink Href="/movimentacoes-estoque" Icon="@Icons.Material.Filled.SwapVert">Movimentações</MudNavLink>
             </MudNavGroup>
             <MudNavLink Href="/vendas" Icon="@Icons.Material.Filled.ShoppingCart">Vendas</MudNavLink>
+            <MudNavGroup Title="Fiscal" Icon="@Icons.Material.Filled.Receipt" Expanded="false">
+                <MudNavLink Href="/notas-fiscais" Icon="@Icons.Material.Filled.Description">Notas Fiscais</MudNavLink>
+            </MudNavGroup>
 
         </MudNavMenu>
     </MudDrawer>

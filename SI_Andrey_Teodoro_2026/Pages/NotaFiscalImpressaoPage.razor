@@ -1,0 +1,93 @@
+﻿@page "/notas-fiscais/imprimir/{Id:int}"
+@layout SI_Andrey_Teodoro_2026.Components.Layout.MainLayout
+@rendermode InteractiveServer
+@inject INfeService NfeService
+@inject IContaReceberService ContaReceberService
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<PageTitle>Nota Fiscal @(_nfe != null ? _nfe.Numero.ToString("D6") : "")</PageTitle>
+
+<style>
+    body {
+        background: #eceff1;
+        font-family: Arial, sans-serif;
+        color: #222;
+    }
+
+    .no-print button {
+        padding: 10px 24px;
+        font-size: 0.95rem;
+        border: none;
+        border-radius: 6px;
+        background: #5C6BC0;
+        color: white;
+        cursor: pointer;
+        font-weight: 700;
+    }
+
+    @@media print {
+        body {
+            background: white;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+    }
+</style>
+
+<style>
+    @@media print {
+        body * {
+            visibility: hidden !important;
+        }
+
+        .nfe-print-area, .nfe-print-area * {
+            visibility: visible !important;
+        }
+
+        .nfe-print-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
+</style>
+
+@if (_carregando)
+{
+    <div style="text-align:center;padding:60px;">Carregando...</div>
+}
+else if (_nfe == null)
+{
+    <div style="text-align:center;padding:60px;color:#c62828;">Nota Fiscal não encontrada.</div>
+}
+else
+{
+    <NfeInvoiceView Nfe="_nfe" Parcelas="_parcelas" />
+
+    <div class="no-print" style="text-align:center;margin:16px 0 40px;">
+        <button @onclick="Imprimir">Imprimir</button>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private NfeDto? _nfe;
+    private List<ContaReceberResumoVendaDto> _parcelas = new();
+    private bool _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _nfe = await NfeService.ObterPorIdAsync(Id);
+        if (_nfe?.VendaId != null)
+            _parcelas = await ContaReceberService.ObterContasDaVendaAsync(_nfe.VendaId.Value);
+        _carregando = false;
+    }
+
+    private async Task Imprimir() => await JS.InvokeVoidAsync("print");
+}

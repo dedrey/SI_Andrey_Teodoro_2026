@@ -1,0 +1,195 @@
+﻿<div class="nfe-print-area">
+    <div class="invoice-paper">
+        <div class="invoice-header">
+            <div>
+                <div class="invoice-title">@Nfe.NomeEmitente</div>
+                <div>@Nfe.CnpjEmitente</div>
+                <div>@Nfe.EnderecoEmitente — @Nfe.CidadeEmitente</div>
+            </div>
+            <div style="text-align:right;">
+                <div class="invoice-title">NOTA FISCAL Nº @Nfe.Numero.ToString("D6")</div>
+                <div>Série @Nfe.Serie</div>
+                <div>Emissão: @Nfe.DataEmissao.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+        </div>
+
+        <div class="invoice-section">
+            <div class="invoice-section-title">Destinatário</div>
+            <div>@Nfe.NomeCliente @(string.IsNullOrWhiteSpace(Nfe.CpfCnpjCliente) ? "" : $"— {Nfe.CpfCnpjCliente}")</div>
+            <div>@Nfe.EnderecoCliente — @Nfe.CidadeCliente</div>
+        </div>
+
+        @if (Nfe.TransportadoraId.HasValue)
+        {
+            <div class="invoice-section">
+                <div class="invoice-section-title">Transportadora</div>
+                <div>@Nfe.NomeTransportadora</div>
+            </div>
+        }
+
+        <div class="invoice-section">
+            <div class="invoice-section-title">Itens</div>
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Un.</th>
+                        <th>Qtd.</th>
+                        <th>Valor Unit.</th>
+                        <th>@RotuloColunaAjuste</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Nfe.Itens)
+                    {
+                        <tr>
+                            <td>@item.DescricaoItem</td>
+                            <td>@item.SiglaUnidade</td>
+                            <td>@item.Quantidade.ToString("N0")</td>
+                            <td>R$ @item.ValorUnitario.ToString("N2")</td>
+                            <td>@FormatarAjusteItem(item.ValorDesconto)</td>
+                            <td>R$ @item.ValorTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Nfe.NomeCondicao) || (Parcelas?.Count ?? 0) > 0)
+        {
+            <div class="invoice-section">
+                <div class="invoice-section-title">Condição de Pagamento</div>
+                <div>@Nfe.NomeCondicao</div>
+                @if (Parcelas != null && Parcelas.Count > 0)
+                {
+                    <table class="invoice-table">
+                        <thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th></tr></thead>
+                        <tbody>
+                            @foreach (var p in Parcelas)
+                            {
+                                <tr>
+                                    <td>@p.Descricao</td>
+                                    <td>@p.DataVencimento.ToString("dd/MM/yyyy")</td>
+                                    <td>R$ @p.ValorOriginal.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+
+        <div class="totais">
+            <div class="totais-box">
+                <div class="totais-linha"><span>Subtotal dos produtos</span><span>R$ @Nfe.ValorProdutos.ToString("N2")</span></div>
+                @if (Nfe.ValorDesconto != 0)
+                {
+                    <div class="totais-linha">
+                        <span>@(Nfe.ValorDesconto > 0 ? "Desconto" : "Acréscimo")</span>
+                        <span>R$ @Math.Abs(Nfe.ValorDesconto).ToString("N2")</span>
+                    </div>
+                }
+                <div class="totais-linha totais-final"><span>TOTAL</span><span>R$ @Nfe.ValorTotal.ToString("N2")</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .invoice-paper {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 6px;
+        padding: 24px;
+    }
+
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 2px solid #333;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+
+    .invoice-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .invoice-disclaimer {
+        font-size: 0.72rem;
+        color: #888;
+    }
+
+    .invoice-section {
+        margin-bottom: 14px;
+    }
+
+    .invoice-section-title {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #888;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    table.invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 0.85rem;
+    }
+
+        table.invoice-table th, table.invoice-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: left;
+        }
+
+        table.invoice-table th {
+            background: #f5f5f5;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+        }
+
+    .totais {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
+
+    .totais-box {
+        min-width: 260px;
+    }
+
+    .totais-linha {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 0;
+    }
+
+    .totais-final {
+        font-weight: 700;
+        font-size: 1.05rem;
+        border-top: 1px solid #333;
+        margin-top: 4px;
+        padding-top: 4px;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired] public NfeDto Nfe { get; set; } = null!;
+    [Parameter] public List<ContaReceberResumoVendaDto>? Parcelas { get; set; }
+    private string RotuloColunaAjuste => Nfe.ValorDesconto < 0 ? "Acréscimo" : "Desconto";
+
+    private string FormatarAjusteItem(decimal v)
+    {
+        if (v == 0) return "—";
+        return v > 0
+            ? $"R$ {v:N2}"
+            : $"+R$ {Math.Abs(v):N2}";
+    }
+}
