@@ -1,5 +1,4 @@
-﻿@* ModalCadastroCor.razor *@
-@inject ICorService CorService
+﻿@inject ICorService CorService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -49,10 +48,5 @@
     }
     private void Fechar() => MudDialog.Cancel();
 
-    private static string Cap(string? v)
-    {
-        if (string.IsNullOrWhiteSpace(v)) return v ?? "";
-        return string.Join(" ", v.Trim().Split(' ')
-            .Select((w, i) => w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
-    }
+    private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
 }
