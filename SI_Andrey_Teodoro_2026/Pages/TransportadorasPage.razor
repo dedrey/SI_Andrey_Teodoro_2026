@@ -37,7 +37,6 @@
             <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo ? Color.Success : Color.Error)">@(context.Ativo ? "Ativa" : "Inativa")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Visualizar"><MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => Visualizar(context.Id))" /></MudTooltip>
-                <MudTooltip Text="Editar"><MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" /></MudTooltip>
                 <MudTooltip Text="@(context.Ativo ? "Desativar" : "Ativar")"><MudIconButton Icon="@(context.Ativo? Icons.Material.Filled.ToggleOff : Icons.Material.Filled.ToggleOn)" Color="@(context.Ativo ? Color.Error : Color.Success)" Size="Size.Small" OnClick="@(() => AlterarStatus(context.Id, context.RazaoSocial, context.Ativo))" /></MudTooltip>
             </MudTd>
         </RowTemplate>
