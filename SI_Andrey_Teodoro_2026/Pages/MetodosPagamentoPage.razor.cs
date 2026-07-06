@@ -31,13 +31,13 @@ public partial class MetodosPagamentoPage : BasePage<MetodoPagamentoListDto, Met
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await MetodoPagamentoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Método de pagamento não encontrado(a).", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroMetodoPagamento> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroMetodoPagamento> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Editar Método de pagamento", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Detalhes do Método de Pagamento", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 

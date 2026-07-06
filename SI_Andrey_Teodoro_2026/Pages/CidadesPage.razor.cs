@@ -31,13 +31,13 @@ public partial class CidadesPage : BasePage<CidadeListDto, CidadeDto>
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await CidadeService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Cidade não encontrada.", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroCidade> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroCidade> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Editar Cidade", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Detalhes da Cidade", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 

@@ -44,7 +44,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="CidadeListDto" Label="Cidade*"
+                    <MudAutocomplete T="CidadeListDto" Label="Cidade"
                                      Value="_cidadeSelecionada"
                                      ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
                                      SearchFunc="PesquisarCidade"

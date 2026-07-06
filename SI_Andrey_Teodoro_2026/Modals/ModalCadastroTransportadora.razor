@@ -38,7 +38,7 @@
                                      ValueChanged="OnCidadeAlterada"
                                      SearchFunc="PesquisarCidade"
                                      ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} — {c.Uf}")"
-                                     Label="Cidade*" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
                                      Required="true" RequiredError="Obrigatório"
                                      FullWidth="true" Clearable="true" ResetValueOnEmptyText="true"
                                      CoerceText="false" Disabled="@_readOnly" />
@@ -88,7 +88,7 @@
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => _dto.Cep = MascaraCep(v))"
                                   Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Placeholder="00000-000" Disabled="@_readOnly" />
+                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
                 </MudItem>
             </MudGrid>
         </MudForm>

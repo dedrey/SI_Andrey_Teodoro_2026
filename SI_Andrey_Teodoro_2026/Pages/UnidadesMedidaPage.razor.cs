@@ -31,13 +31,13 @@ public partial class UnidadesMedidaPage : BasePage<UnidadeMedidaListDto, Unidade
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await UnidadeMedidaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Unidade de medida não encontrado(a).", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroUnidadeMedida> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroUnidadeMedida> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Editar Unidade de medida", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Detalhes da Unidade de Medida", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 

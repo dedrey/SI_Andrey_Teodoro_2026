@@ -343,6 +343,8 @@ CREATE TABLE produto_variacoes (
   tamanho            VARCHAR(10)   NOT NULL,
   tamanho_id         INT           NULL,
   codigo_barras      VARCHAR(50)   UNIQUE,
+  preco_compra       DECIMAL(10,2) NOT NULL DEFAULT 0,
+  frete              DECIMAL(10,2) NOT NULL DEFAULT 0,
   preco              DECIMAL(14,2) NOT NULL,
   preco_custo        DECIMAL(14,2) NOT NULL DEFAULT 0.00,
   data_ultima_compra DATE          NULL,

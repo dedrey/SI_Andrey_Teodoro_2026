@@ -134,7 +134,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               LEFT  JOIN usuarios        ua ON ua.id = p.atualizado_por
               WHERE p.id = @id", new { id });
     }
-
     public async Task<List<ProdutoVariacaoDto>> ObterVariacoesPorProdutoAsync(int produtoId)
     {
         using var conn = _factory.CreateConnection();
@@ -147,6 +146,8 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      pv.tamanho_id            AS TamanhoId,
                      ta.nome                  AS Tamanho,
                      pv.codigo_barras         AS CodigoBarras,
+                     pv.preco_compra          AS PrecoCompra,
+                     pv.frete                 AS Frete,
                      pv.preco                 AS Preco,
                      pv.preco_custo           AS PrecoCusto,
                      pv.data_ultima_compra    AS DataUltimaCompra,
@@ -231,10 +232,10 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         await conn.ExecuteAsync(
             @"INSERT INTO produto_variacoes
                 (id, produto_id, cor, cor_id, tamanho, tamanho_id, codigo_barras,
-                 preco, preco_custo, ativo)
+                 preco_compra, frete, preco, preco_custo, ativo)
               VALUES
                 (@ProximoId, @ProdutoId, @Cor, @CorId, @Tamanho, @TamanhoId, @CodigoBarras,
-                 @Preco, @PrecoCusto, @Ativo)",
+                 @PrecoCompra, @Frete, @Preco, @PrecoCusto, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -244,6 +245,8 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.Tamanho,
                 dto.TamanhoId,
                 dto.CodigoBarras,
+                dto.PrecoCompra,
+                dto.Frete,
                 dto.Preco,
                 dto.PrecoCusto,
                 dto.Ativo
@@ -262,6 +265,8 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                   tamanho       = @Tamanho,
                   tamanho_id    = @TamanhoId,
                   codigo_barras = @CodigoBarras,
+                  preco_compra  = @PrecoCompra,
+                  frete         = @Frete,
                   preco         = @Preco,
                   preco_custo   = @PrecoCusto,
                   atualizado_em = NOW()
@@ -275,6 +280,8 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.Tamanho,
                 dto.TamanhoId,
                 dto.CodigoBarras,
+                dto.PrecoCompra,
+                dto.Frete,
                 dto.Preco,
                 dto.PrecoCusto
             });
