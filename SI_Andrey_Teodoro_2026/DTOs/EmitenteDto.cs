@@ -20,11 +20,14 @@ public class EmitenteDto
     [MaxLength(100)]
     public string ApelidoNomeFantasia { get; set; } = string.Empty;
     public int? CidadeId { get; set; }
+    public string? NomeCidade { get; set; }
 
     [Required(ErrorMessage = "Endereço é obrigatório")]
     [MinLength(5)]
     [MaxLength(50)]
     public string Endereco { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Número é obrigatório")]
+    [MaxLength(10)] public string Numero { get; set; } = string.Empty;
     [MaxLength(50)] public string? Complemento { get; set; }
 
 

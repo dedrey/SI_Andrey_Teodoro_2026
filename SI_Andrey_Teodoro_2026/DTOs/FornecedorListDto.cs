@@ -4,7 +4,8 @@ public class FornecedorListDto
 {
     public int Id { get; set; }
     public string RazaoSocial { get; set; } = string.Empty;
-    public string Cnpj { get; set; } = string.Empty;
+    public string TipoPessoa { get; set; } = "PJ";
+    public string CpfCnpj { get; set; } = string.Empty;
     public string? NomeFantasia { get; set; }
     public int? CidadeId { get; set; }
     public string? NomeCidade { get; set; }

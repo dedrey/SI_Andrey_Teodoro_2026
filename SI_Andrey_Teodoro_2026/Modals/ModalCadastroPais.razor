@@ -14,7 +14,7 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="8">
-                    <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = CapPalavras(v))"
+                    <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = Cap(v))"
                                   Label="Nome do País" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v, "País"))" />
@@ -32,7 +32,7 @@
                                   Validation="@((string v) => !int.TryParse(v, out int n) || n < 1 || n > 999 ? "DDI: 1 a 999" : null)" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Moeda" ValueChanged="@((string v) => _dto.Moeda = CapPalavras(v))"
+                    <MudTextField Value="@_dto.Moeda" ValueChanged="@((string v) => _dto.Moeda = Cap(v))"
                                   Label="Moeda" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v, "Moeda"))" />
@@ -91,6 +91,5 @@
     }
     private void Cancelar() => MudDialog.Cancel();
     private string? ValidarNome(string? v, string campo) { if (string.IsNullOrWhiteSpace(v)) return $"{campo} obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$")) return "Apenas letras"; return null; }
-    private string CapPalavras(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) if (i == 0 || i == p.Length - 1 || !_prep.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; return string.Join(" ", p); }
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
+    private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
 }

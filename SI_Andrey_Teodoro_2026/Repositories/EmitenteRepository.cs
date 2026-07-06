@@ -92,7 +92,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                      e.regime_tributario     AS RegimeTributario,
                      e.cidade_id             AS CidadeId,
                      c.cidade                AS NomeCidade,
-                     e.endereco, e.complemento, e.bairro,
+                     e.endereco, e.numero, e.complemento, e.bairro,
                      e.telefone, e.email,
                      e.ativo,
                      e.criado_em     AS CriadoEm,
@@ -111,11 +111,11 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
         await conn.ExecuteAsync(
             @"INSERT INTO emitentes
                 (id, nome_razaosocial, apelido_nomefantasia, cnpj, inscricao_estadual,
-                 regime_tributario, cidade_id, endereco, complemento, bairro,
+                 regime_tributario, cidade_id, endereco, numero, complemento, bairro,
                  telefone, email, ativo)
               VALUES
                 (@ProximoId, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual,
-                 @RegimeTributario, @CidadeId, @Endereco, @Complemento, @Bairro,
+                 @RegimeTributario, @CidadeId, @Endereco, @Numero, @Complemento, @Bairro,
                  @Telefone, @Email, @Ativo)",
             new
             {
@@ -127,6 +127,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 dto.RegimeTributario,
                 dto.CidadeId,
                 dto.Endereco,
+                dto.Numero,
                 dto.Complemento,
                 dto.Bairro,
                 dto.Telefone,
@@ -149,6 +150,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                   regime_tributario    = @RegimeTributario,
                   cidade_id            = @CidadeId,
                   endereco             = @Endereco,
+                  numero               = @Numero,
                   complemento          = @Complemento,
                   bairro               = @Bairro,
                   telefone             = @Telefone,
@@ -166,6 +168,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 dto.RegimeTributario,
                 dto.CidadeId,
                 dto.Endereco,
+                dto.Numero,
                 dto.Complemento,
                 dto.Bairro,
                 dto.Telefone,

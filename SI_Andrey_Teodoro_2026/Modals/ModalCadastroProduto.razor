@@ -73,7 +73,7 @@
 
             <MudGrid Spacing="2" Class="mt-2">
                 <MudItem xs="12">
-                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = Cap(v))"
                                   Label="Descrição" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2" />
                 </MudItem>
@@ -221,15 +221,7 @@
     private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
 
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase)
-        { "da","de","do","das","dos","e","a","o","as","os","em","no","na","com","por","para","ao","aos" };
-    private static string Cap(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return s ?? "";
-        return string.Join(" ", s.Trim().Split(' ')
-            .Select((w, i) => i > 0 && _prep.Contains(w) ? w.ToLower()
-                : w.Length == 0 ? w : char.ToUpper(w[0]) + w[1..].ToLower()));
-    }
+    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 
     protected override async Task OnInitializedAsync()
     {

@@ -3,7 +3,8 @@ public class Fornecedor
 {
     public int Id { get; set; }
     public string RazaoSocial { get; set; } = string.Empty;
-    public string Cnpj { get; set; } = string.Empty;
+    public string TipoPessoa { get; set; } = "PJ";
+    public string CpfCnpj { get; set; } = string.Empty;
     public string? NomeFantasia { get; set; }
     public int? CidadeId { get; set; }
     public int? EstadoId { get; set; }
@@ -11,6 +12,7 @@ public class Fornecedor
     public string? NomeCidade { get; set; }
     public string? Cep { get; set; }
     public string? Endereco { get; set; }
+    public string? Numero { get; set; }
     public string? Complemento { get; set; }
     public string? Bairro { get; set; }
     public string? Telefone { get; set; }

@@ -4,29 +4,33 @@ public class FornecedorDto
 {
     public int Id { get; set; }
     public int IdOriginal { get; set; }
-    [Required(ErrorMessage = "Razão Social é obrigatória")]
+    [Required(ErrorMessage = "Nome/Razão Social é obrigatório")]
     [MinLength(2)]
     [MaxLength(100)]
     public string RazaoSocial { get; set; } = string.Empty;
-    [Required(ErrorMessage = "CNPJ é obrigatório")]
+    public string TipoPessoa { get; set; } = "PJ";
+    [Required(ErrorMessage = "CPF/CNPJ é obrigatório")]
     [MaxLength(18)]
-    public string Cnpj { get; set; } = string.Empty;
-    [Required(ErrorMessage = "Nome Fantasia é obrigatório")]
+    public string CpfCnpj { get; set; } = string.Empty;
     [MinLength(2)]
     [MaxLength(100)]
-    public string NomeFantasia { get; set; } = string.Empty;
+    public string? NomeFantasia { get; set; }
     public string? NomeCidade { get; set; }
     public int? CidadeId { get; set; }
     [Required(ErrorMessage = "Endereço é obrigatório")]
     [MinLength(5)]
     [MaxLength(100)]
     public string Endereco { get; set; } = string.Empty;
-    [MaxLength(50)] public string? Complemento { get; set; }
+    [Required(ErrorMessage = "Número é obrigatório")]
+    [MaxLength(10)] public string Numero { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Complemento é obrigatório")]
+    [MaxLength(50)] public string Complemento { get; set; } = string.Empty;
     [Required(ErrorMessage = "Bairro é obrigatório")]
     [MinLength(2)]
     [MaxLength(60)]
     public string Bairro { get; set; } = string.Empty;
-    [MaxLength(9)] public string? Cep { get; set; }
+    [Required(ErrorMessage = "CEP é obrigatório")]
+    [MaxLength(9)] public string Cep { get; set; } = string.Empty;
     [Required(ErrorMessage = "Telefone é obrigatório")]
     [MaxLength(15)]
     public string Telefone { get; set; } = string.Empty;

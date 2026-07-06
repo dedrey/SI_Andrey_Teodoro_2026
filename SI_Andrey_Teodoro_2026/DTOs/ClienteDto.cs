@@ -21,15 +21,20 @@ public class ClienteDto
     [MinLength(5)]
     [MaxLength(100)]
     public string Endereco { get; set; } = string.Empty;
-    [MaxLength(50)] public string? Complemento { get; set; }
+    [Required(ErrorMessage = "Número é obrigatório")]
+    [MaxLength(10)] public string Numero { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Complemento é obrigatório")]
+    [MaxLength(50)] public string Complemento { get; set; } = string.Empty;
     [Required(ErrorMessage = "Bairro é obrigatório")]
     [MinLength(2)]
     [MaxLength(60)]
     public string Bairro { get; set; } = string.Empty;
-    [MaxLength(9)] public string? Cep { get; set; }
+    [Required(ErrorMessage = "CEP é obrigatório")]
+    [MaxLength(9)] public string Cep { get; set; } = string.Empty;
     [Required(ErrorMessage = "Telefone é obrigatório")]
     [MaxLength(15)]
     public string Telefone { get; set; } = string.Empty;
+    [MaxLength(15)] public string? Celular { get; set; }
     [Required(ErrorMessage = "E-mail é obrigatório")]
     [MaxLength(100)]
     [EmailAddress(ErrorMessage = "E-mail inválido")]
