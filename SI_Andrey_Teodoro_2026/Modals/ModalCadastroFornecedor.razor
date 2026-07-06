@@ -42,7 +42,7 @@
                                   Validation="@((string v) => ValidarDocumento(v))" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="CidadeListDto" Label="Cidade*"
+                    <MudAutocomplete T="CidadeListDto" Label="Cidade"
                                      Value="_cidadeSelecionada"
                                      ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
                                      SearchFunc="PesquisarCidade"
@@ -79,7 +79,7 @@
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => _dto.Cep = MascaraCep(v))"
                                   Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Placeholder="00000-000" Disabled="@_readOnly" />
+                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"

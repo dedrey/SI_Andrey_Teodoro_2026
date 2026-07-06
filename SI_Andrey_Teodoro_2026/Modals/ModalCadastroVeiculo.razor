@@ -10,7 +10,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Class="mr-2" />
-            @(_dto.IdOriginal == 0 ? "Cadastrar Novo Veículo" : "Editar Veículo")
+            @(_readOnly ? "Detalhes do Veículo" : _dto.IdOriginal == 0 ? "Cadastrar Novo Veículo" : "Editar Veículo")
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -23,18 +23,18 @@
                                      SearchFunc="PesquisarTransportadora"
                                      ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudTooltip Text="Nova Transportadora">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalTransportadora" />
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalTransportadora" Disabled="@_readOnly" />
                     </MudTooltip>
                 </MudItem>
                 <MudItem xs="6" sm="3">
                     <MudTextField Value="@_placaTexto" ValueChanged="@((string? v) => OnPlacaAlterada(v))"
                                   Label="Placa" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="7" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarPlaca(v))" />
+                                  Validation="@((string v) => ValidarPlaca(v))" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="6" sm="3">
                     <MudAutocomplete T="string" Label="UF"
@@ -42,24 +42,46 @@
                                      SearchFunc="PesquisarUf"
                                      ToStringFunc="@(u => u ?? "")"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
                 </MudItem>
             </MudGrid>
         </MudForm>
+        @if (_dto.AtualizadoEm.HasValue)
+        {
+            <MudText Style="font-size:0.75rem;color:#999;text-align:right;display:block;margin-top:8px;">
+                Alterado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
+                {
+                    <text> por @_dto.NomeAtualizadoPor</text>
+                }
+            </MudText>
+        }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
-        <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
-                   Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
-            @(_salvando ? "Salvando..." : "Salvar")
-        </MudButton>
+        @if (_readOnly)
+        {
+            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
+            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+                Editar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
+                       Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public VeiculoDto? DtoEdicao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; } = false;
 
+    private bool _readOnly;
     private VeiculoDto _dto = new();
     private MudForm _form = null!;
     private bool _formValido, _salvando;
@@ -70,6 +92,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _readOnly = SomenteLeitura;
         _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
         _ufs = (await EstadoService.ObterTodosAtivosAsync()).Select(e => e.Uf).Distinct().OrderBy(u => u).ToList();
         if (DtoEdicao is not null)
@@ -81,7 +104,9 @@
                 TransportadoraId = DtoEdicao.TransportadoraId,
                 Placa = DtoEdicao.Placa,
                 Uf = DtoEdicao.Uf,
-                Ativo = DtoEdicao.Ativo
+                Ativo = DtoEdicao.Ativo,
+                AtualizadoEm = DtoEdicao.AtualizadoEm,
+                NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
             _placaTexto = DtoEdicao.Placa;
             _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == DtoEdicao.TransportadoraId);

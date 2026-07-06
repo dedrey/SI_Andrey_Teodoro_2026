@@ -7,18 +7,22 @@ public class ProdutoVariacaoDto
     public int IdOriginal { get; set; }
     public int ProdutoId { get; set; }
 
-    // FK para tabela cores
     [Required(ErrorMessage = "Cor é obrigatória")]
     public int CorId { get; set; }
     public string Cor { get; set; } = string.Empty;
 
-    // FK para tabela tamanhos
     [Required(ErrorMessage = "Tamanho é obrigatório")]
     public int TamanhoId { get; set; }
     public string Tamanho { get; set; } = string.Empty;
 
     [MaxLength(50)]
     public string? CodigoBarras { get; set; }
+
+    [Range(0, 999999.99, ErrorMessage = "Preço de compra inválido")]
+    public decimal PrecoCompra { get; set; }
+
+    [Range(0, 999999.99, ErrorMessage = "Frete inválido")]
+    public decimal Frete { get; set; }
 
     [Required(ErrorMessage = "Preço de venda é obrigatório")]
     [Range(0.01, 999999.99, ErrorMessage = "Preço deve ser maior que zero")]

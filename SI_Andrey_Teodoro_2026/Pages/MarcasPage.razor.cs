@@ -31,13 +31,13 @@ public partial class MarcasPage : BasePage<MarcaListDto, MarcaDto>
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await MarcaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Marca não encontrado(a).", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroMarca> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroMarca> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Editar Marca", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Detalhes da Marca", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 

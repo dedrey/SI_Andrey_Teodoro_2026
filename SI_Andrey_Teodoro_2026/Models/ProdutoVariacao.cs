@@ -8,7 +8,11 @@ public class ProdutoVariacao
     public string Cor { get; set; } = string.Empty;
     public string Tamanho { get; set; } = string.Empty;
     public string? CodigoBarras { get; set; }
+    public decimal PrecoCompra { get; set; }
+    public decimal Frete { get; set; }
+    public decimal PrecoCusto { get; set; }
     public decimal Preco { get; set; }
+    public DateTime? DataUltimaCompra { get; set; }
     public int QuantidadeEstoque { get; set; }
     public bool Ativo { get; set; } = true;
     public DateTime CriadoEm { get; set; } = DateTime.Now;

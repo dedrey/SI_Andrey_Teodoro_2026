@@ -28,13 +28,13 @@ public partial class CondicoesPagamentoPage : BasePage<CondicaoPagamentoListDto,
         var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await CondicaoPagamentoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Condição não encontrada.", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroCondicaoPagamento> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroCondicaoPagamento> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Editar Condição", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Detalhes da Condição de Pagamento", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
     private Task AlterarStatus(int id, string nome, bool ativoAtual)

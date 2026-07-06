@@ -1,5 +1,6 @@
 ﻿@inject IEstadoService EstadoService
 @inject IPaisService PaisService
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @using SI_Andrey_Teodoro_2026.DTOs
 @using SI_Andrey_Teodoro_2026.Services.Interfaces
@@ -8,15 +9,15 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Map" Class="mr-2" />
-            @(_dto.IdOriginal == 0 ? "Cadastrar Novo Estado" : "Editar Estado")
+            @(_readOnly ? "Detalhes do Estado" : _dto.IdOriginal == 0 ? "Cadastrar Novo Estado" : "Editar Estado")
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12">
+                <MudItem xs="10" sm="11">
                     <MudSelect T="int" @bind-Value="_dto.PaisId" Label="País"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@_readOnly">
                         <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                         @foreach (var p in _paises)
                         {
@@ -24,27 +25,52 @@
                         }
                     </MudSelect>
                 </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudTooltip Text="Novo País">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalPais" Disabled="@_readOnly" />
+                    </MudTooltip>
+                </MudItem>
                 <MudItem xs="12" sm="9">
                     <MudTextField Value="@_dto.NomeEstado" ValueChanged="@((string v) => _dto.NomeEstado = Cap(v))"
-                                  Label="Nome do Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null)" />
+                                  Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null)" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = new string(v.Where(char.IsLetter).ToArray()).ToUpper())"
                                   Label="UF" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[A-Z]{2}$") ? "2 letras maiúsculas" : null)" />
+                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[A-Z]{2}$") ? "2 letras maiúsculas" : null)" Disabled="@_readOnly" />
                 </MudItem>
             </MudGrid>
         </MudForm>
+        @if (_dto.AtualizadoEm.HasValue)
+        {
+            <MudText Style="font-size:0.75rem;color:#999;text-align:right;display:block;margin-top:8px;">
+                Alterado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
+                {
+                    <text> por @_dto.NomeAtualizadoPor</text>
+                }
+            </MudText>
+        }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
-        <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
-                   Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
-            @(_salvando ? "Salvando..." : "Salvar")
-        </MudButton>
+        @if (_readOnly)
+        {
+            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
+            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+                Editar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
+                       Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -52,7 +78,9 @@
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public EstadoDto? DtoEdicao { get; set; }
     [Parameter] public int PaisIdInicial { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; } = false;
 
+    private bool _readOnly;
     private EstadoDto _dto = new();
     private MudForm _form = null!;
     private bool _formValido, _salvando;
@@ -60,6 +88,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _readOnly = SomenteLeitura;
         _paises = (await PaisService.ObterTodosAtivosAsync()).ToList();
         if (DtoEdicao is not null)
             _dto = new EstadoDto
@@ -69,10 +98,24 @@
                 PaisId = DtoEdicao.PaisId,
                 NomeEstado = DtoEdicao.NomeEstado,
                 Uf = DtoEdicao.Uf,
-                Ativo = DtoEdicao.Ativo
+                Ativo = DtoEdicao.Ativo,
+                AtualizadoEm = DtoEdicao.AtualizadoEm,
+                NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
         else if (PaisIdInicial > 0)
             _dto.PaisId = PaisIdInicial;
+    }
+
+    private async Task AbrirModalPais()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+        {
+            _paises = (await PaisService.ObterTodosAtivosAsync()).ToList();
+            if (result.Data is int id) _dto.PaisId = id;
+        }
     }
 
     private async Task Salvar()
@@ -88,4 +131,5 @@
     }
     private void Cancelar() => MudDialog.Cancel();
     private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
 }

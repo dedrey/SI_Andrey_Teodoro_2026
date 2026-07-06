@@ -31,13 +31,13 @@ public partial class CategoriasPage : BasePage<CategoriaListDto, CategoriaDto>
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await CategoriaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Categoria não encontrado(a).", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroCategoria> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroCategoria> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Editar Categoria", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Detalhes da Categoria", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 

@@ -100,6 +100,9 @@
                         <MudTh Style="font-weight:600;">Tamanho</MudTh>
                         <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Cód. Barras</MudTh>
+                        <MudTh Style="font-weight:600;">Compra (R$)</MudTh>
+                        <MudTh Style="font-weight:600;">Frete (R$)</MudTh>
+                        <MudTh Style="font-weight:600;">Custo (R$)</MudTh>
                         <MudTh Style="font-weight:600;">Venda (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
@@ -142,6 +145,22 @@
                                           Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
                         </MudTd>
                         <MudTd>
+                            <MudTextField Value="@GetCompraTexto(context)" ValueChanged="@((string v) => OnCompraAlterado(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField Value="@GetFreteTexto(context)" ValueChanged="@((string v) => OnFreteAlterado(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField Value="@context.PrecoCusto.ToString("N2")" ReadOnly="true" Disabled="true"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
+                                          Style="background-color:#fafafa;" />
+                        </MudTd>
+                        <MudTd>
                             <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                           FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
@@ -149,7 +168,7 @@
                             @if (abaixoCusto)
                             {
                                 <MudText Typo="Typo.caption" Color="@(fastFashion? Color.Warning: Color.Error)">
-                                    @(fastFashion ? "⚡ Fast Fashion — abaixo do custo permitido" : "⚠ Abaixo do custo (definido na última entrada)")
+                                    @(fastFashion ? "⚡ Fast Fashion — abaixo do custo permitido" : "⚠ Abaixo do custo")
                                 </MudText>
                             }
                         </MudTd>
@@ -220,6 +239,8 @@
     private List<CorListDto> _cores = new();
     private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
+    private readonly Dictionary<ProdutoVariacaoDto, string> _compraTextos = new();
+    private readonly Dictionary<ProdutoVariacaoDto, string> _freteTextos = new();
 
     private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 
@@ -229,7 +250,12 @@
         if (DtoEdicao != null)
         {
             foreach (var v in _dto.Variacoes)
+            {
                 _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
+                _compraTextos[v] = v.PrecoCompra > 0 ? v.PrecoCompra.ToString("N2") : "";
+                _freteTextos[v] = v.Frete > 0 ? v.Frete.ToString("N2") : "";
+                v.PrecoCusto = v.PrecoCompra + v.Frete;
+            }
         }
         await Task.WhenAll(
             Task.Run(async () => _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList()),
@@ -259,6 +285,36 @@
         _precoTextos[v] = f;
         v.Preco = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
                                    System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        StateHasChanged();
+    }
+
+    private string GetCompraTexto(ProdutoVariacaoDto v)
+    {
+        if (!_compraTextos.ContainsKey(v)) _compraTextos[v] = v.PrecoCompra > 0 ? v.PrecoCompra.ToString("N2") : "";
+        return _compraTextos[v];
+    }
+    private void OnCompraAlterado(ProdutoVariacaoDto v, string? texto)
+    {
+        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _compraTextos[v] = f;
+        v.PrecoCompra = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        v.PrecoCusto = v.PrecoCompra + v.Frete;
+        StateHasChanged();
+    }
+
+    private string GetFreteTexto(ProdutoVariacaoDto v)
+    {
+        if (!_freteTextos.ContainsKey(v)) _freteTextos[v] = v.Frete > 0 ? v.Frete.ToString("N2") : "";
+        return _freteTextos[v];
+    }
+    private void OnFreteAlterado(ProdutoVariacaoDto v, string? texto)
+    {
+        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _freteTextos[v] = f;
+        v.Frete = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        v.PrecoCusto = v.PrecoCompra + v.Frete;
         StateHasChanged();
     }
 

@@ -7,7 +7,7 @@
     <TitleContent>
         <div class="d-flex align-center gap-2">
             <MudIcon Icon="@Icons.Material.Filled.RequestQuote" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">@(DtoEdicao == null ? "Nova Condição de Pagamento" : "Editar Condição de Pagamento")</MudText>
+            <MudText Typo="Typo.h6">@(_readOnly ? "Detalhes da Condição de Pagamento" : DtoEdicao == null ? "Nova Condição de Pagamento" : "Editar Condição de Pagamento")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -17,7 +17,7 @@
                 <MudItem xs="12" sm="7">
                     <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
                     <div class="d-flex align-center gap-1">
@@ -28,11 +28,11 @@
                                          ToStringFunc="@(m => m == null ? "" : $"{m.MetodoPagamento} ({m.Codigo})")"
                                          Label="Método de Pagamento"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
-                                         ResetValueOnEmptyText="true" CoerceText="false"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly"
                                          Placeholder="Digite para pesquisar..." />
                         <MudTooltip Text="Novo método de pagamento">
                             <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                           Size="Size.Medium" OnClick="AbrirNovoMetodo" />
+                                           Size="Size.Medium" OnClick="AbrirNovoMetodo" Disabled="@_readOnly" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -42,11 +42,11 @@
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
                 <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Taxas e Percentuais</div>
                 <MudGrid Spacing="2">
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.DescontoPercentual" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.AcrescimoPercentual" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.TaxaJurosPercentual" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.MultaPercentual" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.EntradaMinimaPercentual" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" /></MudItem>
+                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.DescontoPercentual" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@_readOnly" /></MudItem>
+                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.AcrescimoPercentual" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@_readOnly" /></MudItem>
+                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.TaxaJurosPercentual" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@_readOnly" /></MudItem>
+                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.MultaPercentual" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@_readOnly" /></MudItem>
+                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.EntradaMinimaPercentual" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@_readOnly" /></MudItem>
                 </MudGrid>
             </div>
 
@@ -61,9 +61,10 @@
                                          ValueChanged="OnNumeroParcelas"
                                          Label="Nº parcelas" Variant="Variant.Outlined"
                                          Margin="Margin.Dense" Min="1" Max="999"
-                                         Style="width:110px;" />
+                                         Immediate="true"
+                                         Style="width:110px;" Disabled="@_readOnly" />
                         <MudButton Size="Size.Small" Variant="Variant.Outlined"
-                                   OnClick="GerarParcelas" StartIcon="@Icons.Material.Filled.Refresh">
+                                   OnClick="GerarParcelas" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@_readOnly">
                             Gerar
                         </MudButton>
                     </div>
@@ -84,7 +85,7 @@
                                 <MudTextField Value="@context.DiasVencimento.ToString()"
                                               ValueChanged="@((string v) => { context.DiasVencimento = int.TryParse(v, out int d) && d >= 0 ? d : 0; StateHasChanged(); })"
                                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                                              Immediate="true" Style="max-width:120px;" Placeholder="0 = no ato" />
+                                              Immediate="true" Style="max-width:120px;" Placeholder="0 = no ato" Disabled="@_readOnly" />
                             </MudTd>
                             <MudTd Style="color:#888;font-size:0.85rem;">
                                 @if (context.DiasVencimento == 0)
@@ -107,21 +108,43 @@
                 }
             </div>
         </MudForm>
+        @if (_dto.AtualizadoEm.HasValue)
+        {
+            <MudText Style="font-size:0.75rem;color:#999;text-align:right;display:block;margin-top:8px;">
+                Alterado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
+                {
+                    <text> por @_dto.NomeAtualizadoPor</text>
+                }
+            </MudText>
+        }
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_salvando">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Save"
-                   OnClick="Salvar" Disabled="_salvando">
-            @(_salvando ? "Salvando..." : "Salvar")
-        </MudButton>
+        @if (_readOnly)
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="Fechar">Fechar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => _readOnly = false)" StartIcon="@Icons.Material.Filled.Edit">
+                Editar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="Salvar" Disabled="_salvando">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public CondicaoPagamentoDto? DtoEdicao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; } = false;
 
+    private bool _readOnly;
     private CondicaoPagamentoDto _dto = new();
     private List<MetodoPagamentoListDto> _metodos = new();
     private MudForm _form = null!;
@@ -130,6 +153,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _readOnly = SomenteLeitura;
         _dto = DtoEdicao != null
             ? new CondicaoPagamentoDto
             {
@@ -144,6 +168,8 @@
                 MultaPercentual = DtoEdicao.MultaPercentual,
                 TaxaJurosPercentual = DtoEdicao.TaxaJurosPercentual,
                 Ativo = DtoEdicao.Ativo,
+                AtualizadoEm = DtoEdicao.AtualizadoEm,
+                NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor,
                 Parcelas = DtoEdicao.Parcelas.Select(p => new CondicaoPagamentoParcelaDto
                 { Id = p.Id, NumeroParcela = p.NumeroParcela, DiasVencimento = p.DiasVencimento }).ToList()
             }

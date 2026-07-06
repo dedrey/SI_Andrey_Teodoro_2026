@@ -7,63 +7,86 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Public" Class="mr-2" />
-            @(_dto.IdOriginal == 0 ? "Cadastrar Novo País" : "Editar País")
+            @(_readOnly ? "Detalhes do País" : _dto.IdOriginal == 0 ? "Cadastrar Novo País" : "Editar País")
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="8">
-                    <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = Cap(v))"
-                                  Label="Nome do País" Variant="Variant.Outlined" Margin="Margin.Dense"
+                    <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = CapPalavras(v))"
+                                  Label="cPaís" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarNome(v, "País"))" />
+                                  Validation="@((string v) => ValidarNome(v, "País"))" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Sigla" ValueChanged="@((string v) => _dto.Sigla = new string(v.Where(char.IsLetter).ToArray()).ToUpper())"
                                   Label="Sigla" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[A-Z]{1,3}$") ? "1-3 letras maiúsculas" : null)" />
+                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[A-Z]{1,3}$") ? "1-3 letras maiúsculas" : null)" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Ddi" ValueChanged="@((string v) => _dto.Ddi = new string(v.Where(char.IsDigit).ToArray()))"
                                   Label="DDI" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => !int.TryParse(v, out int n) || n < 1 || n > 999 ? "DDI: 1 a 999" : null)" />
+                                  Validation="@((string v) => !int.TryParse(v, out int n) || n < 1 || n > 999 ? "DDI: 1 a 999" : null)" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Moeda" ValueChanged="@((string v) => _dto.Moeda = Cap(v))"
+                    <MudTextField Value="@_dto.Moeda" ValueChanged="@((string v) => _dto.Moeda = CapPalavras(v))"
                                   Label="Moeda" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarNome(v, "Moeda"))" />
+                                  Validation="@((string v) => ValidarNome(v, "Moeda"))" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.SimboleMoeda" ValueChanged="@((string v) => _dto.SimboleMoeda = v.ToUpper())"
                                   Label="Símbolo" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="5" FullWidth="true" Immediate="true" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="5" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
                 </MudItem>
             </MudGrid>
         </MudForm>
+        @if (_dto.AtualizadoEm.HasValue)
+        {
+            <MudText Style="font-size:0.75rem;color:#999;text-align:right;display:block;margin-top:8px;">
+                Alterado em @_dto.AtualizadoEm.Value.ToString("dd/MM/yyyy HH:mm")
+                @if (!string.IsNullOrWhiteSpace(_dto.NomeAtualizadoPor))
+                {
+                    <text> por @_dto.NomeAtualizadoPor</text>
+                }
+            </MudText>
+        }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
-        <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
-                   Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
-            @(_salvando ? "Salvando..." : "Salvar")
-        </MudButton>
+        @if (_readOnly)
+        {
+            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
+            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+                Editar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
+                       Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+                @(_salvando ? "Salvando..." : "Salvar")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
     [Parameter] public PaisDto? DtoEdicao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; } = false;
 
+    private bool _readOnly;
     private PaisDto _dto = new();
     private MudForm _form = null!;
     private bool _formValido, _salvando;
 
     protected override Task OnInitializedAsync()
     {
+        _readOnly = SomenteLeitura;
         if (DtoEdicao is not null)
             _dto = new PaisDto
             {
@@ -74,7 +97,9 @@
                 Moeda = DtoEdicao.Moeda,
                 SimboleMoeda = DtoEdicao.SimboleMoeda,
                 NomePais = DtoEdicao.NomePais,
-                Ativo = DtoEdicao.Ativo
+                Ativo = DtoEdicao.Ativo,
+                AtualizadoEm = DtoEdicao.AtualizadoEm,
+                NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
         return base.OnInitializedAsync();
     }
@@ -91,5 +116,6 @@
     }
     private void Cancelar() => MudDialog.Cancel();
     private string? ValidarNome(string? v, string campo) { if (string.IsNullOrWhiteSpace(v)) return $"{campo} obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$")) return "Apenas letras"; return null; }
-    private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
+    private static string CapPalavras(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
+    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
 }

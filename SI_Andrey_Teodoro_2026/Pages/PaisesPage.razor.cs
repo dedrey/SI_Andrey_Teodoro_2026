@@ -31,13 +31,13 @@ public partial class PaisesPage : BasePage<PaisListDto, PaisDto>
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await PaisService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("País não encontrado(a).", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroPais> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroPais> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Editar País", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Detalhes do País", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
