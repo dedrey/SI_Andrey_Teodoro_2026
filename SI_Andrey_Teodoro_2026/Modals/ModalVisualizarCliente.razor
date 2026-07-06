@@ -44,8 +44,7 @@
 
                     @if (_dto.TipoPessoa == "PJ" && !_dto.Estrangeiro)
                     {
-                        <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Inscrição Estadual</span><span class="vis-value">@(_dto.InscricaoEstadual ?? "—")</span></div></MudItem>
-                        <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">Inscrição Municipal</span><span class="vis-value">@(_dto.InscricaoMunicipal ?? "—")</span></div></MudItem>
+                        <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">IE/IM</span><span class="vis-value">@(_dto.InscricaoEstadual ?? "—")</span></div></MudItem>
                     }
                 </MudGrid>
             </div>
@@ -66,6 +65,10 @@
                     <div class="vis-field">
                         <span class="vis-label">Rua / Logradouro</span>
                         <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Endereco) ? "—" : _dto.Endereco)</span>
+                    </div>
+                    <div class="vis-field">
+                        <span class="vis-label">Número</span>
+                        <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Numero) ? "—" : _dto.Numero)</span>
                     </div>
                     <div class="vis-field">
                         <span class="vis-label">Bairro</span>

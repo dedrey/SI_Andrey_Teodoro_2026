@@ -17,13 +17,19 @@ public class TransportadoraDto
     public string? InscricaoEstadual { get; set; }
     public string? NomeCidade { get; set; }
     public int? CidadeId { get; set; }
+    [Required(ErrorMessage = "Endereço é obrigatório")]
     [MaxLength(100)]
-    public string? Endereco { get; set; }
+    public string Endereco { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Número é obrigatório")]
+    [MaxLength(10)] public string Numero { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Complemento é obrigatório")]
     [MaxLength(50)]
-    public string? Complemento { get; set; }
+    public string Complemento { get; set; } = string.Empty;
+    [Required(ErrorMessage = "Bairro é obrigatório")]
     [MaxLength(60)]
-    public string? Bairro { get; set; }
-    [MaxLength(9)] public string? Cep { get; set; }
+    public string Bairro { get; set; } = string.Empty;
+    [Required(ErrorMessage = "CEP é obrigatório")]
+    [MaxLength(9)] public string Cep { get; set; } = string.Empty;
     [Required(ErrorMessage = "Telefone é obrigatório")]
     [MaxLength(15)]
     public string Telefone { get; set; } = string.Empty;

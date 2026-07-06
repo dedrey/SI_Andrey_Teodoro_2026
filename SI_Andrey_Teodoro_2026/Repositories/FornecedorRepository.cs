@@ -19,7 +19,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add(@"(f.razaosocial   LIKE @Busca
                       OR f.nomefantasia  LIKE @Busca
-                      OR f.cnpj          LIKE @Busca
+                      OR f.cpf_cnpj      LIKE @Busca
                       OR CAST(f.id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
@@ -39,7 +39,8 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
         var sqlData = $@"SELECT f.id,
                                   f.razaosocial   AS RazaoSocial,
                                   f.nomefantasia  AS NomeFantasia,
-                                  f.cnpj,
+                                  f.tipo_pessoa   AS TipoPessoa,
+                                  f.cpf_cnpj      AS CpfCnpj,
                                   c.cidade        AS NomeCidade,
                                   f.telefone, f.email,
                                   f.ativo,
@@ -75,10 +76,11 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
             @"SELECT f.id,
                      f.razaosocial   AS RazaoSocial,
                      f.nomefantasia  AS NomeFantasia,
-                     f.cnpj,
+                     f.tipo_pessoa   AS TipoPessoa,
+                     f.cpf_cnpj      AS CpfCnpj,
                      f.cidade_id     AS CidadeId,
                      c.cidade        AS NomeCidade,
-                     f.endereco, f.complemento, f.bairro, f.cep,
+                     f.endereco, f.numero, f.complemento, f.bairro, f.cep,
                      f.telefone, f.email,
                      f.ativo,
                      f.criado_em     AS CriadoEm,
@@ -96,19 +98,21 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO fornecedores
-                (id, razaosocial, nomefantasia, cnpj, cidade_id,
-                 endereco, complemento, bairro, cep, telefone, email, ativo)
+                (id, razaosocial, tipo_pessoa, nomefantasia, cpf_cnpj, cidade_id,
+                 endereco, numero, complemento, bairro, cep, telefone, email, ativo)
               VALUES
-                (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @CidadeId,
-                 @Endereco, @Complemento, @Bairro, @Cep, @Telefone, @Email, @Ativo)",
+                (@ProximoId, @RazaoSocial, @TipoPessoa, @NomeFantasia, @CpfCnpj, @CidadeId,
+                 @Endereco, @Numero, @Complemento, @Bairro, @Cep, @Telefone, @Email, @Ativo)",
             new
             {
                 ProximoId = proximoId,
                 RazaoSocial = dto.RazaoSocial,
+                dto.TipoPessoa,
                 NomeFantasia = dto.NomeFantasia,
-                dto.Cnpj,
+                dto.CpfCnpj,
                 dto.CidadeId,
                 dto.Endereco,
+                dto.Numero,
                 dto.Complemento,
                 dto.Bairro,
                 dto.Cep,
@@ -126,10 +130,12 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
             @"UPDATE fornecedores
               SET id           = @Id,
                   razaosocial  = @RazaoSocial,
+                  tipo_pessoa  = @TipoPessoa,
                   nomefantasia = @NomeFantasia,
-                  cnpj         = @Cnpj,
+                  cpf_cnpj     = @CpfCnpj,
                   cidade_id    = @CidadeId,
                   endereco     = @Endereco,
+                  numero       = @Numero,
                   complemento  = @Complemento,
                   bairro       = @Bairro,
                   cep          = @Cep,
@@ -142,10 +148,12 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                 dto.Id,
                 dto.IdOriginal,
                 RazaoSocial = dto.RazaoSocial,
+                dto.TipoPessoa,
                 NomeFantasia = dto.NomeFantasia,
-                dto.Cnpj,
+                dto.CpfCnpj,
                 dto.CidadeId,
                 dto.Endereco,
+                dto.Numero,
                 dto.Complemento,
                 dto.Bairro,
                 dto.Cep,
@@ -157,13 +165,13 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
     public Task AlterarStatusAsync(int id, bool ativo)
         => AlterarStatusBaseAsync(id, ativo);
 
-    public async Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null)
+    public async Task<bool> ExisteCpfCnpjAsync(string cpfCnpj, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();
         var sql = idOriginalIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM fornecedores WHERE cnpj = @cnpj AND id <> @idOriginalIgnorar"
-            : "SELECT COUNT(*) FROM fornecedores WHERE cnpj = @cnpj";
-        return await conn.ExecuteScalarAsync<int>(sql, new { cnpj, idOriginalIgnorar }) > 0;
+            ? "SELECT COUNT(*) FROM fornecedores WHERE cpf_cnpj = @cpfCnpj AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM fornecedores WHERE cpf_cnpj = @cpfCnpj";
+        return await conn.ExecuteScalarAsync<int>(sql, new { cpfCnpj, idOriginalIgnorar }) > 0;
     }
 
     public async Task<bool> ExisteRazaoSocialAsync(string razaoSocial, int? idOriginalIgnorar = null)
@@ -190,7 +198,8 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
             @"SELECT id,
                  razaosocial AS RazaoSocial,
                  nomefantasia AS NomeFantasia,
-                 cnpj,
+                 tipo_pessoa AS TipoPessoa,
+                 cpf_cnpj AS CpfCnpj,
                  ativo
           FROM fornecedores
           WHERE ativo = TRUE

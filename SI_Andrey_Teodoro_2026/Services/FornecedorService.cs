@@ -26,13 +26,15 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             Id = f.Id,
             IdOriginal = f.Id,
             RazaoSocial = f.RazaoSocial,
+            TipoPessoa = f.TipoPessoa,
             NomeFantasia = f.NomeFantasia,
-            Cnpj = FormatarCnpj(f.Cnpj),
+            CpfCnpj = FormatarDocumento(f.CpfCnpj, f.TipoPessoa),
             NomeCidade = f.NomeCidade,
             CidadeId = f.CidadeId,
-            Cep = f.Cep,
+            Cep = f.Cep ?? string.Empty,
             Endereco = f.Endereco,
-            Complemento = f.Complemento,
+            Numero = f.Numero ?? string.Empty,
+            Complemento = f.Complemento ?? string.Empty,
             Bairro = f.Bairro,
             Telefone = f.Telefone ?? string.Empty,
             Email = f.Email ?? string.Empty,
@@ -47,26 +49,39 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
         try
         {
             dto.RazaoSocial = dto.RazaoSocial.Trim();
-            dto.NomeFantasia = dto.NomeFantasia.Trim();
+            dto.NomeFantasia = dto.NomeFantasia?.Trim();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
-            dto.Email = dto.Email?.Trim().ToLower() ?? string.Empty;
+            dto.Email = dto.Email?.Trim() ?? string.Empty;
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
+                return (false, "E-mail inválido.", 0);
             dto.Endereco = dto.Endereco.Trim();
+            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
             dto.Bairro = dto.Bairro.Trim();
+            dto.Complemento = dto.Complemento.Trim();
+            dto.Cep = dto.Cep.Trim();
 
-            var cnpjLimpo = LimparDigitos(dto.Cnpj);
-            var erroCnpj = ValidarCnpj(cnpjLimpo);
-            if (erroCnpj != null) return (false, erroCnpj, 0);
-            dto.Cnpj = cnpjLimpo;
+            if (!dto.CidadeId.HasValue)
+                return (false, "Cidade é obrigatória.", 0);
+
+            if (dto.TipoPessoa == "PJ" && string.IsNullOrWhiteSpace(dto.NomeFantasia))
+                return (false, "Nome Fantasia é obrigatório para Pessoa Jurídica.", 0);
+            if (dto.TipoPessoa == "PF")
+                dto.NomeFantasia = null;
+
+            var docLimpo = LimparDigitos(dto.CpfCnpj);
+            var erroDoc = dto.TipoPessoa == "PF" ? ValidarCpf(docLimpo) : ValidarCnpj(docLimpo);
+            if (erroDoc != null) return (false, erroDoc, 0);
+            dto.CpfCnpj = docLimpo;
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
-            if (await _repo.ExisteCnpjAsync(dto.Cnpj, ignorar))
-                return (false, $"Já existe um fornecedor com o CNPJ '{FormatarCnpj(dto.Cnpj)}'.", 0);
+            if (await _repo.ExisteCpfCnpjAsync(dto.CpfCnpj, ignorar))
+                return (false, $"Já existe um fornecedor com o documento '{FormatarDocumento(dto.CpfCnpj, dto.TipoPessoa)}'.", 0);
 
             if (await _repo.ExisteRazaoSocialAsync(dto.RazaoSocial, ignorar))
-                return (false, $"Já existe um fornecedor com a razão social '{dto.RazaoSocial}'.", 0);
+                return (false, $"Já existe um fornecedor com o nome/razão social '{dto.RazaoSocial}'.", 0);
 
-            if (await _repo.ExisteNomeFantasiaAsync(dto.NomeFantasia, ignorar))
+            if (!string.IsNullOrWhiteSpace(dto.NomeFantasia) && await _repo.ExisteNomeFantasiaAsync(dto.NomeFantasia, ignorar))
                 return (false, $"Já existe um fornecedor com o nome fantasia '{dto.NomeFantasia}'.", 0);
 
             if (dto.IdOriginal == 0)
@@ -94,10 +109,23 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
     private static string LimparDigitos(string v)
         => new string(v.Where(char.IsDigit).ToArray());
 
-    public static string FormatarCnpj(string cnpj)
+    public static string FormatarDocumento(string? doc, string tipoPessoa)
     {
-        var d = LimparDigitos(cnpj);
-        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : cnpj;
+        if (string.IsNullOrWhiteSpace(doc)) return string.Empty;
+        var d = LimparDigitos(doc);
+        if (tipoPessoa == "PF" && d.Length == 11)
+            return $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}";
+        if (tipoPessoa == "PJ" && d.Length == 14)
+            return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
+        return doc;
+    }
+
+    private static string? ValidarCpf(string cpf)
+    {
+        if (cpf.Length != 11 || cpf.Distinct().Count() == 1) return "CPF inválido.";
+        int[] m1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+        int[] m2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
+        return Digito(cpf, m1, 9) && Digito(cpf, m2, 10) ? null : "CPF inválido.";
     }
 
     private static string? ValidarCnpj(string cnpj)

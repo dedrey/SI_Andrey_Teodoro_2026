@@ -1,4 +1,4 @@
-﻿    using SI_Andrey_Teodoro_2026.DTOs;
+﻿using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -67,6 +67,17 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
                 return (false, "O número de parcelas configuradas não bate com o campo 'Nº parcelas'.", 0);
             if (dto.Parcelas.Any(p => p.DiasVencimento < 0))
                 return (false, "Dias de vencimento não pode ser negativo.", 0);
+            if (dto.Parcelas.Count > 1)
+            {
+                var ordenadas = dto.Parcelas.OrderBy(p => p.NumeroParcela).ToList();
+                for (int i = 1; i < ordenadas.Count; i++)
+                {
+                    if (ordenadas[i].DiasVencimento <= ordenadas[i - 1].DiasVencimento)
+                        return (false, $"Os dias de vencimento devem ser crescentes: a parcela {ordenadas[i].NumeroParcela} " +
+                            $"({ordenadas[i].DiasVencimento} dias) deve ter um prazo maior que a parcela {ordenadas[i - 1].NumeroParcela} " +
+                            $"({ordenadas[i - 1].DiasVencimento} dias).", 0);
+                }
+            }
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
             if (await _repo.ExisteNomeAsync(dto.CondicaoPagamento, ignorar))

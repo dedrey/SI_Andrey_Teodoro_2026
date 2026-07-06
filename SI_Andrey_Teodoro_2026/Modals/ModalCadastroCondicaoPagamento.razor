@@ -15,7 +15,7 @@
             <!-- Nome + Método -->
             <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="7">
-                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento **" Immediate="true"
+                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" />
                 </MudItem>
@@ -26,7 +26,7 @@
                                          ValueChanged="@((MetodoPagamentoListDto? m) => _dto.MetodoPagamentoId = m?.Id ?? 0)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _metodos.AsEnumerable() : _metodos.Where(m => m.MetodoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase) || m.Codigo.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(m => m == null ? "" : $"{m.MetodoPagamento} ({m.Codigo})")"
-                                         Label="Método de Pagamento **"
+                                         Label="Método de Pagamento"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false"
                                          Placeholder="Digite para pesquisar..." />
@@ -177,11 +177,6 @@
             .Select(n => new CondicaoPagamentoParcelaDto
             {
                 NumeroParcela = n,
-                // Parcela única: 0 dias = pagamento no ato (Pix, Débito)
-                // Múltiplas parcelas: usa dias equivalentes a n meses a partir de hoje
-                // ex: 1 mês = ~30 dias, mas o cálculo real de vencimento no VendaService
-                // usa AddDays(DiasVencimento), então convertemos meses para dias aproximados
-                // usando a diferença real entre hoje e hoje+n meses
                 DiasVencimento = _dto.NumeroParcelas == 1
                     ? 0
                     : (DateTime.Today.AddMonths(n) - DateTime.Today).Days
@@ -196,6 +191,11 @@
         if (_dto.Parcelas.Count != _dto.NumeroParcelas)
         {
             Snackbar.Add("Clique em 'Gerar' para definir os prazos das parcelas.", Severity.Warning);
+            return;
+        }
+        if (!ValidarParcelasCrescentes(out var erroParcelas))
+        {
+            Snackbar.Add(erroParcelas, Severity.Warning);
             return;
         }
         _salvando = true;
@@ -215,6 +215,23 @@
             var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
             _metodos = metodos.ToList();
         }
+    }
+
+    private bool ValidarParcelasCrescentes(out string erro)
+    {
+        erro = "";
+        var ordenadas = _dto.Parcelas.OrderBy(p => p.NumeroParcela).ToList();
+        for (int i = 1; i < ordenadas.Count; i++)
+        {
+            if (ordenadas[i].DiasVencimento <= ordenadas[i - 1].DiasVencimento)
+            {
+                erro = $"A parcela {ordenadas[i].NumeroParcela} ({ordenadas[i].DiasVencimento} dias) precisa ter um prazo " +
+                       $"maior que a parcela {ordenadas[i - 1].NumeroParcela} ({ordenadas[i - 1].DiasVencimento} dias). " +
+                       "Cada parcela deve vencer depois da anterior.";
+                return false;
+            }
+        }
+        return true;
     }
 
     private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();

@@ -28,6 +28,12 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
         var dialog = await DialogService.ShowAsync<ModalCadastroEmitente>("Novo Emitente", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
+    private async Task Visualizar(int id)
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var param = new DialogParameters<ModalVisualizarEmitente> { { x => x.Id, id } };
+        await DialogService.ShowAsync<ModalVisualizarEmitente>("Detalhes do Emitente", param, opts);
+    }
     private async Task Editar(int id)
     {
         var dto = await EmitenteService.ObterPorIdAsync(id);

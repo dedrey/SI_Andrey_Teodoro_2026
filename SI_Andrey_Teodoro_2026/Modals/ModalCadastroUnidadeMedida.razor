@@ -75,6 +75,6 @@
     }
     private void Cancelar() => MudDialog.Cancel();
     private string? ValidarSigla(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[A-Z0-9\²\³\/]+$")) return "Apenas maiúsculas e números"; return null; }
-    private string Cap(string? v) { if (string.IsNullOrEmpty(v)) return v ?? ""; var p = v.Trim().ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries); for (int i = 0; i < p.Length; i++) if (i == 0 || i == p.Length - 1 || !_min.Contains(p[i])) p[i] = char.ToUpper(p[i][0]) + p[i][1..]; return string.Join(" ", p); }
-    private static readonly HashSet<string> _min = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "com", "por", "para", "ao", "aos" };
+    private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
+
 }

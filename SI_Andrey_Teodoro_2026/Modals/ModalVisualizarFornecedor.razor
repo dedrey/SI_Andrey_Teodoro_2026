@@ -28,10 +28,14 @@
                 <div class="vis-section-title">Identificação</div>
                 <MudGrid Spacing="3" Justify="Justify.Center">
                     <MudItem xs="2" sm="1"><div class="vis-field"><span class="vis-label">ID</span><span class="vis-value">@_dto.Id</span></div></MudItem>
-                    <MudItem xs="10" sm="6"><div class="vis-field"><span class="vis-label">Razão Social</span><span class="vis-value" style="font-size:1.05rem;font-weight:700;">@_dto.RazaoSocial</span></div></MudItem>
-                    <MudItem xs="12" sm="5"><div class="vis-field"><span class="vis-label">Nome Fantasia</span><span class="vis-value">@(_dto.NomeFantasia ?? "—")</span></div></MudItem>
+                    <MudItem xs="10" sm="6"><div class="vis-field"><span class="vis-label">@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Nome")</span><span class="vis-value" style="font-size:1.05rem;font-weight:700;">@_dto.RazaoSocial</span></div></MudItem>
+                    @if (_dto.TipoPessoa == "PJ")
+                    {
+                        <MudItem xs="12" sm="5"><div class="vis-field"><span class="vis-label">Nome Fantasia</span><span class="vis-value">@(_dto.NomeFantasia ?? "—")</span></div></MudItem>
+                    }
 
-                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">CNPJ</span><span class="vis-value">@FormatCnpj(_dto.Cnpj)</span></div></MudItem>
+                    <MudItem xs="12" sm="3"><div class="vis-field"><span class="vis-label">Tipo</span><span class="vis-value">@(_dto.TipoPessoa == "PF" ? "Pessoa Física" : "Pessoa Jurídica")</span></div></MudItem>
+                    <MudItem xs="12" sm="6"><div class="vis-field"><span class="vis-label">@(_dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")</span><span class="vis-value">@_dto.CpfCnpj</span></div></MudItem>
                 </MudGrid>
             </div>
 
@@ -49,6 +53,10 @@
                     <div class="vis-field">
                         <span class="vis-label">Rua / Logradouro</span>
                         <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Endereco) ? "—" : _dto.Endereco)</span>
+                    </div>
+                    <div class="vis-field">
+                        <span class="vis-label">Número</span>
+                        <span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.Numero) ? "—" : _dto.Numero)</span>
                     </div>
                     <div class="vis-field">
                         <span class="vis-label">Bairro</span>

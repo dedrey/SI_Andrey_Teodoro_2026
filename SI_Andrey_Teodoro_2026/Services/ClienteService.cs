@@ -35,11 +35,13 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             DocumentoEstrangeiro = c.DocumentoEstrangeiro,
             NomeCidade = c.NomeCidade,
             CidadeId = c.CidadeId,
-            Cep = c.Cep,
+            Cep = c.Cep ?? string.Empty,
             Endereco = c.Endereco,
-            Complemento = c.Complemento,
+            Numero = c.Numero ?? string.Empty,
+            Complemento = c.Complemento ?? string.Empty,
             Bairro = c.Bairro,
             Telefone = c.Telefone ?? string.Empty,
+            Celular = c.Celular,
             Email = c.Email ?? string.Empty,
             InscricaoEstadual = c.InscricaoEstadual,
             InscricaoMunicipal = c.InscricaoMunicipal,
@@ -57,9 +59,23 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim();
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
-            dto.Email = dto.Email?.Trim().ToLower() ?? string.Empty;
+            dto.Celular = dto.Celular?.Trim();
+            dto.Email = dto.Email?.Trim() ?? string.Empty;
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
+                return (false, "E-mail inválido.", 0);
             dto.Endereco = dto.Endereco.Trim();
+            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
             dto.Bairro = dto.Bairro.Trim();
+            dto.Complemento = dto.Complemento.Trim();
+            dto.Cep = dto.Cep.Trim();
+
+            if (!dto.CidadeId.HasValue)
+                return (false, "Cidade é obrigatória.", 0);
+
+            if (dto.TipoPessoa == "PJ" && string.IsNullOrWhiteSpace(dto.Celular))
+                return (false, "Celular é obrigatório para Pessoa Jurídica.", 0);
+            if (dto.TipoPessoa == "PF")
+                dto.Celular = null;
 
             if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
             {

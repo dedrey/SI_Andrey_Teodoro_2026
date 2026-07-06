@@ -252,7 +252,7 @@
     private string? ValidarEmail(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
-        return v.Contains('@') && v.Contains('.') ? null : "E-mail inválido";
+        return System.Text.RegularExpressions.Regex.IsMatch(v, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$") ? null : "E-mail inválido";
     }
 
     private static readonly HashSet<string> _minusculas = new(StringComparer.OrdinalIgnoreCase)

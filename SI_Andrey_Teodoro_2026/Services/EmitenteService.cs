@@ -32,7 +32,9 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             InscricaoEstadual = e.InscricaoEstadual,
             RegimeTributario = e.RegimeTributario,
             CidadeId = e.CidadeId,
+            NomeCidade = e.NomeCidade,
             Endereco = e.Endereco,
+            Numero = e.Numero ?? string.Empty,
             Complemento = e.Complemento,
             Bairro = e.Bairro,
             Telefone = e.Telefone ?? string.Empty,
@@ -51,8 +53,14 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia.Trim();
             dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
-            dto.Email = dto.Email?.Trim().ToLower() ?? string.Empty;
+            dto.Email = dto.Email?.Trim() ?? string.Empty;
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
+                return (false, "E-mail inválido.", 0);
             dto.Endereco = dto.Endereco.Trim();
+            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
+
+            if (!dto.CidadeId.HasValue)
+                return (false, "Cidade é obrigatória.", 0);
             dto.Bairro = dto.Bairro.Trim();
 
             var cnpjLimpo = LimparDigitos(dto.Cnpj);

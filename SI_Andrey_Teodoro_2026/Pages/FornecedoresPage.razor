@@ -20,7 +20,7 @@
         <HeaderContent><MudTh Style="font-weight:600;">ID</MudTh><MudTh Style="font-weight:600;">Razão Social</MudTh><MudTh Style="font-weight:600;">Nome Fantasia</MudTh><MudTh Style="font-weight:600;text-align:center;">CNPJ</MudTh><MudTh Style="font-weight:600;">Telefone</MudTh><MudTh Style="font-weight:600;">E-mail</MudTh><MudTh Style="font-weight:600;">Status</MudTh><MudTh Style="font-weight:600;text-align:center;">Ações</MudTh></HeaderContent>
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd><MudTd><strong>@context.RazaoSocial</strong></MudTd><MudTd>@(string.IsNullOrWhiteSpace(context.NomeFantasia) ? "—" : context.NomeFantasia)</MudTd>
-            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@FormatCnpj(context.Cnpj)</MudChip></MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@FormatDoc(context.CpfCnpj, context.TipoPessoa)</MudChip></MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : context.Telefone)</MudTd><MudTd>@(string.IsNullOrWhiteSpace(context.Email) ? "—" : context.Email)</MudTd>
             <MudTd><MudChip T="string" Size="Size.Small" Color="@(context.Ativo? Color.Success: Color.Error)">@(context.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
@@ -37,5 +37,11 @@
     }
 </MudPaper>
 @code {
-    private static string FormatCnpj(string s) { var d = new string(s.Where(char.IsDigit).ToArray()); return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : s; }
+    private static string FormatDoc(string s, string tipoPessoa)
+    {
+        var d = new string(s.Where(char.IsDigit).ToArray());
+        if (tipoPessoa == "PF" && d.Length == 11) return $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}";
+        if (d.Length == 14) return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
+        return s;
+    }
 }

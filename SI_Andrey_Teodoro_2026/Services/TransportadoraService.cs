@@ -32,10 +32,11 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             InscricaoEstadual = t.InscricaoEstadual,
             NomeCidade = t.NomeCidade,
             CidadeId = t.CidadeId,
-            Cep = t.Cep,
-            Endereco = t.Endereco,
-            Complemento = t.Complemento,
-            Bairro = t.Bairro,
+            Cep = t.Cep ?? string.Empty,
+            Endereco = t.Endereco ?? string.Empty,
+            Numero = t.Numero ?? string.Empty,
+            Complemento = t.Complemento ?? string.Empty,
+            Bairro = t.Bairro ?? string.Empty,
             Telefone = t.Telefone ?? string.Empty,
             Email = t.Email ?? string.Empty,
             Ativo = t.Ativo,
@@ -51,11 +52,18 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             dto.RazaoSocial = dto.RazaoSocial.Trim();
             dto.NomeFantasia = dto.NomeFantasia?.Trim();
             dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim();
-            dto.Endereco = dto.Endereco?.Trim();
-            dto.Complemento = dto.Complemento?.Trim();
-            dto.Bairro = dto.Bairro?.Trim();
+            dto.Endereco = dto.Endereco.Trim();
+            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
+            dto.Complemento = dto.Complemento.Trim();
+            dto.Bairro = dto.Bairro.Trim();
+            dto.Cep = dto.Cep.Trim();
+
+            if (!dto.CidadeId.HasValue)
+                return (false, "Cidade é obrigatória.", 0);
             dto.Telefone = dto.Telefone.Trim();
-            dto.Email = dto.Email.Trim().ToLower();
+            dto.Email = dto.Email.Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
+                return (false, "E-mail inválido.", 0);
 
             var cnpjLimpo = LimparDigitos(dto.Cnpj);
             var erroCnpj = ValidarCnpj(cnpjLimpo);
