@@ -30,17 +30,11 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
     }
     private async Task Visualizar(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var param = new DialogParameters<ModalVisualizarEmitente> { { x => x.Id, id } };
-        await DialogService.ShowAsync<ModalVisualizarEmitente>("Detalhes do Emitente", param, opts);
-    }
-    private async Task Editar(int id)
-    {
         var dto = await EmitenteService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Emitente não encontrado.", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroEmitente> { { x => x.DtoEdicao, dto } };
+        var param = new DialogParameters<ModalCadastroEmitente> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroEmitente>("Editar Emitente", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroEmitente>("Detalhes do Emitente", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
     private Task AlterarStatus(int id, string nome, bool ativoAtual)

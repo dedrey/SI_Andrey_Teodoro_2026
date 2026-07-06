@@ -31,22 +31,15 @@ public partial class FornecedoresPage : BasePage<FornecedorListDto, FornecedorDt
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
-    {
-        var dto = await FornecedorService.ObterPorIdAsync(id);
-        if (dto == null) { Snackbar.Add("Fornecedor não encontrado.", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroFornecedor> { { x => x.DtoEdicao, dto } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Editar Fornecedor", param, opts);
-        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
-    }
-
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual, FornecedorService.AlterarStatusAsync, CarregarDados);
     private async Task Visualizar(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var param = new DialogParameters<ModalVisualizarFornecedor> { { x => x.Id, id } };
-        await DialogService.ShowAsync<ModalVisualizarFornecedor>("Detalhes do Fornecedor", param, opts);
+        var dto = await FornecedorService.ObterPorIdAsync(id);
+        if (dto == null) { Snackbar.Add("Fornecedor não encontrado.", Severity.Warning); return; }
+        var param = new DialogParameters<ModalCadastroFornecedor> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Detalhes do Fornecedor", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 }

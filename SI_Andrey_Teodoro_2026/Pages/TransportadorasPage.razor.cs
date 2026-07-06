@@ -40,29 +40,23 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         if (result is { Canceled: false })
             await CarregarDados();
     }
-    private async Task Editar(int id)
+    private Task AlterarStatus(int id, string nome, bool ativoAtual)
+        => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
+               TransportadoraService.AlterarStatusAsync, CarregarDados);
+    private async Task Visualizar(int id)
     {
         var dto = await TransportadoraService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Transportadora não encontrada.", Severity.Warning); return; }
 
         var param = new DialogParameters<ModalCadastroTransportadora>
         {
-            { x => x.DtoEdicao, dto }
+            { x => x.DtoEdicao, dto },
+            { x => x.SomenteLeitura, true }
         };
         var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Editar Transportadora", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Detalhes da Transportadora", param, opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
             await CarregarDados();
-    }
-
-    private Task AlterarStatus(int id, string nome, bool ativoAtual)
-        => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
-               TransportadoraService.AlterarStatusAsync, CarregarDados);
-    private async Task Visualizar(int id)
-    {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var param = new DialogParameters<ModalVisualizarTransportadora> { { x => x.Id, id } };
-        await DialogService.ShowAsync<ModalVisualizarTransportadora>("Detalhes da Transportadora", param, opts);
     }
 }

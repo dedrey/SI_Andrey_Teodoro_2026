@@ -28,15 +28,6 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
-    private async Task Editar(int id)
-    {
-        var dto = await ClienteService.ObterPorIdAsync(id);
-        if (dto == null) { Snackbar.Add("Cliente não encontrado.", Severity.Warning); return; }
-        var param = new DialogParameters<ModalCadastroCliente> { { x => x.DtoEdicao, dto } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Editar Cliente", param, opts);
-        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
-    }
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual, ClienteService.AlterarStatusAsync, CarregarDados);
 
@@ -50,8 +41,11 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
     }
     private async Task Visualizar(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var param = new DialogParameters<ModalVisualizarCliente> { { x => x.Id, id } };
-        await DialogService.ShowAsync<ModalVisualizarCliente>("Detalhes do Cliente", param, opts);
+        var dto = await ClienteService.ObterPorIdAsync(id);
+        if (dto == null) { Snackbar.Add("Cliente não encontrado.", Severity.Warning); return; }
+        var param = new DialogParameters<ModalCadastroCliente> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Detalhes do Cliente", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 }
