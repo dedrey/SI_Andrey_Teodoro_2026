@@ -10,5 +10,6 @@ public interface IContaReceberService
     Task<(bool sucesso, string mensagem)> RegistrarRecebimentoAsync(int contaReceberId, DateTime dataRecebimento,
         decimal valorRecebido, string? comprovanteArquivo, string? observacao);
     Task<(bool sucesso, string mensagem)> CancelarAsync(int id);
+    Task<(bool sucesso, string mensagem)> AnexarComprovanteAsync(int baixaId, string comprovanteArquivo);
     Task<List<ContaReceberResumoVendaDto>> ObterContasDaVendaAsync(int vendaId);
 }

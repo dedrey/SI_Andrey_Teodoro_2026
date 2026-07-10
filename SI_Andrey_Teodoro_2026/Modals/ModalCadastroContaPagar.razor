@@ -7,7 +7,7 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(_dto.IdOriginal != 0 ? "Editar Conta a Pagar" : "Nova Conta a Pagar")</MudText>
+            <MudText Typo="Typo.h6">@(_somenteLeitura ? "Visualizar Conta a Pagar" : _dto.IdOriginal != 0 ? "Editar Conta a Pagar" : "Nova Conta a Pagar")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -26,7 +26,7 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12">
-                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição"
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição *"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="150" FullWidth="true"
                                   ReadOnly="@_somenteLeitura"
@@ -52,7 +52,7 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
+                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento *"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" />
@@ -66,7 +66,7 @@
                 }
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Valor *" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura" />
                 </MudItem>

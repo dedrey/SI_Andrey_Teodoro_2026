@@ -132,8 +132,9 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => _dto.Cep = MascaraCep(v))"
-                                  Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                  Label="@(_dto.Estrangeiro ? "CEP (não se aplica)" : "CEP")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="@(!_dto.Estrangeiro)" RequiredError="Obrigatório"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@(_readOnly || _dto.Estrangeiro)" />
                 </MudItem>
 
                 <MudItem xs="12"><MudDivider /><MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Financeiro</MudText></MudItem>
@@ -231,7 +232,7 @@
     }
 
     private void OnTipoPessoaAlterado(string tipo) { _dto.TipoPessoa = tipo; _docTexto = ""; _dto.CpfCnpj = ""; if (tipo == "PF") _dto.Celular = null; }
-    private void OnEstrangeiroAlterado(bool v) { _dto.Estrangeiro = v; _dto.CidadeId = null; _dto.DocumentoEstrangeiro = null; _docTexto = ""; _dto.CpfCnpj = null; }
+
     private void OnDocAlterado(string? v) { if (string.IsNullOrEmpty(v)) { _docTexto = ""; _dto.CpfCnpj = ""; return; } var limpo = new string(v.Where(char.IsDigit).ToArray()); _docTexto = _dto.TipoPessoa == "PF" ? FormatarCpf(limpo) : FormatarCnpj(limpo); _dto.CpfCnpj = limpo; }
 
 
@@ -279,6 +280,7 @@
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         return System.Text.RegularExpressions.Regex.IsMatch(v, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$") ? null : "E-mail inválido";
     }
+    private void OnEstrangeiroAlterado(bool v) { _dto.Estrangeiro = v; _dto.CidadeId = null; _dto.DocumentoEstrangeiro = null; _docTexto = ""; _dto.CpfCnpj = null; if (v) _dto.Cep = ""; }
     private static string Cap(string? v) => string.IsNullOrWhiteSpace(v) ? v ?? "" : v.Trim().ToUpper();
 
 }

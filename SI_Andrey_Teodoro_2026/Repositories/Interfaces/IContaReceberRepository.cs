@@ -16,5 +16,6 @@ public interface IContaReceberRepository
         string? comprovanteArquivo, string? observacao);
 
     Task RemoverBaixaAsync(int baixaId, int contaReceberId);
+    Task AtualizarComprovanteBaixaAsync(int baixaId, string comprovanteArquivo);
     Task<List<ContaReceberResumoVendaDto>> ObterContasDaVendaAsync(int vendaId);
 }

@@ -112,6 +112,16 @@ public class ContaReceberService : IContaReceberService
         catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
     }
 
+    public async Task<(bool sucesso, string mensagem)> AnexarComprovanteAsync(int baixaId, string comprovanteArquivo)
+    {
+        try
+        {
+            await _repo.AtualizarComprovanteBaixaAsync(baixaId, comprovanteArquivo);
+            return (true, "Comprovante anexado com sucesso!");
+        }
+        catch (Exception ex) { return (false, $"Erro ao anexar comprovante: {ex.Message}"); }
+    }
+
     public Task<List<ContaReceberResumoVendaDto>> ObterContasDaVendaAsync(int vendaId)
         => _repo.ObterContasDaVendaAsync(vendaId);
 }
