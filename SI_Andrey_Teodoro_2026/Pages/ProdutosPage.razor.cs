@@ -30,7 +30,7 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroProduto>("Novo Produto", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -39,7 +39,7 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
     {
         var dto = await ProdutoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Produto não encontrado.", Severity.Warning); return; }
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var param = new DialogParameters<ModalCadastroProduto> { { x => x.DtoEdicao, dto } };
         var dialog = await DialogService.ShowAsync<ModalCadastroProduto>("Editar Produto", param, opts);
         if ((await dialog.Result) is { Canceled: false }) { _variacoesCache.Remove(id); await CarregarDados(); }
@@ -64,7 +64,7 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
             async (i, a) => await ProdutoService.AlterarStatusAsync(i, a), CarregarDados);
     private async Task Visualizar(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var param = new DialogParameters<ModalVisualizarProduto> { { x => x.Id, id } };
         await DialogService.ShowAsync<ModalVisualizarProduto>("Detalhes do Produto", param, opts);
     }

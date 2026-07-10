@@ -50,7 +50,7 @@
             <MudTh Style="font-weight:600;">Cliente</MudTh>
             <MudTh Style="font-weight:600;">Origem</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Vencimento</MudTh>
-            <MudTh Style="font-weight:600;text-align:center;">Recebimento</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Parcelas</MudTh>
             <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
             <MudTh Style="font-weight:600;text-align:right;">Recebido</MudTh>
             <MudTh Style="font-weight:600;text-align:right;">Saldo</MudTh>
@@ -87,13 +87,16 @@
                     </MudTooltip>
                 }
             </MudTd>
-            <MudTd Style="text-align:center;color:#888;font-size:0.85rem;">
-                @(context.DataUltimoRecebimento.HasValue? context.DataUltimoRecebimento.Value.ToString("dd/MM/yyyy") : "—")
-                @if (context.DataUltimoRecebimento.HasValue && context.DataUltimoRecebimento.Value.Date > context.DataVencimento.Date)
+            <MudTd Style="text-align:center;">
+                @if (context.TotalParcelas > 1)
                 {
-                    <MudTooltip Text="@($"Recebido com {(context.DataUltimoRecebimento.Value.Date - context.DataVencimento.Date).Days} dia(s) de atraso")">
-                        <MudIcon Icon="@Icons.Material.Filled.WatchLater" Color="Color.Warning" Size="Size.Small" Style="margin-left:2px;vertical-align:middle;" />
-                    </MudTooltip>
+                    <MudChip T="string" Size="Size.Small" Color="@(context.ParcelasPagas == context.TotalParcelas ? Color.Success : Color.Default)" Variant="Variant.Outlined">
+                        @context.ParcelasPagas/@context.TotalParcelas pagas
+                    </MudChip>
+                }
+                else
+                {
+                    <span style="color:#bbb;font-size:0.85rem;">—</span>
                 }
             </MudTd>
             <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
@@ -109,7 +112,13 @@
                 </MudChip>
             </MudTd>
             <MudTd Style="text-align:center;">
-                @if (context.Status == "ABERTA")
+                @if (context.VendaId.HasValue)
+                {
+                    <MudTooltip Text="Ver parcelas desta venda">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => VisualizarVenda(context.VendaId.Value))" />
+                    </MudTooltip>
+                }
+                else if (context.Status == "ABERTA")
                 {
                     <MudTooltip Text="Editar">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />

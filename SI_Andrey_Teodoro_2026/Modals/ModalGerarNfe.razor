@@ -24,7 +24,7 @@
                                      ValueChanged="@((VendaParaNfeDto? v) => _vendaSelecionada = v)"
                                      SearchFunc="PesquisarVenda"
                                      ToStringFunc="@(v => v == null ? "" : $"Venda #{v.Id} — {v.NomeCliente} — R$ {v.ValorTotal:N2}")"
-                                     Label="Venda Finalizada *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Label="Venda Finalizada" Variant="Variant.Outlined" Margin="Margin.Dense"
                                      FullWidth="true" Clearable="true"
                                      ResetValueOnEmptyText="true" CoerceText="false"
                                      HelperText="Apenas vendas finalizadas que ainda não possuem NF" />
@@ -35,7 +35,7 @@
                                      ValueChanged="@((EmitenteListDto? e) => _emitenteSelecionado = e)"
                                      SearchFunc="PesquisarEmitente"
                                      ToStringFunc="@(e => e?.NomeRazaoSocial ?? "")"
-                                     Label="Emitente *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Label="Emitente" Variant="Variant.Outlined" Margin="Margin.Dense"
                                      FullWidth="true" ResetValueOnEmptyText="true" CoerceText="false" />
                 </MudItem>
                 <MudItem xs="12" sm="6">

@@ -153,7 +153,7 @@
 
     private async Task AbrirModalPais()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _paises = (await PaisService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _dto.PaisId = id; _paisNaoSelecionado = false; _estados = (await EstadoService.ObterPorPaisAsync(id)).ToList(); } }
@@ -162,7 +162,7 @@
     private async Task AbrirModalEstado()
     {
         var param = new DialogParameters<ModalCadastroEstado> { { x => x.PaisIdInicial, _dto.PaisId } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", param, opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList(); if (result.Data is int id) { _dto.EstadoId = id; _estadoNaoSelecionado = false; } }

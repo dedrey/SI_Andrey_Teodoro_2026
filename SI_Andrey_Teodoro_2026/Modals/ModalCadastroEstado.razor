@@ -108,7 +108,7 @@
 
     private async Task AbrirModalPais()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })

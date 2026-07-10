@@ -1,0 +1,147 @@
+﻿@inject IContaReceberService ContaReceberService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">Venda #@VendaId — Parcelas</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (_carregando)
+        {
+            <div class="d-flex justify-center pa-8"><MudProgressCircular Indeterminate="true" Color="Color.Primary" /></div>
+        }
+        else if (_parcelas.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info">Nenhuma parcela encontrada para esta venda.</MudAlert>
+        }
+        else
+        {
+            <div class="d-flex justify-space-between align-center pa-2 mb-2" style="background:#f8f9fa;border-radius:8px;">
+                <div>
+                    <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Total da venda</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight:700;">R$ @_parcelas.Sum(p => p.ValorOriginal).ToString("N2")</MudText>
+                </div>
+                <div style="text-align:right;">
+                    <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Saldo em aberto</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight:700;color:#e65100;">R$ @_parcelas.Sum(p => p.ValorSaldo).ToString("N2")</MudText>
+                </div>
+                @if (_parcelas.Any(p => p.Status == "ABERTA"))
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.DoneAll"
+                               OnClick="DarBaixaTotal" Disabled="_processandoBaixaTotal">
+                        @(_processandoBaixaTotal ? "Processando..." : "Dar baixa em tudo")
+                    </MudButton>
+                }
+            </div>
+
+            <MudTable Items="@_parcelas" Dense="true" Hover="true" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                <HeaderContent>
+                    <MudTh Style="font-weight:600;">Descrição</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Vencimento</MudTh>
+                    <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
+                    <MudTh Style="font-weight:600;text-align:right;">Recebido</MudTh>
+                    <MudTh Style="font-weight:600;text-align:right;">Saldo</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Status</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    @{
+                        bool vencida = context.Status == "ABERTA" && context.DataVencimento.Date < DateTime.Today;
+                    }
+                    <MudTd>@context.Descricao</MudTd>
+                    <MudTd Style="text-align:center;">
+                        <span style="@(vencida ? "color:#c62828;font-weight:600;" : "")">@context.DataVencimento.ToString("dd/MM/yyyy")</span>
+                    </MudTd>
+                    <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
+                    <MudTd Style="text-align:right;color:#2e7d32;">@(context.ValorRecebido > 0 ? $"R$ {context.ValorRecebido:N2}" : "—")</MudTd>
+                    <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorSaldo.ToString("N2")</MudTd>
+                    <MudTd Style="text-align:center;">
+                        <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "RECEBIDA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
+                            @(context.Status switch { "RECEBIDA" => "Recebida", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
+                        </MudChip>
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
+                        @if (context.Status == "ABERTA")
+                        {
+                            <MudTooltip Text="Dar baixa nesta parcela">
+                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small"
+                                               OnClick="@(() => AbrirBaixaIndividual(context))" />
+                            </MudTooltip>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" OnClick="@(() => MudDialog.Close(DialogResult.Ok(true)))">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int VendaId { get; set; }
+
+    private List<ContaReceberResumoVendaDto> _parcelas = new();
+    private bool _carregando = true;
+    private bool _processandoBaixaTotal;
+
+    protected override async Task OnInitializedAsync() => await Carregar();
+
+    private async Task Carregar()
+    {
+        _carregando = true;
+        _parcelas = await ContaReceberService.ObterContasDaVendaAsync(VendaId);
+        _carregando = false;
+    }
+
+    private async Task AbrirBaixaIndividual(ContaReceberResumoVendaDto parcela)
+    {
+        var param = new DialogParameters<ModalRegistrarRecebimento>
+        {
+            { x => x.ContaReceberId, parcela.Id },
+            { x => x.Descricao, parcela.Descricao },
+            { x => x.ValorOriginal, parcela.ValorOriginal },
+            { x => x.ValorSaldo, parcela.ValorSaldo }
+        };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalRegistrarRecebimento>("Registrar Recebimento", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) await Carregar();
+    }
+
+    private async Task DarBaixaTotal()
+    {
+        var abertas = _parcelas.Where(p => p.Status == "ABERTA").ToList();
+        if (abertas.Count == 0) return;
+
+        var param = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Titulo, "Dar baixa em tudo" },
+            { x => x.Mensagem, $"Confirma o recebimento total de {abertas.Count} parcela(s) em aberto, somando R$ {abertas.Sum(p => p.ValorSaldo):N2}, com data de hoje?" },
+            { x => x.TextoBotao, "Confirmar Recebimento" },
+            { x => x.CorBotao, Color.Success }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar",
+            param, new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small });
+        if ((await dialog.Result) is not { Canceled: false }) return;
+
+        _processandoBaixaTotal = true;
+        int falhas = 0;
+        foreach (var parcela in abertas)
+        {
+            var (sucesso, _) = await ContaReceberService.RegistrarRecebimentoAsync(
+                parcela.Id, DateTime.Today, parcela.ValorSaldo, null, "Baixa total registrada via tela de parcelas da venda");
+            if (!sucesso) falhas++;
+        }
+        _processandoBaixaTotal = false;
+
+        Snackbar.Add(falhas == 0 ? "Todas as parcelas foram recebidas!" : $"{abertas.Count - falhas} parcela(s) recebida(s), {falhas} falharam.",
+            falhas == 0 ? Severity.Success : Severity.Warning);
+        await Carregar();
+    }
+}
+

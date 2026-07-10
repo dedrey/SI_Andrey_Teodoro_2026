@@ -26,7 +26,7 @@ public partial class VeiculosPage : BasePage<VeiculoListDto, VeiculoDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroVeiculo>("Novo Veículo", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class VeiculosPage : BasePage<VeiculoListDto, VeiculoDto>
         var dto = await VeiculoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Veículo não encontrado.", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroVeiculo> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroVeiculo>("Detalhes do Veículo", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

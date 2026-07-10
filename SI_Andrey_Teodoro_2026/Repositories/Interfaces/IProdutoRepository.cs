@@ -13,8 +13,7 @@ public interface IProdutoRepository
     Task AtualizarAsync(ProdutoDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null);
-    Task<int> InserirVariacaoAsync(ProdutoVariacaoDto dto);
-    Task AtualizarVariacaoAsync(ProdutoVariacaoDto dto);
+    Task<int> SalvarComVariacoesAsync(ProdutoDto dto, List<ProdutoVariacaoDto> variacoes);
     Task AlterarStatusVariacaoAsync(int id, bool ativo);
 
     // assinatura atualizada: usa int corId e int tamanhoId (não mais string)

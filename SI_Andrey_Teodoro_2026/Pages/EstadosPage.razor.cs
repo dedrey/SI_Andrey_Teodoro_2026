@@ -26,7 +26,7 @@ public partial class EstadosPage : BasePage<EstadoListDto, EstadoDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class EstadosPage : BasePage<EstadoListDto, EstadoDto>
         var dto = await EstadoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Estado não encontrado.", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroEstado> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Detalhes do Estado", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

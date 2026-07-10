@@ -15,21 +15,9 @@ public class ProdutoVariacaoDto
     public int TamanhoId { get; set; }
     public string Tamanho { get; set; } = string.Empty;
 
-    [MaxLength(50)]
-    public string? CodigoBarras { get; set; }
-
-    [Range(0, 999999.99, ErrorMessage = "Preço de compra inválido")]
-    public decimal PrecoCompra { get; set; }
-
-    [Range(0, 999999.99, ErrorMessage = "Frete inválido")]
-    public decimal Frete { get; set; }
-
     [Required(ErrorMessage = "Preço de venda é obrigatório")]
     [Range(0.01, 999999.99, ErrorMessage = "Preço deve ser maior que zero")]
     public decimal Preco { get; set; }
-
-    [Range(0, 999999.99, ErrorMessage = "Preço de custo inválido")]
-    public decimal PrecoCusto { get; set; }
 
     public DateTime? DataUltimaCompra { get; set; }
 

@@ -43,14 +43,14 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroVenda>("Nova Venda", opts);
         if ((await dialog.Result) is { Canceled: false }) { _itensCache.Clear(); _expandidos.Clear(); await CarregarDados(); }
     }
 
     private async Task AbrirCancelamento(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var param = new DialogParameters<ModalCancelamentoVenda> { { x => x.VendaId, id } };
         var dialog = await DialogService.ShowAsync<ModalCancelamentoVenda>("Cancelar Venda", param, opts);
         var result = await dialog.Result;
@@ -77,7 +77,7 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
     {
         var dto = await VendaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Venda não encontrada.", Severity.Warning); return; }
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var param = new DialogParameters<ModalCadastroVenda> { { x => x.DtoEdicao, dto } };
         var dialog = await DialogService.ShowAsync<ModalCadastroVenda>("Alterar Venda", param, opts);
         if ((await dialog.Result) is { Canceled: false }) { _itensCache.Remove(id); await CarregarDados(); }

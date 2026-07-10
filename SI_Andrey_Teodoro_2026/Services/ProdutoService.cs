@@ -29,6 +29,10 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             IdOriginal = p.Id,
             Produto = p.NomeProduto,
             Descricao = p.Descricao,
+            CodigoBarras = p.CodigoBarras,
+            PrecoCompra = p.PrecoCompra,
+            Frete = p.Frete,
+            PrecoCusto = p.PrecoCusto,
             CategoriaId = p.CategoriaId,
             NomeCategoria = p.NomeCategoria,
             MarcaId = p.MarcaId,
@@ -51,6 +55,8 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
         {
             dto.Produto = dto.Produto.Trim();
             dto.Descricao = dto.Descricao?.Trim();
+            dto.CodigoBarras = string.IsNullOrWhiteSpace(dto.CodigoBarras) ? null : dto.CodigoBarras.Trim();
+            dto.PrecoCusto = dto.PrecoCompra + dto.Frete;
 
             if (dto.CategoriaId == 0) return (false, "Selecione uma categoria.", 0);
             if (dto.MarcaId == 0) return (false, "Selecione uma marca.", 0);
@@ -60,52 +66,35 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             if (await _repo.ExisteNomeAsync(dto.Produto, ignorarProduto))
                 return (false, $"Já existe um produto com o nome '{dto.Produto}'.", 0);
 
+            if (!string.IsNullOrWhiteSpace(dto.CodigoBarras) && await _repo.ExisteCodigoBarrasAsync(dto.CodigoBarras, ignorarProduto))
+                return (false, $"Código de barras '{dto.CodigoBarras}' já está em uso em outro produto.", 0);
+
             var variacoesValidas = dto.Variacoes.Where(v => !v.Removida).ToList();
+            if (variacoesValidas.Count == 0)
+                return (false, "Adicione ao menos uma variação (cor/tamanho).", 0);
+
+            var combinacoesNoLote = new HashSet<(int cor, int tamanho)>();
             foreach (var v in variacoesValidas)
             {
-                if (v.CorId == 0) return (false, $"Selecione a cor de uma variação.", 0);
-                if (v.TamanhoId == 0) return (false, $"Selecione o tamanho de uma variação.", 0);
-                if (v.Preco <= 0) return (false, $"Variação: preço de venda deve ser maior que zero.", 0);
-                if (v.PrecoCusto < 0) return (false, $"Variação: preço de custo não pode ser negativo.", 0);
-                if (v.PrecoCusto > 0 && v.Preco < v.PrecoCusto && !v.PermiteVendaAbaixoCusto)
+                if (v.CorId == 0) return (false, "Selecione a cor de uma variação.", 0);
+                if (v.TamanhoId == 0) return (false, "Selecione o tamanho de uma variação.", 0);
+                if (v.Preco <= 0) return (false, "Variação: preço de venda deve ser maior que zero.", 0);
+                if (dto.PrecoCusto > 0 && v.Preco < dto.PrecoCusto && !v.PermiteVendaAbaixoCusto)
                     return (false,
                         $"Preço de venda (R$ {v.Preco:N2}) não pode ser menor que o custo " +
-                        $"(R$ {v.PrecoCusto:N2}). O produto tem menos de 90 dias sem venda.", 0);
+                        $"(R$ {dto.PrecoCusto:N2}). O produto tem menos de 90 dias sem venda.", 0);
+
+                // Cor+tamanho repetidos dentro do MESMO lote sendo salvo agora (antes de bater no banco)
+                if (!combinacoesNoLote.Add((v.CorId, v.TamanhoId)))
+                    return (false, "Há duas variações com a mesma cor e tamanho nesta tela — remova a duplicada.", 0);
 
                 int? ignorarVar = v.IdOriginal > 0 ? v.IdOriginal : null;
                 int produtoIdRef = dto.IdOriginal > 0 ? dto.IdOriginal : -1;
-
                 if (await _repo.ExisteVariacaoAsync(produtoIdRef, v.CorId, v.TamanhoId, ignorarVar))
-                    return (false, $"Já existe uma variação com essa cor e tamanho neste produto.", 0);
-
-                if (!string.IsNullOrWhiteSpace(v.CodigoBarras))
-                {
-                    v.CodigoBarras = v.CodigoBarras.Trim();
-                    if (await _repo.ExisteCodigoBarrasAsync(v.CodigoBarras, ignorarVar))
-                        return (false, $"Código de barras '{v.CodigoBarras}' já está em uso.", 0);
-                }
+                    return (false, "Já existe uma variação com essa cor e tamanho neste produto.", 0);
             }
 
-            int produtoId;
-            if (dto.IdOriginal == 0)
-                produtoId = await _repo.InserirAsync(dto);
-            else
-            {
-                produtoId = dto.Id;
-                await _repo.AtualizarAsync(dto);
-            }
-
-            foreach (var v in variacoesValidas)
-            {
-                v.ProdutoId = produtoId;
-                if (v.IdOriginal == 0)
-                {
-                    var novoVarId = await _repo.InserirVariacaoAsync(v);
-                    await _repo.InserirEstoqueAsync(novoVarId);
-                }
-                else
-                    await _repo.AtualizarVariacaoAsync(v);
-            }
+            var produtoId = await _repo.SalvarComVariacoesAsync(dto, variacoesValidas);
 
             return (true, dto.IdOriginal == 0
                 ? "Produto cadastrado com sucesso!"

@@ -26,7 +26,7 @@ public partial class UnidadesMedidaPage : BasePage<UnidadeMedidaListDto, Unidade
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Novo(a) Unidade de medida", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class UnidadesMedidaPage : BasePage<UnidadeMedidaListDto, Unidade
         var dto = await UnidadeMedidaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Unidade de medida não encontrado(a).", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroUnidadeMedida> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Detalhes da Unidade de Medida", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

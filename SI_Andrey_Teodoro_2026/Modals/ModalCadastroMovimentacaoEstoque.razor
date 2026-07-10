@@ -84,7 +84,27 @@
                 </MudText>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem">
-                    Adicionar Item
+                    Adicionar Item Manualmente
+                </MudButton>
+            </div>
+
+            <div class="d-flex flex-wrap align-end gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
+                <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
+                                 SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                 Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                <MudSelect T="int" @bind-SelectedValues="_variacoesLote" MultiSelection="true" Label="Variações (cor/tamanho)"
+                           Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:260px;"
+                           Disabled="@(_variacoesDisponiveisLote.Count == 0)"
+                           MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} variação(ões) selecionada(s)")">
+                    @foreach (var v in _variacoesDisponiveisLote)
+                    {
+                        <MudSelectItem T="int" Value="@v.IdOriginal">@v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                           OnClick="AdicionarVariacoesLote" Style="height:40px;" Disabled="@(_variacoesDisponiveisLote.Count == 0)">
+                    Adicionar Selecionadas
                 </MudButton>
             </div>
 
@@ -201,6 +221,11 @@
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _valorTextos = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, string> _qtdRealTextos = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, decimal> _precoVendaPorItem = new();
+    private readonly Dictionary<MovimentacaoEstoqueItemDto, decimal> _precoCustoPorItem = new();
+    private ProdutoListDto? _produtoSelecionadoLote;
+    private List<ProdutoVariacaoDto> _variacoesDisponiveisLote = new();
+    private decimal _precoCustoLote;
+    private IReadOnlyCollection<int> _variacoesLote = new List<int>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -226,6 +251,81 @@
         StateHasChanged();
     }
 
+    private async Task OnProdutoLoteAlterado(ProdutoListDto? produto)
+    {
+        _produtoSelecionadoLote = produto;
+        _variacoesLote = new List<int>();
+        if (produto != null)
+        {
+            var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
+            _variacoesDisponiveisLote = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+            _precoCustoLote = dto?.PrecoCusto ?? 0;
+        }
+        else
+        {
+            _variacoesDisponiveisLote = new();
+            _precoCustoLote = 0;
+        }
+        StateHasChanged();
+    }
+
+    private void AdicionarVariacoesLote()
+    {
+        if (_produtoSelecionadoLote == null || _variacoesLote.Count == 0)
+        {
+            Snackbar.Add("Selecione o produto e ao menos uma variação.", Severity.Warning);
+            return;
+        }
+
+        int adicionadas = 0, jaExistiam = 0;
+        foreach (var variacaoId in _variacoesLote)
+        {
+            var v = _variacoesDisponiveisLote.FirstOrDefault(x => x.IdOriginal == variacaoId);
+            if (v == null) continue;
+
+            bool jaAdicionado = _dto.Itens.Any(i => !i.Removido && i.ProdutoVariacaoId == variacaoId);
+            if (jaAdicionado) { jaExistiam++; continue; }
+
+            var item = new MovimentacaoEstoqueItemDto
+            {
+                ProdutoVariacaoId = v.IdOriginal,
+                NomeProduto = _produtoSelecionadoLote.Produto,
+                Cor = v.Cor,
+                Tamanho = v.Tamanho,
+                EstoqueAtual = v.QuantidadeEstoque,
+                Quantidade = 0
+            };
+            _dto.Itens.Add(item);
+            _produtosSelecionados[item] = _produtoSelecionadoLote;
+            _variacoesPorItem[item] = _variacoesDisponiveisLote;
+            _precoCustoPorItem[item] = _precoCustoLote;
+            _qtdRealTextos[item] = "";
+
+            if (_dto.TipoMovimentacao == "ENTRADA")
+            {
+                item.ValorUnitario = _precoCustoLote > 0 ? _precoCustoLote : 0;
+                _valorTextos[item] = _precoCustoLote > 0 ? _precoCustoLote.ToString("N2") : "";
+            }
+            else
+            {
+                item.ValorUnitario = 0;
+                _valorTextos[item] = "";
+            }
+            _precoVendaPorItem[item] = v.Preco;
+            adicionadas++;
+        }
+
+        var msg = adicionadas > 0
+            ? $"{adicionadas} variação(ões) adicionada(s)." + (jaExistiam > 0 ? $" {jaExistiam} já estava(m) na lista." : "")
+            : "Todas as variações selecionadas já estavam na lista.";
+        Snackbar.Add(msg, adicionadas > 0 ? Severity.Success : Severity.Info);
+
+        _produtoSelecionadoLote = null;
+        _variacoesDisponiveisLote = new();
+        _variacoesLote = new List<int>();
+        StateHasChanged();
+    }
+
     private void RemoverItem(MovimentacaoEstoqueItemDto item)
     {
         _dto.Itens.Remove(item);
@@ -246,6 +346,7 @@
         {
             var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
             _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+            _precoCustoPorItem[item] = dto?.PrecoCusto ?? 0;
         }
         else _variacoesPorItem[item] = new();
         StateHasChanged();
@@ -262,8 +363,9 @@
                 item.Cor = v.Cor; item.Tamanho = v.Tamanho; item.EstoqueAtual = v.QuantidadeEstoque;
                 if (_dto.TipoMovimentacao == "ENTRADA")
                 {
-                    item.ValorUnitario = v.PrecoCusto > 0 ? v.PrecoCusto : 0;
-                    _valorTextos[item] = v.PrecoCusto > 0 ? v.PrecoCusto.ToString("N2") : "";
+                    var custo = _precoCustoPorItem.TryGetValue(item, out var c) ? c : 0;
+                    item.ValorUnitario = custo > 0 ? custo : 0;
+                    _valorTextos[item] = custo > 0 ? custo.ToString("N2") : "";
                     _precoVendaPorItem[item] = v.Preco;
                 }
                 else { item.ValorUnitario = 0; _valorTextos[item] = ""; _precoVendaPorItem[item] = v.Preco; }
@@ -328,7 +430,7 @@
 
     private async Task AbrirModalFornecedor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         if ((await dialog.Result) is { Canceled: false })
             _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();

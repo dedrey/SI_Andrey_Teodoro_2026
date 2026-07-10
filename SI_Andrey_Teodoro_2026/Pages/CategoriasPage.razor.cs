@@ -26,7 +26,7 @@ public partial class CategoriasPage : BasePage<CategoriaListDto, CategoriaDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Novo(a) Categoria", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class CategoriasPage : BasePage<CategoriaListDto, CategoriaDto>
         var dto = await CategoriaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Categoria não encontrado(a).", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroCategoria> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Detalhes da Categoria", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

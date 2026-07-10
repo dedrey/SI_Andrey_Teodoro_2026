@@ -180,7 +180,7 @@
 
     private async Task AbrirModalCidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)).ToList(); if (result.Data is int id) { _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == id); _dto.CidadeId = id; } }

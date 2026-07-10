@@ -24,7 +24,7 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
     }
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -44,7 +44,7 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
         var dto = await ClienteService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Cliente não encontrado.", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroCliente> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Detalhes do Cliente", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

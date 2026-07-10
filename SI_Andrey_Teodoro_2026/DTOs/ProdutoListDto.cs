@@ -5,6 +5,7 @@ public class ProdutoListDto
     public int Id { get; set; }
     public string Produto { get; set; } = string.Empty;
     public string? Descricao { get; set; }
+    public string? CodigoBarras { get; set; }
     public int CategoriaId { get; set; }
     public string NomeCategoria { get; set; } = string.Empty;
     public int MarcaId { get; set; }

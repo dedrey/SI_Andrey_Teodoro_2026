@@ -26,7 +26,7 @@ public partial class CidadesPage : BasePage<CidadeListDto, CidadeDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class CidadesPage : BasePage<CidadeListDto, CidadeDto>
         var dto = await CidadeService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Cidade não encontrada.", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroCidade> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Detalhes da Cidade", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

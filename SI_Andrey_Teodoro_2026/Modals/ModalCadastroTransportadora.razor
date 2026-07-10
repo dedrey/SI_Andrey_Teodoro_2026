@@ -164,7 +164,7 @@
 
     private async Task AbrirModalCidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         if ((await dialog.Result) is { Canceled: false })
             _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();

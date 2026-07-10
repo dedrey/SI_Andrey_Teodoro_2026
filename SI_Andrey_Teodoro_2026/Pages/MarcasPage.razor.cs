@@ -26,7 +26,7 @@ public partial class MarcasPage : BasePage<MarcaListDto, MarcaDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Novo(a) Marca", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class MarcasPage : BasePage<MarcaListDto, MarcaDto>
         var dto = await MarcaService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Marca não encontrado(a).", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroMarca> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Detalhes da Marca", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

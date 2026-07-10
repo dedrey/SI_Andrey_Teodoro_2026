@@ -80,15 +80,91 @@
             </MudGrid>
 
             <MudDivider Class="my-4" />
+            <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:12px;">
+                Compra / Custo (vale para o produto inteiro, não muda por cor/tamanho)
+            </MudText>
+            <MudGrid Spacing="2" Class="mb-2">
+                <MudItem xs="12" sm="6" md="3">
+                    <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
+                                  Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  MaxLength="50" FullWidth="true" Immediate="true"
+                                  HelperText="Um só código pra este produto (todas as variações)" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudTextField Value="@GetCompraTexto()" ValueChanged="@((string v) => OnCompraAlterado(v))"
+                                  Label="Compra (R$)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                  FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudTextField Value="@GetFreteTexto()" ValueChanged="@((string v) => OnFreteAlterado(v))"
+                                  Label="Frete (R$)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                  FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudTextField Value="@(_dto.PrecoCusto.ToString("N2"))" ReadOnly="true" Disabled="true"
+                                  Label="Custo (R$)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
+                                  Style="background-color:#fafafa;" HelperText="Compra + Frete, calculado" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
             <div class="d-flex align-center justify-space-between mb-3">
                 <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
-                    Variações (Cor / Tamanho / Preço)
+                    Variações (Cor / Tamanho / Preço de Venda)
                 </MudText>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarVariacao">
                     Nova Variação
                 </MudButton>
             </div>
+
+            @if (_dto.Variacoes.Count(v => !v.Removida) > 1)
+            {
+                <div class="d-flex align-center gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Style="color:#888;" />
+                    <MudText Typo="Typo.body2" Style="color:#666;white-space:nowrap;">Replicar valor de venda pra todas as variações:</MudText>
+                    <MudTextField Value="@_replicarVendaTexto" ValueChanged="@((string v) => _replicarVendaTexto = v)"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                  Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:160px;" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="ReplicarValorVenda">
+                        Replicar Valor de Venda
+                    </MudButton>
+                </div>
+            }
+
+            <MudExpansionPanels Elevation="0" Class="mb-3" Style="border:1px solid #e0e0e0;border-radius:8px;">
+                <MudExpansionPanel Text="Gerar várias combinações de cor × tamanho de uma vez" Icon="@Icons.Material.Filled.GridView">
+                    <div class="d-flex flex-wrap align-end gap-3">
+                        <MudSelect T="int" @bind-SelectedValues="_coresLote" MultiSelection="true" Label="Cores"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                   MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} cor(es) selecionada(s)")">
+                            @foreach (var c in _cores)
+                            {
+                                <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect T="int" @bind-SelectedValues="_tamanhosLote" MultiSelection="true" Label="Tamanhos"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                   MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} tamanho(s) selecionado(s)")">
+                            @foreach (var t in _tamanhos)
+                            {
+                                <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView"
+                                   OnClick="GerarCombinacoes" Style="height:40px;">
+                            Gerar combinações
+                        </MudButton>
+                    </div>
+                    <MudText Typo="Typo.caption" Style="color:#888;display:block;margin-top:8px;">
+                        Cria uma variação pra cada combinação marcada (pulando as que já existem), já com o preço de venda
+                        copiado da última variação preenchida — é só ajustar o que for diferente. Código de barras,
+                        compra, frete e custo já valem pra todas (preenchidos ali em cima).
+                    </MudText>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
 
             @if (_dto.Variacoes.Any(v => !v.Removida))
             {
@@ -99,18 +175,14 @@
                         <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Tamanho</MudTh>
                         <MudTh Style="font-weight:600;width:36px;"></MudTh>
-                        <MudTh Style="font-weight:600;">Cód. Barras</MudTh>
-                        <MudTh Style="font-weight:600;">Compra (R$)</MudTh>
-                        <MudTh Style="font-weight:600;">Frete (R$)</MudTh>
-                        <MudTh Style="font-weight:600;">Custo (R$)</MudTh>
                         <MudTh Style="font-weight:600;">Venda (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         @{
-                            bool fastFashion = context.IdOriginal > 0 && context.PrecoCusto > 0 && context.PermiteVendaAbaixoCusto;
-                            bool abaixoCusto = context.PrecoCusto > 0 && context.Preco < context.PrecoCusto;
+                            bool fastFashion = context.IdOriginal > 0 && _dto.PrecoCusto > 0 && context.PermiteVendaAbaixoCusto;
+                            bool abaixoCusto = _dto.PrecoCusto > 0 && context.Preco < _dto.PrecoCusto;
                         }
                         <MudTd>
                             <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
@@ -139,26 +211,6 @@
                         <MudTd Style="padding:4px;">
                             <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
                                            Size="Size.Small" OnClick="AbrirModalTamanho" />
-                        </MudTd>
-                        <MudTd>
-                            <MudTextField @bind-Value="context.CodigoBarras" Variant="Variant.Outlined"
-                                          Margin="Margin.Dense" MaxLength="50" FullWidth="true" />
-                        </MudTd>
-                        <MudTd>
-                            <MudTextField Value="@GetCompraTexto(context)" ValueChanged="@((string v) => OnCompraAlterado(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
-                        </MudTd>
-                        <MudTd>
-                            <MudTextField Value="@GetFreteTexto(context)" ValueChanged="@((string v) => OnFreteAlterado(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
-                        </MudTd>
-                        <MudTd>
-                            <MudTextField Value="@context.PrecoCusto.ToString("N2")" ReadOnly="true" Disabled="true"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
-                                          Style="background-color:#fafafa;" />
                         </MudTd>
                         <MudTd>
                             <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
@@ -239,23 +291,24 @@
     private List<CorListDto> _cores = new();
     private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
-    private readonly Dictionary<ProdutoVariacaoDto, string> _compraTextos = new();
-    private readonly Dictionary<ProdutoVariacaoDto, string> _freteTextos = new();
+    private string _compraTexto = "";
+    private string _freteTexto = "";
+    private string _replicarVendaTexto = "";
+    private IReadOnlyCollection<int> _coresLote = new List<int>();
+    private IReadOnlyCollection<int> _tamanhosLote = new List<int>();
 
     private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 
     protected override async Task OnInitializedAsync()
     {
         _dto = DtoEdicao ?? new ProdutoDto();
+        _compraTexto = _dto.PrecoCompra > 0 ? _dto.PrecoCompra.ToString("N2") : "";
+        _freteTexto = _dto.Frete > 0 ? _dto.Frete.ToString("N2") : "";
+        _dto.PrecoCusto = _dto.PrecoCompra + _dto.Frete;
         if (DtoEdicao != null)
         {
             foreach (var v in _dto.Variacoes)
-            {
                 _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
-                _compraTextos[v] = v.PrecoCompra > 0 ? v.PrecoCompra.ToString("N2") : "";
-                _freteTextos[v] = v.Frete > 0 ? v.Frete.ToString("N2") : "";
-                v.PrecoCusto = v.PrecoCompra + v.Frete;
-            }
         }
         await Task.WhenAll(
             Task.Run(async () => _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList()),
@@ -266,7 +319,38 @@
         );
     }
 
-    private void AdicionarVariacao() { _dto.Variacoes.Add(new ProdutoVariacaoDto()); StateHasChanged(); }
+    private string GetCompraTexto() => _compraTexto;
+    private void OnCompraAlterado(string? texto)
+    {
+        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _compraTexto = f;
+        _dto.PrecoCompra = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        _dto.PrecoCusto = _dto.PrecoCompra + _dto.Frete;
+        StateHasChanged();
+    }
+
+    private string GetFreteTexto() => _freteTexto;
+    private void OnFreteAlterado(string? texto)
+    {
+        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _freteTexto = f;
+        _dto.Frete = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        _dto.PrecoCusto = _dto.PrecoCompra + _dto.Frete;
+        StateHasChanged();
+    }
+
+    private void AdicionarVariacao()
+    {
+        var nova = new ProdutoVariacaoDto();
+        var ultima = _dto.Variacoes.LastOrDefault(v => !v.Removida);
+        if (ultima != null)
+            nova.Preco = ultima.Preco;
+        _dto.Variacoes.Add(nova);
+        _precoTextos[nova] = nova.Preco > 0 ? nova.Preco.ToString("N2") : "";
+        StateHasChanged();
+    }
     private void RemoverVariacao(ProdutoVariacaoDto v)
     {
         if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); }
@@ -288,67 +372,99 @@
         StateHasChanged();
     }
 
-    private string GetCompraTexto(ProdutoVariacaoDto v)
+    private void ReplicarValorVenda()
     {
-        if (!_compraTextos.ContainsKey(v)) _compraTextos[v] = v.PrecoCompra > 0 ? v.PrecoCompra.ToString("N2") : "";
-        return _compraTextos[v];
-    }
-    private void OnCompraAlterado(ProdutoVariacaoDto v, string? texto)
-    {
-        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _compraTextos[v] = f;
-        v.PrecoCompra = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
-        v.PrecoCusto = v.PrecoCompra + v.Frete;
+        var valor = decimal.TryParse(_replicarVendaTexto.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                                     System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        if (valor <= 0)
+        {
+            Snackbar.Add("Informe um valor de venda antes de replicar.", Severity.Warning);
+            return;
+        }
+
+        foreach (var v in _dto.Variacoes.Where(v => !v.Removida))
+        {
+            v.Preco = valor;
+            _precoTextos[v] = valor.ToString("N2");
+        }
+        Snackbar.Add($"Valor de venda aplicado a todas as {_dto.Variacoes.Count(v => !v.Removida)} variações.", Severity.Success);
         StateHasChanged();
     }
 
-    private string GetFreteTexto(ProdutoVariacaoDto v)
+    private void GerarCombinacoes()
     {
-        if (!_freteTextos.ContainsKey(v)) _freteTextos[v] = v.Frete > 0 ? v.Frete.ToString("N2") : "";
-        return _freteTextos[v];
-    }
-    private void OnFreteAlterado(ProdutoVariacaoDto v, string? texto)
-    {
-        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _freteTextos[v] = f;
-        v.Frete = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
-        v.PrecoCusto = v.PrecoCompra + v.Frete;
+        var cores = _coresLote?.ToList() ?? new();
+        var tamanhos = _tamanhosLote?.ToList() ?? new();
+        if (cores.Count == 0 || tamanhos.Count == 0)
+        {
+            Snackbar.Add("Selecione ao menos uma cor e um tamanho.", Severity.Warning);
+            return;
+        }
+
+        var ultima = _dto.Variacoes.LastOrDefault(v => !v.Removida);
+        int criadas = 0, existentes = 0;
+
+        foreach (var corId in cores)
+        {
+            foreach (var tamanhoId in tamanhos)
+            {
+                bool jaExiste = _dto.Variacoes.Any(v => !v.Removida && v.CorId == corId && v.TamanhoId == tamanhoId);
+                if (jaExiste) { existentes++; continue; }
+
+                var cor = _cores.FirstOrDefault(c => c.Id == corId);
+                var tamanho = _tamanhos.FirstOrDefault(t => t.Id == tamanhoId);
+                var nova = new ProdutoVariacaoDto
+                {
+                    CorId = corId,
+                    Cor = cor?.Nome ?? "",
+                    TamanhoId = tamanhoId,
+                    Tamanho = tamanho?.Nome ?? "",
+                    Preco = ultima?.Preco ?? 0
+                };
+                _dto.Variacoes.Add(nova);
+                _precoTextos[nova] = nova.Preco > 0 ? nova.Preco.ToString("N2") : "";
+                criadas++;
+            }
+        }
+
+        var msg = criadas > 0
+            ? $"{criadas} variação(ões) criada(s)." + (existentes > 0 ? $" {existentes} já existia(m) e foram pulada(s)." : "")
+            : "Todas as combinações selecionadas já existiam.";
+        Snackbar.Add(msg, criadas > 0 ? Severity.Success : Severity.Info);
         StateHasChanged();
     }
 
     private async Task AbrirModalCor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCor>("Nova Cor", opts);
         if ((await dialog.Result) is { Canceled: false })
             _cores = (await CorService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalTamanho()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTamanho>("Novo Tamanho", opts);
         if ((await dialog.Result) is { Canceled: false })
             _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalCategoria()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Nova Categoria", opts);
         if ((await dialog.Result) is { Canceled: false })
             _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalMarca()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Nova Marca", opts);
         if ((await dialog.Result) is { Canceled: false })
             _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalUnidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Nova Unidade", opts);
         if ((await dialog.Result) is { Canceled: false })
             _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList();
