@@ -67,7 +67,7 @@ public abstract class BasePage<TListDto, TDto> : ComponentBase
 
         var dialog = await DialogService.ShowAsync<ConfirmDialog>(
             "Confirmar", param,
-            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
+            new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small });
 
         if ((await dialog.Result) is { Canceled: false })
         {

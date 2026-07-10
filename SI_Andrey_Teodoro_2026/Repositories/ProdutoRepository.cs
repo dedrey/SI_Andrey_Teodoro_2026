@@ -20,6 +20,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             where.Add(@"(p.produto  LIKE @Busca
                       OR c.categoria LIKE @Busca
                       OR m.marca     LIKE @Busca
+                      OR p.codigo_barras LIKE @Busca
                       OR CAST(p.id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
@@ -40,6 +41,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         var sqlData = $@"SELECT p.id,
                                  p.produto            AS Produto,
                                  p.descricao          AS Descricao,
+                                 p.codigo_barras       AS CodigoBarras,
                                  p.categoria_id       AS CategoriaId,
                                  c.categoria          AS NomeCategoria,
                                  p.marca_id           AS MarcaId,
@@ -57,7 +59,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                           LEFT  JOIN produto_variacoes pv ON pv.produto_id = p.id AND pv.ativo = TRUE
                           LEFT  JOIN estoque          e  ON e.produto_variacao_id = pv.id
                           {whereClause}
-                          GROUP BY p.id, p.produto, p.descricao, p.categoria_id, c.categoria,
+                          GROUP BY p.id, p.produto, p.descricao, p.codigo_barras, p.categoria_id, c.categoria,
                                    p.marca_id, m.marca, p.unidade_medida_id, u.unidade_medida,
                                    p.ativo, p.criado_em
                           ORDER BY {orderBy}
@@ -99,6 +101,10 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             @"SELECT p.id,
                      p.produto            AS NomeProduto,
                      p.descricao          AS Descricao,
+                     p.codigo_barras      AS CodigoBarras,
+                     p.preco_compra       AS PrecoCompra,
+                     p.frete              AS Frete,
+                     p.preco_custo        AS PrecoCusto,
                      p.categoria_id       AS CategoriaId,
                      c.categoria          AS NomeCategoria,
                      p.marca_id           AS MarcaId,
@@ -145,11 +151,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      co.nome                  AS Cor,
                      pv.tamanho_id            AS TamanhoId,
                      ta.nome                  AS Tamanho,
-                     pv.codigo_barras         AS CodigoBarras,
-                     pv.preco_compra          AS PrecoCompra,
-                     pv.frete                 AS Frete,
                      pv.preco                 AS Preco,
-                     pv.preco_custo           AS PrecoCusto,
                      pv.data_ultima_compra    AS DataUltimaCompra,
                      pv.ativo                 AS Ativo,
                      COALESCE(e.quantidade, 0) AS QuantidadeEstoque,
@@ -170,15 +172,19 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         using var conn = _factory.CreateConnection();
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
-            @"INSERT INTO produtos (id, produto, descricao, categoria_id, marca_id,
-                                    unidade_medida_id, ativo)
-              VALUES (@ProximoId, @Produto, @Descricao, @CategoriaId, @MarcaId,
-                      @UnidadeMedidaId, @Ativo)",
+            @"INSERT INTO produtos (id, produto, descricao, codigo_barras, preco_compra, frete, preco_custo,
+                                    categoria_id, marca_id, unidade_medida_id, ativo)
+              VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras, @PrecoCompra, @Frete, @PrecoCusto,
+                      @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
             new
             {
                 ProximoId = proximoId,
                 dto.Produto,
                 dto.Descricao,
+                dto.CodigoBarras,
+                dto.PrecoCompra,
+                dto.Frete,
+                dto.PrecoCusto,
                 dto.CategoriaId,
                 dto.MarcaId,
                 dto.UnidadeMedidaId,
@@ -195,6 +201,10 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               SET id                = @Id,
                   produto           = @Produto,
                   descricao         = @Descricao,
+                  codigo_barras     = @CodigoBarras,
+                  preco_compra      = @PrecoCompra,
+                  frete             = @Frete,
+                  preco_custo       = @PrecoCusto,
                   categoria_id      = @CategoriaId,
                   marca_id          = @MarcaId,
                   unidade_medida_id = @UnidadeMedidaId,
@@ -206,6 +216,10 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.IdOriginal,
                 dto.Produto,
                 dto.Descricao,
+                dto.CodigoBarras,
+                dto.PrecoCompra,
+                dto.Frete,
+                dto.PrecoCusto,
                 dto.CategoriaId,
                 dto.MarcaId,
                 dto.UnidadeMedidaId
@@ -223,68 +237,133 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         return await conn.ExecuteScalarAsync<int>(sql, new { nome, idOriginalIgnorar }) > 0;
     }
 
-    public async Task<int> InserirVariacaoAsync(ProdutoVariacaoDto dto)
+    public async Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM produto_variacoes) t
-              WHERE seq NOT IN (SELECT id FROM produto_variacoes)");
-        await conn.ExecuteAsync(
-            @"INSERT INTO produto_variacoes
-                (id, produto_id, cor, cor_id, tamanho, tamanho_id, codigo_barras,
-                 preco_compra, frete, preco, preco_custo, ativo)
-              VALUES
-                (@ProximoId, @ProdutoId, @Cor, @CorId, @Tamanho, @TamanhoId, @CodigoBarras,
-                 @PrecoCompra, @Frete, @Preco, @PrecoCusto, @Ativo)",
-            new
-            {
-                ProximoId = proximoId,
-                dto.ProdutoId,
-                dto.Cor,
-                dto.CorId,
-                dto.Tamanho,
-                dto.TamanhoId,
-                dto.CodigoBarras,
-                dto.PrecoCompra,
-                dto.Frete,
-                dto.Preco,
-                dto.PrecoCusto,
-                dto.Ativo
-            });
-        return proximoId;
+        var sql = idIgnorar.HasValue
+            ? "SELECT COUNT(*) FROM produtos WHERE codigo_barras = @codigoBarras AND id <> @idIgnorar"
+            : "SELECT COUNT(*) FROM produtos WHERE codigo_barras = @codigoBarras";
+        return await conn.ExecuteScalarAsync<int>(sql, new { codigoBarras, idIgnorar }) > 0;
     }
 
-    public async Task AtualizarVariacaoAsync(ProdutoVariacaoDto dto)
+    /// Salva o produto inteiro (dados do produto + todas as variações + estoque) numa única
+    /// transação: ou tudo é gravado, ou nada é — evita o cenário de "salvou 2 de 6 variações
+    /// e travou no meio" quando alguma variação dá erro (ex: cor/tamanho duplicado).
+    public async Task<int> SalvarComVariacoesAsync(ProdutoDto dto, List<ProdutoVariacaoDto> variacoes)
     {
         using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            @"UPDATE produto_variacoes
-              SET id            = @Id,
-                  cor           = @Cor,
-                  cor_id        = @CorId,
-                  tamanho       = @Tamanho,
-                  tamanho_id    = @TamanhoId,
-                  codigo_barras = @CodigoBarras,
-                  preco_compra  = @PrecoCompra,
-                  frete         = @Frete,
-                  preco         = @Preco,
-                  preco_custo   = @PrecoCusto,
-                  atualizado_em = NOW()
-              WHERE id = @IdOriginal",
-            new
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+        try
+        {
+            int produtoId;
+            if (dto.IdOriginal == 0)
             {
-                dto.Id,
-                dto.IdOriginal,
-                dto.Cor,
-                dto.CorId,
-                dto.Tamanho,
-                dto.TamanhoId,
-                dto.CodigoBarras,
-                dto.PrecoCompra,
-                dto.Frete,
-                dto.Preco,
-                dto.PrecoCusto
-            });
+                var proximoId = await ProximoIdAsync();
+                await conn.ExecuteAsync(
+                    @"INSERT INTO produtos (id, produto, descricao, codigo_barras, preco_compra, frete, preco_custo,
+                                            categoria_id, marca_id, unidade_medida_id, ativo)
+                      VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras, @PrecoCompra, @Frete, @PrecoCusto,
+                              @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
+                    new
+                    {
+                        ProximoId = proximoId,
+                        dto.Produto,
+                        dto.Descricao,
+                        dto.CodigoBarras,
+                        dto.PrecoCompra,
+                        dto.Frete,
+                        dto.PrecoCusto,
+                        dto.CategoriaId,
+                        dto.MarcaId,
+                        dto.UnidadeMedidaId,
+                        dto.Ativo
+                    }, tx);
+                produtoId = proximoId;
+            }
+            else
+            {
+                produtoId = dto.Id;
+                await conn.ExecuteAsync(
+                    @"UPDATE produtos
+                      SET id                = @Id,
+                          produto           = @Produto,
+                          descricao         = @Descricao,
+                          codigo_barras     = @CodigoBarras,
+                          preco_compra      = @PrecoCompra,
+                          frete             = @Frete,
+                          preco_custo       = @PrecoCusto,
+                          categoria_id      = @CategoriaId,
+                          marca_id          = @MarcaId,
+                          unidade_medida_id = @UnidadeMedidaId,
+                          atualizado_em     = NOW()
+                      WHERE id = @IdOriginal",
+                    new
+                    {
+                        dto.Id,
+                        dto.IdOriginal,
+                        dto.Produto,
+                        dto.Descricao,
+                        dto.CodigoBarras,
+                        dto.PrecoCompra,
+                        dto.Frete,
+                        dto.PrecoCusto,
+                        dto.CategoriaId,
+                        dto.MarcaId,
+                        dto.UnidadeMedidaId
+                    }, tx);
+            }
+
+            foreach (var v in variacoes)
+            {
+                v.ProdutoId = produtoId;
+                if (v.IdOriginal == 0)
+                {
+                    var proximoVarId = await conn.ExecuteScalarAsync<int>(
+                        @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM produto_variacoes) t
+                          WHERE seq NOT IN (SELECT id FROM produto_variacoes)", transaction: tx);
+                    await conn.ExecuteAsync(
+                        @"INSERT INTO produto_variacoes (id, produto_id, cor, cor_id, tamanho, tamanho_id, preco, ativo)
+                          VALUES (@ProximoVarId, @ProdutoId, @Cor, @CorId, @Tamanho, @TamanhoId, @Preco, @Ativo)",
+                        new
+                        {
+                            ProximoVarId = proximoVarId,
+                            v.ProdutoId,
+                            v.Cor,
+                            v.CorId,
+                            v.Tamanho,
+                            v.TamanhoId,
+                            v.Preco,
+                            v.Ativo
+                        }, tx);
+                    await conn.ExecuteAsync(
+                        "INSERT IGNORE INTO estoque (produto_variacao_id, quantidade) VALUES (@variacaoId, 0)",
+                        new { variacaoId = proximoVarId }, tx);
+                }
+                else
+                {
+                    await conn.ExecuteAsync(
+                        @"UPDATE produto_variacoes
+                          SET id            = @Id,
+                              cor           = @Cor,
+                              cor_id        = @CorId,
+                              tamanho       = @Tamanho,
+                              tamanho_id    = @TamanhoId,
+                              preco         = @Preco,
+                              atualizado_em = NOW()
+                          WHERE id = @IdOriginal",
+                        new { v.Id, v.IdOriginal, v.Cor, v.CorId, v.Tamanho, v.TamanhoId, v.Preco }, tx);
+                }
+            }
+
+            tx.Commit();
+            return produtoId;
+        }
+        catch
+        {
+            tx.Rollback();
+            throw;
+        }
     }
 
     public async Task AlterarStatusVariacaoAsync(int id, bool ativo)
@@ -302,15 +381,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             ? "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor_id = @corId AND tamanho_id = @tamanhoId AND id <> @idIgnorar"
             : "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor_id = @corId AND tamanho_id = @tamanhoId";
         return await conn.ExecuteScalarAsync<int>(sql, new { produtoId, corId, tamanhoId, idIgnorar }) > 0;
-    }
-
-    public async Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null)
-    {
-        using var conn = _factory.CreateConnection();
-        var sql = idIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM produto_variacoes WHERE codigo_barras = @codigoBarras AND id <> @idIgnorar"
-            : "SELECT COUNT(*) FROM produto_variacoes WHERE codigo_barras = @codigoBarras";
-        return await conn.ExecuteScalarAsync<int>(sql, new { codigoBarras, idIgnorar }) > 0;
     }
 
     public async Task InserirEstoqueAsync(int variacaoId)

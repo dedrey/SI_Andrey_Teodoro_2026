@@ -32,7 +32,7 @@ public partial class ContasPagarPage : ComponentBase
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroContaPagar>("Nova Conta a Pagar", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -42,7 +42,7 @@ public partial class ContasPagarPage : ComponentBase
         var dto = await ContaPagarService.ObterPorIdAsync(id);
         if (dto == null) return;
         var param = new DialogParameters<ModalCadastroContaPagar> { { x => x.DtoEdicao, dto } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroContaPagar>(
             dto.Status == "ABERTA" ? "Editar Conta a Pagar" : "Detalhes da Conta", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
@@ -56,7 +56,7 @@ public partial class ContasPagarPage : ComponentBase
             { x => x.Descricao, conta.Descricao },
             { x => x.ValorOriginal, conta.ValorOriginal }
         };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalFinalizarPagamento>("Finalizar Pagamento", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -71,7 +71,7 @@ public partial class ContasPagarPage : ComponentBase
             { x => x.CorBotao, Color.Error }
         };
         var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar", param,
-            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
+            new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small });
         if ((await dialog.Result) is { Canceled: false })
         {
             var (sucesso, mensagem) = await ContaPagarService.CancelarAsync(id);

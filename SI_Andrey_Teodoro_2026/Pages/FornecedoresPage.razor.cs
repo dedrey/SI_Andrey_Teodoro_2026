@@ -26,7 +26,7 @@ public partial class FornecedoresPage : BasePage<FornecedorListDto, FornecedorDt
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -38,7 +38,7 @@ public partial class FornecedoresPage : BasePage<FornecedorListDto, FornecedorDt
         var dto = await FornecedorService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Fornecedor não encontrado.", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroFornecedor> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Detalhes do Fornecedor", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

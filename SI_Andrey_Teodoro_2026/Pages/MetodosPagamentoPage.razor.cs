@@ -26,7 +26,7 @@ public partial class MetodosPagamentoPage : BasePage<MetodoPagamentoListDto, Met
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo(a) Método de pagamento", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class MetodosPagamentoPage : BasePage<MetodoPagamentoListDto, Met
         var dto = await MetodoPagamentoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Método de pagamento não encontrado(a).", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroMetodoPagamento> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Detalhes do Método de Pagamento", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

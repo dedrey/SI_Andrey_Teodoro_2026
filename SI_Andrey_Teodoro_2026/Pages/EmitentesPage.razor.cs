@@ -24,7 +24,7 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
     }
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEmitente>("Novo Emitente", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -33,7 +33,7 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
         var dto = await EmitenteService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Emitente não encontrado.", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroEmitente> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEmitente>("Detalhes do Emitente", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

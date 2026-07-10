@@ -320,6 +320,10 @@ CREATE TABLE produtos (
   id                INT          AUTO_INCREMENT PRIMARY KEY,
   produto           VARCHAR(100) NOT NULL,
   descricao         VARCHAR(500),
+  codigo_barras     VARCHAR(50) NULL,
+  preco_compra      DECIMAL(10,2) NOT NULL DEFAULT 0,
+  frete             DECIMAL(10,2) NOT NULL DEFAULT 0,
+  preco_custo       DECIMAL(10,2) NOT NULL DEFAULT 0,
   categoria_id      INT          NOT NULL,
   marca_id          INT          NOT NULL,
   unidade_medida_id INT          NOT NULL,
@@ -332,7 +336,8 @@ CREATE TABLE produtos (
   CONSTRAINT fk_produtos_marca         FOREIGN KEY (marca_id)          REFERENCES marcas(id)          ON DELETE NO ACTION,
   CONSTRAINT fk_produtos_unidade       FOREIGN KEY (unidade_medida_id) REFERENCES unidades_medida(id) ON DELETE NO ACTION,
   CONSTRAINT fk_produtos_criado_por    FOREIGN KEY (criado_por)        REFERENCES usuarios(id)        ON DELETE SET NULL,
-  CONSTRAINT fk_produtos_atualizado_por FOREIGN KEY (atualizado_por)   REFERENCES usuarios(id)        ON DELETE SET NULL
+  CONSTRAINT fk_produtos_atualizado_por FOREIGN KEY (atualizado_por)   REFERENCES usuarios(id)        ON DELETE SET NULL,
+  ADD UNIQUE KEY uq_produtos_codigo_barras (codigo_barras);
 ) ENGINE=InnoDB;
 
 CREATE TABLE produto_variacoes (

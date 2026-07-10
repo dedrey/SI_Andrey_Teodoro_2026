@@ -60,9 +60,9 @@
                     {
                         <div style="padding:10px 20px 14px 48px;">
                             <MudTable Items="@variacoes" Dense="true" Hover="true" Elevation="0" Style="border:0.5px solid #e0e0e0;border-radius:6px;background:white;">
-                                <HeaderContent><MudTh Style="font-weight:600;font-size:0.8rem;">Cor</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Tamanho</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Cód. Barras</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Preço</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Estoque</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Status</MudTh></HeaderContent>
+                                <HeaderContent><MudTh Style="font-weight:600;font-size:0.8rem;">Cor</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;">Tamanho</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:right;">Preço</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Estoque</MudTh><MudTh Style="font-weight:600;font-size:0.8rem;text-align:center;">Status</MudTh></HeaderContent>
                                 <RowTemplate Context="v">
-                                    <MudTd>@v.Cor</MudTd><MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@v.Tamanho</MudChip></MudTd><MudTd Style="color:#888;font-size:0.82rem;">@(string.IsNullOrEmpty(v.CodigoBarras) ? "—" : v.CodigoBarras)</MudTd><MudTd Style="text-align:right;font-weight:600;">R$ @v.Preco.ToString("N2")</MudTd>
+                                    <MudTd>@v.Cor</MudTd><MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@v.Tamanho</MudChip></MudTd><MudTd Style="text-align:right;font-weight:600;">R$ @v.Preco.ToString("N2")</MudTd>
                                     <MudTd Style="text-align:center;font-weight:600;">@v.QuantidadeEstoque un.</MudTd>
                                     <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(v.Ativo ? Color.Success : Color.Error)" Variant="Variant.Outlined">@(v.Ativo?"Ativo":"Inativo")</MudChip></MudTd>
                                 </RowTemplate>

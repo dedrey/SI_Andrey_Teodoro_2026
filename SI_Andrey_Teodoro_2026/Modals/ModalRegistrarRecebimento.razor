@@ -28,14 +28,14 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento *"
+                    <MudDatePicker @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório"
                                    Editable="true" DateFormat="dd/MM/yyyy" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="Valor Recebido *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Valor Recebido" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$"
                                   HelperText="Pode ser parcial — saldo restante fica aberto" />

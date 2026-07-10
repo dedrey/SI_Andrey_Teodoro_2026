@@ -81,7 +81,7 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12">
-                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição *"
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true"
                                   ReadOnly="@_somenteLeitura"
@@ -93,7 +93,7 @@
                                      ValueChanged="@((ClienteListDto? c) => _dto.ClienteId = c?.Id ?? 0)"
                                      SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                      ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
-                                     Label="Cliente *"
+                                     Label="Cliente"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      Required="true" RequiredError="Selecione um cliente"
                                      ResetValueOnEmptyText="true" CoerceText="false"
@@ -107,14 +107,14 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento *"
+                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="Valor Original *" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Valor Original" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$"
                                   ReadOnly="@(_somenteLeitura || (_dto.IdOriginal != 0 && _dto.ValorRecebido > 0))"
@@ -221,7 +221,7 @@
 
     private async Task AbrirModalCliente()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })

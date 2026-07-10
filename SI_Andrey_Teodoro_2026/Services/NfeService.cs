@@ -8,11 +8,13 @@ public class NfeService : INfeService
 {
     private readonly INfeRepository _repo;
     private readonly IVendaRepository _vendaRepo;
+    private readonly IContaReceberService _contaReceberService;
 
-    public NfeService(INfeRepository repo, IVendaRepository vendaRepo)
+    public NfeService(INfeRepository repo, IVendaRepository vendaRepo, IContaReceberService contaReceberService)
     {
         _repo = repo;
         _vendaRepo = vendaRepo;
+        _contaReceberService = contaReceberService;
     }
 
     public Task<PaginacaoDto<NfeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
@@ -61,9 +63,36 @@ public class NfeService : INfeService
             var itensNfe = DistribuirAjusteProporcional(itensOrigem, venda.ValorTotal);
 
             var novoId = await _repo.InserirAsync(nfeDto, itensNfe);
+
+            await BaixarEntradaAutomaticamenteAsync(vendaId);
+
             return (true, $"Nota Fiscal nº {numero} gerada com sucesso!", novoId);
         }
         catch (Exception ex) { return (false, $"Erro ao gerar Nota Fiscal: {ex.Message}", 0); }
+    }
+
+    /// Ao emitir a NF-e, a entrada da venda (se houver e ainda estiver em aberto) é considerada
+    /// paga na hora — evita ter que ir manualmente em Contas a Receber dar baixa nela depois.
+    private async Task BaixarEntradaAutomaticamenteAsync(int vendaId)
+    {
+        try
+        {
+            var contas = await _contaReceberService.ObterContasDaVendaAsync(vendaId);
+            var entrada = contas.FirstOrDefault(c =>
+                c.Status == "ABERTA" && c.Descricao.Contains("Entrada", StringComparison.OrdinalIgnoreCase));
+
+            if (entrada != null)
+            {
+                await _contaReceberService.RegistrarRecebimentoAsync(
+                    entrada.Id, DateTime.Today, entrada.ValorSaldo,
+                    null, "Baixa automática — entrada quitada na emissão da Nota Fiscal");
+            }
+        }
+        catch
+        {
+            // Não deixa a emissão da NF-e falhar por causa da baixa automática;
+            // se algo der errado aqui, a entrada continua em aberto e pode ser baixada manualmente.
+        }
     }
 
     public async Task<(bool sucesso, string mensagem)> CancelarAsync(int id)

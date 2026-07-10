@@ -26,7 +26,7 @@ public partial class PaisesPage : BasePage<PaisListDto, PaisDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo(a) País", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -36,7 +36,7 @@ public partial class PaisesPage : BasePage<PaisListDto, PaisDto>
         var dto = await PaisService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("País não encontrado(a).", Severity.Warning); return; }
         var param = new DialogParameters<ModalCadastroPais> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Detalhes do País", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }

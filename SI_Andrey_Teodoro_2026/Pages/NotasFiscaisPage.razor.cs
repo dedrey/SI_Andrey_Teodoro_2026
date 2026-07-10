@@ -32,7 +32,7 @@ public partial class NotasFiscaisPage : ComponentBase
 
     private async Task AbrirModalGeracao()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalGerarNfe>("Gerar Nota Fiscal", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -45,7 +45,7 @@ public partial class NotasFiscaisPage : ComponentBase
 
     private async Task Visualizar(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var param = new DialogParameters<ModalVisualizarNfe> { { x => x.Id, id } };
         await DialogService.ShowAsync<ModalVisualizarNfe>("Nota Fiscal", param, opts);
     }
@@ -60,7 +60,7 @@ public partial class NotasFiscaisPage : ComponentBase
             { x => x.CorBotao, Color.Error }
         };
         var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar", param,
-            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
+            new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small });
         if ((await dialog.Result) is { Canceled: false })
         {
             var (sucesso, mensagem) = await NfeService.CancelarAsync(id);

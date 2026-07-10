@@ -110,7 +110,7 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
               WHERE c.id = @id", new { id });
     }
 
-    // ← NOVO: retorna parcelas individuais de uma condição
+    // retorna parcelas individuais de uma condição
     public async Task<List<CondicaoPagamentoParcelaDto>> ObterParcelasAsync(int condicaoId)
     {
         using var conn = _factory.CreateConnection();
@@ -122,7 +122,7 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
         return result.ToList();
     }
 
-    // ← NOVO: remove e reinserção das parcelas (simples e confiável)
+    // remove e reinserção das parcelas (simples e confiável)
     private async Task SalvarParcelasAsync(int condicaoId, List<CondicaoPagamentoParcelaDto> parcelas,
         Dapper.SqlMapper.GridReader? _ = null)
     {

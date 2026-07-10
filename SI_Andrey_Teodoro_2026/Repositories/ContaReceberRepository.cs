@@ -73,6 +73,88 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
         { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
     }
 
+    public async Task<PaginacaoDto<ContaReceberVendaGrupoListDto>> ObterTodosAgrupadosAsync(FiltroConsultaDto filtro)
+    {
+        using var conn = _factory.CreateConnection();
+        var where = new List<string>();
+        if (!string.IsNullOrWhiteSpace(filtro.Busca))
+            where.Add(@"(cr.descricao    LIKE @Busca
+                      OR c.nome_razaosocial LIKE @Busca
+                      OR CAST(cr.id AS CHAR) = @BuscaExata
+                      OR CAST(cr.venda_id AS CHAR) = @BuscaExata)");
+        var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
+
+        // Status é calculado depois de agrupar (uma venda com 5 parcelas só é "RECEBIDA"
+        // quando TODAS as parcelas estiverem quitadas), por isso o filtro de status vira HAVING.
+        var having = filtro.StatusFiltro switch
+        {
+            "aberta" => "HAVING Status = 'ABERTA'",
+            "recebida" => "HAVING Status = 'RECEBIDA'",
+            "cancelada" => "HAVING Status = 'CANCELADA'",
+            "vencidas" => "HAVING Status = 'ABERTA' AND DataVencimento < CURDATE()",
+            _ => ""
+        };
+        var orderBy = filtro.OrdenarPor switch
+        {
+            "id" => "Id",
+            "valor" => "ValorOriginal DESC",
+            "vencimento" => "DataVencimento",
+            _ => "DataVencimento"
+        };
+
+        var sqlBase = $@"
+            SELECT
+                COALESCE(cr.venda_id, cr.id)                              AS GroupKey,
+                cr.venda_id                                               AS VendaId,
+                MIN(cr.id)                                                AS Id,
+                MAX(c.nome_razaosocial)                                   AS NomeCliente,
+                CASE WHEN cr.venda_id IS NULL THEN MAX(cr.descricao)
+                     ELSE CONCAT('Venda #', cr.venda_id, ' — ', COUNT(*),
+                                  IF(COUNT(*) = 1, ' parcela', ' parcelas'))
+                END                                                       AS Descricao,
+                COALESCE(MIN(CASE WHEN cr.status = 'ABERTA' THEN cr.data_vencimento END),
+                         MIN(cr.data_vencimento))                         AS DataVencimento,
+                SUM(cr.valor_original)                                    AS ValorOriginal,
+                SUM(cr.valor_saldo)                                       AS ValorSaldo,
+                MAX(ub.UltimoRecebimento)                                 AS DataUltimoRecebimento,
+                COUNT(*)                                                  AS TotalParcelas,
+                SUM(CASE WHEN cr.status = 'RECEBIDA' THEN 1 ELSE 0 END)   AS ParcelasPagas,
+                CASE
+                    WHEN SUM(CASE WHEN cr.status <> 'CANCELADA' THEN 1 ELSE 0 END) = 0 THEN 'CANCELADA'
+                    WHEN SUM(CASE WHEN cr.status = 'ABERTA' THEN 1 ELSE 0 END) = 0 THEN 'RECEBIDA'
+                    ELSE 'ABERTA'
+                END                                                       AS Status
+            FROM contas_receber cr
+            LEFT JOIN clientes c ON c.id = cr.cliente_id
+            LEFT JOIN (
+                SELECT conta_receber_id, MAX(data_recebimento) AS UltimoRecebimento
+                FROM contas_receber_baixas GROUP BY conta_receber_id
+            ) ub ON ub.conta_receber_id = cr.id
+            {whereClause}
+            GROUP BY COALESCE(cr.venda_id, cr.id), cr.venda_id
+            {having}";
+
+        var param = new
+        {
+            Busca = $"%{filtro.Busca}%",
+            BuscaExata = filtro.Busca,
+            Limit = filtro.TamanhoPagina,
+            Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
+        };
+
+        var todos = (await conn.QueryAsync<ContaReceberVendaGrupoListDto>(sqlBase, param)).ToList();
+        var ordenados = filtro.OrdenarPor switch
+        {
+            "id" => todos.OrderBy(x => x.Id),
+            "valor" => todos.OrderByDescending(x => x.ValorOriginal),
+            _ => todos.OrderBy(x => x.DataVencimento)
+        };
+        var pagina = ordenados.Skip((filtro.Pagina - 1) * filtro.TamanhoPagina).Take(filtro.TamanhoPagina).ToList();
+
+        return new PaginacaoDto<ContaReceberVendaGrupoListDto>
+        { Itens = pagina, TotalItens = todos.Count, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+    }
+
     public async Task<ContaReceber?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();

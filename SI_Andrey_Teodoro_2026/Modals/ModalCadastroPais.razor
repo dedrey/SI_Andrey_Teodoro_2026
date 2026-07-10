@@ -15,7 +15,7 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="8">
                     <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = CapPalavras(v))"
-                                  Label="cPaís" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v, "País"))" Disabled="@_readOnly" />
                 </MudItem>

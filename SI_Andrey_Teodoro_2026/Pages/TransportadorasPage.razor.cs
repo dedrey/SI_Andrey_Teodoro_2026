@@ -34,7 +34,7 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
     }
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -53,7 +53,7 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
             { x => x.DtoEdicao, dto },
             { x => x.SomenteLeitura, true }
         };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Detalhes da Transportadora", param, opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })

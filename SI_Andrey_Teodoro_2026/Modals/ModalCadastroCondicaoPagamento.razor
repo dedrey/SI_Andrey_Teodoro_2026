@@ -233,7 +233,7 @@
 
     private async Task AbrirNovoMetodo()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método de Pagamento", opts);
         if ((await dialog.Result) is { Canceled: false })
         {

@@ -219,11 +219,12 @@
             {
                 var prodDto = await ProdutoService.ObterPorIdAsync(produtoMatch.Id);
                 _variacoesPorItem[item] = prodDto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+                _precoCustoPorItem[item] = prodDto?.PrecoCusto ?? 0;
                 var varSelecionada = _variacoesPorItem[item]
                     .FirstOrDefault(v => v.IdOriginal == item.ProdutoVariacaoId);
                 if (varSelecionada != null)
                 {
-                    _custoPorItem[item] = varSelecionada.PrecoCusto;
+                    _custoPorItem[item] = prodDto?.PrecoCusto ?? 0;
                     _dataCompraPorItem[item] = varSelecionada.DataUltimaCompra;
                 }
             }
@@ -246,6 +247,7 @@
     private readonly Dictionary<VendaItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<VendaItemDto, string> _valorTextos = new();
     private readonly Dictionary<VendaItemDto, decimal> _custoPorItem = new();
+    private readonly Dictionary<VendaItemDto, decimal> _precoCustoPorItem = new();
     private readonly Dictionary<VendaItemDto, DateTime?> _dataCompraPorItem = new();
 
     private static int GetEstoqueVar(List<ProdutoVariacaoDto> vars, int id)
@@ -258,6 +260,7 @@
         _produtosSelecionados[item] = null;
         _variacoesPorItem[item] = new();
         _valorTextos[item] = "";
+        _precoCustoPorItem[item] = 0;
         StateHasChanged();
     }
     private void RemoverItem(VendaItemDto item)
@@ -266,6 +269,7 @@
         _produtosSelecionados.Remove(item);
         _variacoesPorItem.Remove(item);
         _valorTextos.Remove(item);
+        _precoCustoPorItem.Remove(item);
         RecalcularTotais();
         StateHasChanged();
     }
@@ -274,7 +278,12 @@
     {
         _produtosSelecionados[item] = produto;
         item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? "";
-        if (produto != null) { var dto = await ProdutoService.ObterPorIdAsync(produto.Id); _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo && v.QuantidadeEstoque > 0).ToList() ?? new(); }
+        if (produto != null)
+        {
+            var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
+            _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo && v.QuantidadeEstoque > 0).ToList() ?? new();
+            _precoCustoPorItem[item] = dto?.PrecoCusto ?? 0;
+        }
         else _variacoesPorItem[item] = new();
         StateHasChanged();
     }
@@ -288,7 +297,7 @@
             {
                 item.ValorUnitario = v.Preco;
                 _valorTextos[item] = v.Preco.ToString("N2");
-                _custoPorItem[item] = v.PrecoCusto;
+                _custoPorItem[item] = _precoCustoPorItem.TryGetValue(item, out var custo) ? custo : 0;
                 _dataCompraPorItem[item] = v.DataUltimaCompra;
             }
         }
@@ -326,7 +335,7 @@
 
     private async Task AbrirModalCliente()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         if ((await dialog.Result) is { Canceled: false })
             _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
@@ -334,7 +343,7 @@
 
     private async Task AbrirModalCondicao()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
         if ((await dialog.Result) is { Canceled: false })
             _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();

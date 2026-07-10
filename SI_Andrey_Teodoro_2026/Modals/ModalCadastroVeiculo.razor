@@ -120,7 +120,7 @@
 
     private async Task AbrirModalTransportadora()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == id); _dto.TransportadoraId = id; } }

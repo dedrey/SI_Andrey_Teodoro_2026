@@ -14,6 +14,17 @@ public class ProdutoDto
     [MaxLength(500)]
     public string? Descricao { get; set; }
 
+    [MaxLength(50)]
+    public string? CodigoBarras { get; set; }
+
+    [Range(0, 999999.99, ErrorMessage = "Preço de compra inválido")]
+    public decimal PrecoCompra { get; set; }
+
+    [Range(0, 999999.99, ErrorMessage = "Frete inválido")]
+    public decimal Frete { get; set; }
+
+    public decimal PrecoCusto { get; set; }
+
     public int CategoriaId { get; set; }
     public string? NomeCategoria { get; set; }
 
