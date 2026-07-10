@@ -7,7 +7,7 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.RequestQuote" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(_dto.IdOriginal != 0 ? "Editar Conta a Receber" : "Nova Conta a Receber")</MudText>
+            <MudText Typo="Typo.h6">@(_somenteLeitura ? "Visualizar Conta a Receber" : _dto.IdOriginal != 0 ? "Editar Conta a Receber" : "Nova Conta a Receber")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -58,30 +58,68 @@
         }
         else if (_dto.IdOriginal != 0 && _dto.Baixas.Any())
         {
-            <!-- Conta isolada (manual ou sem parcelamento): mostra só o histórico dela -->
-            <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-                <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:8px;">
-                    Histórico de Recebimentos
+            <!-- Conta isolada (manual ou sem parcelamento): mesmo layout visual do resumo de parcelas da venda -->
+            <div class="d-flex justify-space-between align-center pa-2 mb-3" style="background:#f8f9fa;border-radius:8px;">
+                <div>
+                    <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Valor Original</MudText>
+                    <MudText Typo="Typo.h6" Style="font-weight:700;">R$ @_dto.ValorOriginal.ToString("N2")</MudText>
                 </div>
-                @foreach (var baixa in _dto.Baixas)
-                {
-                    <div class="d-flex align-center justify-space-between" style="padding:4px 0;border-bottom:1px solid #eee;">
-                        <span style="font-size:0.85rem;color:#555;">@baixa.DataRecebimento.ToString("dd/MM/yyyy")</span>
-                        <span style="font-size:0.85rem;font-weight:600;color:#2e7d32;">R$ @baixa.ValorRecebido.ToString("N2")</span>
+                <div style="text-align:right;">
+                    <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Saldo em aberto</MudText>
+                    <MudText Typo="Typo.h6" Style="@($"font-weight:700;color:{(_dto.ValorSaldo > 0 ? "#e65100" : "#2e7d32")};")">R$ @_dto.ValorSaldo.ToString("N2")</MudText>
+                </div>
+            </div>
+
+            <MudTable Items="@_dto.Baixas" Dense="true" Hover="true" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;margin-bottom:16px;">
+                <HeaderContent>
+                    <MudTh Style="font-weight:600;">Vencimento</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Pago em</MudTh>
+                    <MudTh Style="font-weight:600;text-align:right;">Recebido</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Status</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="baixa">
+                    @{
+                        bool pagoAtrasado = baixa.DataRecebimento.Date > _dto.DataVencimento.Date;
+                    }
+                    <MudTd>@_dto.DataVencimento.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd Style="text-align:center;">
+                        <div>@baixa.DataRecebimento.ToString("dd/MM/yyyy")</div>
+                        @if (pagoAtrasado)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" Style="margin-top:2px;">
+                                Pagamento atrasado
+                            </MudChip>
+                        }
+                    </MudTd>
+                    <MudTd Style="text-align:right;color:#2e7d32;font-weight:600;">R$ @baixa.ValorRecebido.ToString("N2")</MudTd>
+                    <MudTd Style="text-align:center;">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Recebida</MudChip>
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
                         @if (!string.IsNullOrWhiteSpace(baixa.ComprovanteArquivo))
                         {
-                            <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small"
-                                           Href="@baixa.ComprovanteArquivo" Target="_blank" />
+                            <MudTooltip Text="Abrir comprovante anexado">
+                                <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Primary" Size="Size.Small"
+                                               Href="@baixa.ComprovanteArquivo" Target="_blank" />
+                            </MudTooltip>
                         }
-                    </div>
-                }
-            </div>
+                        else
+                        {
+                            <MudTooltip Text="Anexar comprovante (opcional)">
+                                <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Default" Size="Size.Small"
+                                               OnClick="@(() => AbrirAnexarComprovante(baixa.Id))" />
+                            </MudTooltip>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
 
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12">
-                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição"
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = Cap(v))" Label="Descrição *"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true"
                                   ReadOnly="@_somenteLeitura"
@@ -93,7 +131,7 @@
                                      ValueChanged="@((ClienteListDto? c) => _dto.ClienteId = c?.Id ?? 0)"
                                      SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                      ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
-                                     Label="Cliente"
+                                     Label="Cliente *"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      Required="true" RequiredError="Selecione um cliente"
                                      ResetValueOnEmptyText="true" CoerceText="false"
@@ -107,14 +145,14 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
+                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento *"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="Valor Original" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Label="Valor Original *" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$"
                                   ReadOnly="@(_somenteLeitura || (_dto.IdOriginal != 0 && _dto.ValorRecebido > 0))"
@@ -229,6 +267,19 @@
             _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
             if (result.Data is int novoId)
                 _dto.ClienteId = novoId;
+        }
+    }
+
+    private async Task AbrirAnexarComprovante(int baixaId)
+    {
+        var param = new DialogParameters<ModalAnexarComprovante> { { x => x.BaixaId, baixaId } };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalAnexarComprovante>("Anexar Comprovante", param, opts);
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            // recarrega a conta pra já mostrar o comprovante anexado
+            var atualizado = await ContaReceberService.ObterPorIdAsync(_dto.IdOriginal);
+            if (atualizado != null) _dto.Baixas = atualizado.Baixas;
         }
     }
 

@@ -235,11 +235,14 @@
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método de Pagamento", opts);
-        if ((await dialog.Result) is { Canceled: false })
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
         {
             // recarrega a lista de métodos após cadastro
             var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
             _metodos = metodos.ToList();
+            if (result.Data is int novoId)
+                _dto.MetodoPagamentoId = novoId;
         }
     }
 

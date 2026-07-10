@@ -1,0 +1,152 @@
+﻿@inject IContaReceberService ContaReceberService
+@inject IWebHostEnvironment Env
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">Anexar Comprovante</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Style="color:#666;margin-bottom:12px;">
+            Esse recebimento já está fechado — aqui você só anexa o comprovante depois, sem alterar valor ou data. Não é obrigatório.
+        </MudText>
+
+        @if (_nomeArquivoSelecionado != null)
+        {
+            <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Success" Size="Size.Small" />
+                    <MudText Typo="Typo.body2">@_nomeArquivoSelecionado</MudText>
+                    <MudText Typo="Typo.caption" Style="color:#888;">(@FormatarTamanho(_tamanhoArquivo))</MudText>
+                </div>
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="RemoverArquivo" />
+            </div>
+        }
+        else
+        {
+            <div style="border:2px dashed #c5cae9;border-radius:8px;padding:18px;text-align:center;position:relative;cursor:pointer;">
+                <InputFile OnChange="OnArquivoSelecionado" accept=".pdf,.jpg,.jpeg,.png"
+                           style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                <MudIcon Icon="@Icons.Material.Filled.UploadFile" Color="Color.Primary" Style="font-size:1.8rem;" />
+                <MudText Typo="Typo.body2" Style="color:#5c6bc0;font-weight:600;margin-top:4px;">
+                    Clique para anexar comprovante
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color:#aaa;">PDF, JPG ou PNG — máx. 5 MB</MudText>
+            </div>
+        }
+        @if (_carregandoArquivo)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+        }
+        @if (_erroArquivo != null)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Error" Style="display:block;margin-top:4px;">@_erroArquivo</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="@(() => MudDialog.Cancel())">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Salvar"
+                   Disabled="@(_salvando || _carregandoArquivo || _nomeArquivoSelecionado == null)"
+                   StartIcon="@Icons.Material.Filled.Save">
+            @(_salvando ? "Salvando..." : "Salvar Comprovante")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int BaixaId { get; set; }
+
+    private bool _salvando, _carregandoArquivo;
+    private byte[]? _conteudoArquivo;
+    private string? _nomeArquivoSelecionado;
+    private string? _extensaoArquivo;
+    private long _tamanhoArquivo;
+    private string? _erroArquivo;
+
+    private const long TamanhoMaximoBytes = 5 * 1024 * 1024;
+
+    private async Task OnArquivoSelecionado(InputFileChangeEventArgs e)
+    {
+        _erroArquivo = null;
+        var arquivo = e.File;
+        if (arquivo == null) return;
+
+        var ext = Path.GetExtension(arquivo.Name).ToLowerInvariant();
+        if (ext != ".pdf" && ext != ".jpg" && ext != ".jpeg" && ext != ".png")
+        {
+            _erroArquivo = "Apenas arquivos PDF, JPG ou PNG são aceitos.";
+            return;
+        }
+        if (arquivo.Size > TamanhoMaximoBytes)
+        {
+            _erroArquivo = "Arquivo muito grande (máximo 5 MB).";
+            return;
+        }
+
+        _carregandoArquivo = true;
+        StateHasChanged();
+        try
+        {
+            using var stream = arquivo.OpenReadStream(TamanhoMaximoBytes);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            _conteudoArquivo = ms.ToArray();
+            _nomeArquivoSelecionado = arquivo.Name;
+            _extensaoArquivo = ext;
+            _tamanhoArquivo = arquivo.Size;
+        }
+        catch (Exception ex)
+        {
+            _erroArquivo = $"Erro ao ler o arquivo: {ex.Message}";
+            _conteudoArquivo = null;
+            _nomeArquivoSelecionado = null;
+        }
+        finally
+        {
+            _carregandoArquivo = false;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoverArquivo()
+    {
+        _conteudoArquivo = null;
+        _nomeArquivoSelecionado = null;
+        _extensaoArquivo = null;
+        _erroArquivo = null;
+    }
+
+    private static string FormatarTamanho(long bytes)
+        => bytes < 1024 * 1024 ? $"{bytes / 1024.0:N0} KB" : $"{bytes / (1024.0 * 1024):N1} MB";
+
+    private async Task Salvar()
+    {
+        if (_conteudoArquivo == null) return;
+        _salvando = true;
+        try
+        {
+            var pastaDestino = Path.Combine(Env.WebRootPath, "uploads", "comprovantes");
+            Directory.CreateDirectory(pastaDestino);
+            var nomeArquivo = $"comprovante_{BaixaId}_{DateTime.Now:yyyyMMddHHmmss}{_extensaoArquivo}";
+            var caminhoCompleto = Path.Combine(pastaDestino, nomeArquivo);
+            await File.WriteAllBytesAsync(caminhoCompleto, _conteudoArquivo);
+            var caminhoRelativo = $"/uploads/comprovantes/{nomeArquivo}";
+
+            var (sucesso, mensagem) = await ContaReceberService.AnexarComprovanteAsync(BaixaId, caminhoRelativo);
+            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+            if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao salvar o comprovante: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}

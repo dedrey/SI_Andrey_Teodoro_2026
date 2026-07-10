@@ -27,7 +27,7 @@
                 </div>
                 <div style="text-align:right;">
                     <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Saldo em aberto</MudText>
-                    <MudText Typo="Typo.h6" Style="font-weight:700;color:#e65100;">R$ @_parcelas.Sum(p => p.ValorSaldo).ToString("N2")</MudText>
+                    <MudText Typo="Typo.h6" Style="@($"font-weight:700;color:{(_parcelas.Sum(p => p.ValorSaldo) > 0 ? "#e65100" : "#2e7d32")};")">R$ @_parcelas.Sum(p => p.ValorSaldo).ToString("N2")</MudText>
                 </div>
                 @if (_parcelas.Any(p => p.Status == "ABERTA"))
                 {
@@ -42,6 +42,7 @@
                 <HeaderContent>
                     <MudTh Style="font-weight:600;">Descrição</MudTh>
                     <MudTh Style="font-weight:600;text-align:center;">Vencimento</MudTh>
+                    <MudTh Style="font-weight:600;text-align:center;">Pago em</MudTh>
                     <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
                     <MudTh Style="font-weight:600;text-align:right;">Recebido</MudTh>
                     <MudTh Style="font-weight:600;text-align:right;">Saldo</MudTh>
@@ -51,10 +52,32 @@
                 <RowTemplate>
                     @{
                         bool vencida = context.Status == "ABERTA" && context.DataVencimento.Date < DateTime.Today;
+                        bool pagoAtrasado = context.DataUltimoRecebimento.HasValue
+                        && context.DataUltimoRecebimento.Value.Date > context.DataVencimento.Date;
+                        var ultimoComprovante = context.Baixas
+                        .Where(b => !string.IsNullOrWhiteSpace(b.ComprovanteArquivo))
+                        .OrderByDescending(b => b.DataRecebimento).ThenByDescending(b => b.Id)
+                        .FirstOrDefault();
                     }
                     <MudTd>@context.Descricao</MudTd>
                     <MudTd Style="text-align:center;">
                         <span style="@(vencida ? "color:#c62828;font-weight:600;" : "")">@context.DataVencimento.ToString("dd/MM/yyyy")</span>
+                    </MudTd>
+                    <MudTd Style="text-align:center;">
+                        @if (context.DataUltimoRecebimento.HasValue)
+                        {
+                            <div>@context.DataUltimoRecebimento.Value.ToString("dd/MM/yyyy")</div>
+                            @if (pagoAtrasado)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined" Style="margin-top:2px;">
+                                    Pagamento atrasado
+                                </MudChip>
+                            }
+                        }
+                        else
+                        {
+                            <span style="color:#bbb;">—</span>
+                        }
                     </MudTd>
                     <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
                     <MudTd Style="text-align:right;color:#2e7d32;">@(context.ValorRecebido > 0 ? $"R$ {context.ValorRecebido:N2}" : "—")</MudTd>
@@ -71,6 +94,24 @@
                                 <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small"
                                                OnClick="@(() => AbrirBaixaIndividual(context))" />
                             </MudTooltip>
+                        }
+                        else if (ultimoComprovante != null)
+                        {
+                            <MudTooltip Text="Abrir comprovante anexado">
+                                <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Primary" Size="Size.Small"
+                                               Href="@ultimoComprovante.ComprovanteArquivo" Target="_blank" />
+                            </MudTooltip>
+                        }
+                        else if (context.Baixas.Any())
+                        {
+                            <MudTooltip Text="Anexar comprovante (opcional)">
+                                <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Default" Size="Size.Small"
+                                               OnClick="@(() => AbrirAnexarComprovante(context.Baixas.OrderByDescending(b => b.DataRecebimento).ThenByDescending(b => b.Id).First().Id))" />
+                            </MudTooltip>
+                        }
+                        else
+                        {
+                            <span style="color:#bbb;font-size:0.8rem;">—</span>
                         }
                     </MudTd>
                 </RowTemplate>
@@ -113,6 +154,14 @@
         if ((await dialog.Result) is { Canceled: false }) await Carregar();
     }
 
+    private async Task AbrirAnexarComprovante(int baixaId)
+    {
+        var param = new DialogParameters<ModalAnexarComprovante> { { x => x.BaixaId, baixaId } };
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalAnexarComprovante>("Anexar Comprovante", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) await Carregar();
+    }
+
     private async Task DarBaixaTotal()
     {
         var abertas = _parcelas.Where(p => p.Status == "ABERTA").ToList();
@@ -144,4 +193,3 @@
         await Carregar();
     }
 }
-

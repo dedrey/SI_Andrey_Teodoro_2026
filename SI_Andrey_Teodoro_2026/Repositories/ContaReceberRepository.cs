@@ -280,6 +280,13 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
             "DELETE FROM contas_receber_baixas WHERE id = @baixaId", new { baixaId });
         await RecalcularSaldoAsync(conn, contaReceberId);
     }
+    public async Task AtualizarComprovanteBaixaAsync(int baixaId, string comprovanteArquivo)
+    {
+        using var conn = _factory.CreateConnection();
+        await conn.ExecuteAsync(
+            "UPDATE contas_receber_baixas SET comprovante_arquivo = @comprovanteArquivo WHERE id = @baixaId",
+            new { baixaId, comprovanteArquivo });
+    }
     private static async Task RecalcularSaldoAsync(System.Data.IDbConnection conn, int contaReceberId)
     {
         var valorOriginal = await conn.ExecuteScalarAsync<decimal>(
