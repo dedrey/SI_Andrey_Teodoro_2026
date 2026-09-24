@@ -21,5 +21,4 @@ public interface IProdutoRepository
     Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null);
     Task InserirEstoqueAsync(int variacaoId);
     Task AtualizarEstoqueAsync(int variacaoId, int quantidade);
-    Task AtualizarDataUltimaCompraAsync(int variacaoId, DateTime data);
 }

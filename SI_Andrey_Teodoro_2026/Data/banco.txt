@@ -394,12 +394,16 @@ CREATE TABLE estoque (
 -- ================================================================
 -- 10. MOVIMENTAÇÕES DE ESTOQUE
 -- ================================================================
--- ATENÇÃO: conferir com o banco real (SHOW CREATE TABLE) — será revisado no bloco 4
--- (unificação Compra ↔ Movimentação).
+-- ENTRADA: gerada somente pelo lançamento de Compra (compra_id preenchido).
+-- SAIDA:   manual, pela Venda, ou estorno do cancelamento de Compra (compra_id preenchido).
+-- AJUSTE:  manual (inventário). Não altera custo nem data da última compra.
+-- A tabela compras é criada depois (seção 11.1), por isso a FK de compra_id
+-- é adicionada no final do script.
 CREATE TABLE movimentacoes_estoque (
   id                INT          AUTO_INCREMENT PRIMARY KEY,
-  tipo_movimentacao ENUM('SAIDA','AJUSTE') NOT NULL,
+  tipo_movimentacao ENUM('ENTRADA','SAIDA','AJUSTE') NOT NULL,
   observacao        VARCHAR(200) NULL,
+  compra_id         INT          NULL,
   criado_em         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   criado_por        INT NULL,
   CONSTRAINT fk_movest_criado_por  FOREIGN KEY (criado_por)    REFERENCES usuarios(id)     ON DELETE SET NULL
@@ -610,3 +614,9 @@ CREATE TABLE contas_receber_baixas (
   CONSTRAINT fk_crbaixas_criado_por FOREIGN KEY (criado_por)       REFERENCES usuarios(id)        ON DELETE SET NULL,
   CONSTRAINT chk_crbaixas_valor_positivo CHECK (valor_recebido > 0)
 ) ENGINE=InnoDB;
+
+-- ================================================================
+-- FKs adicionadas após a criação das tabelas referenciadas
+-- ================================================================
+ALTER TABLE movimentacoes_estoque
+  ADD CONSTRAINT fk_movest_compra FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE SET NULL;

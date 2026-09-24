@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
@@ -19,8 +20,9 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add(@"(m.tipo_movimentacao LIKE @Busca
                       OR m.observacao        LIKE @Busca
-                      OR CAST(m.id AS CHAR) = @BuscaExata)");
-        if (filtro.StatusFiltro is "SAIDA" or "AJUSTE")
+                      OR CAST(m.id AS CHAR) = @BuscaExata
+                      OR CAST(m.compra_id AS CHAR) = @BuscaExata)");
+        if (filtro.StatusFiltro is "ENTRADA" or "SAIDA" or "AJUSTE")
             where.Add("m.tipo_movimentacao = @StatusFiltro");
         var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
         var orderBy = filtro.OrdenarPor switch
@@ -44,6 +46,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             $@"SELECT m.id,
                       m.tipo_movimentacao  AS TipoMovimentacao,
                       m.observacao,
+                      m.compra_id          AS CompraId,
                       COUNT(i.id)          AS TotalItens,
                       COALESCE(SUM(i.quantidade), 0)                   AS TotalQuantidade,
                       COALESCE(SUM(i.quantidade * i.valor_unitario), 0) AS ValorTotal,
@@ -53,7 +56,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
                LEFT JOIN movimentacoes_estoque_itens i ON i.movimentacao_id = m.id
                LEFT JOIN usuarios     u ON u.id = m.criado_por
                {whereClause}
-               GROUP BY m.id, m.tipo_movimentacao, m.observacao, m.criado_em, u.nome
+               GROUP BY m.id, m.tipo_movimentacao, m.observacao, m.compra_id, m.criado_em, u.nome
                ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset", param);
         return new PaginacaoDto<MovimentacaoEstoqueListDto>
         { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
@@ -66,6 +69,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             @"SELECT m.id,
                      m.tipo_movimentacao AS TipoMovimentacao,
                      m.observacao,
+                     m.compra_id         AS CompraId,
                      m.criado_em         AS CriadoEm,
                      m.criado_por        AS CriadoPor,
                      u.nome              AS NomeCriadoPor
@@ -91,63 +95,45 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
         return result.ToList();
     }
 
-    public async Task<int> InserirAsync(MovimentacaoEstoqueDto dto)
+    public async Task<int> ObterEstoqueAtualAsync(int variacaoId, IDbTransaction? tx = null)
     {
-        using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            @"INSERT INTO movimentacoes_estoque
-                (id, tipo_movimentacao, observacao)
-              VALUES
-                (@ProximoId, @TipoMovimentacao, @Observacao)",
-            new
-            {
-                ProximoId = proximoId,
-                dto.TipoMovimentacao,
-                dto.Observacao
-            });
-        return proximoId;
-    }
+        if (tx != null)
+            return await tx.Connection!.ExecuteScalarAsync<int>(
+                "SELECT COALESCE(quantidade, 0) FROM estoque WHERE produto_variacao_id = @variacaoId FOR UPDATE",
+                new { variacaoId }, tx);
 
-    public async Task InserirItemAsync(MovimentacaoEstoqueItemDto item, int movimentacaoId)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            @"INSERT INTO movimentacoes_estoque_itens
-                (movimentacao_id, produto_variacao_id, quantidade, valor_unitario)
-              VALUES (@MovimentacaoId, @ProdutoVariacaoId, @Quantidade, @ValorUnitario)",
-            new { MovimentacaoId = movimentacaoId, item.ProdutoVariacaoId, item.Quantidade, item.ValorUnitario });
-    }
-
-    public async Task AtualizarEstoqueAsync(int variacaoId, int delta)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE estoque SET quantidade = quantidade + @delta, atualizado_em = NOW() WHERE produto_variacao_id = @variacaoId",
-            new { delta, variacaoId });
-    }
-
-    public async Task<int> ObterEstoqueAtualAsync(int variacaoId)
-    {
         using var conn = _factory.CreateConnection();
         return await conn.ExecuteScalarAsync<int>(
             "SELECT COALESCE(quantidade, 0) FROM estoque WHERE produto_variacao_id = @variacaoId",
             new { variacaoId });
     }
 
-    public async Task AtualizarDataUltimaCompraAsync(int variacaoId, DateTime data)
+    public async Task<int> InserirAsync(string tipoMovimentacao, string? observacao, int? compraId, IDbTransaction tx)
     {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE produto_variacoes SET data_ultima_compra = @data WHERE id = @variacaoId",
-            new { variacaoId, data });
+        return await tx.Connection!.ExecuteScalarAsync<int>(
+            @"INSERT INTO movimentacoes_estoque (tipo_movimentacao, observacao, compra_id)
+              VALUES (@tipoMovimentacao, @observacao, @compraId);
+              SELECT LAST_INSERT_ID();",
+            new { tipoMovimentacao, observacao, compraId }, tx);
     }
 
-    public async Task AtualizarPrecoCustoAsync(int variacaoId, decimal precoCusto)
+    public async Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx)
     {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE produto_variacoes SET preco_custo = @precoCusto WHERE id = @variacaoId",
-            new { variacaoId, precoCusto });
+        await tx.Connection!.ExecuteAsync(
+            @"INSERT INTO movimentacoes_estoque_itens
+                (movimentacao_id, produto_variacao_id, quantidade, valor_unitario)
+              VALUES (@movimentacaoId, @variacaoId, @quantidade, @valorUnitario)",
+            new { movimentacaoId, variacaoId, quantidade, valorUnitario }, tx);
+    }
+
+    public async Task<bool> AtualizarEstoqueAsync(int variacaoId, int delta, IDbTransaction tx)
+    {
+        var linhas = await tx.Connection!.ExecuteAsync(
+            @"UPDATE estoque
+              SET quantidade = quantidade + @delta, atualizado_em = NOW()
+              WHERE produto_variacao_id = @variacaoId
+                AND quantidade >= -@delta",
+            new { delta, variacaoId }, tx);
+        return linhas > 0;
     }
 }

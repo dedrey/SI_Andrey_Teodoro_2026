@@ -29,18 +29,18 @@
                                      ToStringFunc="@(f => f?.RazaoSocial ?? "")"
                                      Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      Required="true" RequiredError="Selecione um fornecedor"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Disabled="@SomenteLeitura" />
+                                     ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudTooltip Text="Novo fornecedor">
                         <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                       OnClick="AbrirModalFornecedor" Disabled="@SomenteLeitura" />
+                                       OnClick="AbrirModalFornecedor" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                     </MudTooltip>
                 </MudItem>
                 <MudItem xs="12" sm="5">
                     <MudTextField @bind-Value="_dto.NumeroNf" Label="Número da NF (opcional)"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="60" FullWidth="true"
-                                  Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                                  Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
 
                 <MudItem xs="12" sm="4">
@@ -49,7 +49,7 @@
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
                                    AutoClose="true" MaxDate="DateTime.Today"
-                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
                     <MudDatePicker @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada"
@@ -57,7 +57,7 @@
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
                                    AutoClose="true" MinDate="_dataEmissao"
-                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="10" sm="3">
                     <MudAutocomplete T="CondicaoPagamentoListDto"
@@ -67,16 +67,20 @@
                                      ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
                                      Label="Condição de Pagamento (opcional)" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
-                                     Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
+                                     Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)"
                                      HelperText="Se selecionada, gera as parcelas de conta a pagar" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudTooltip Text="Nova condição de pagamento">
                         <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                       OnClick="AbrirModalCondicao" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                                       OnClick="AbrirModalCondicao" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                     </MudTooltip>
                 </MudItem>
             </MudGrid>
+            @if (CabecalhoBloqueado && !SomenteLeitura)
+            {
+                <MudText Typo="Typo.caption" Style="color:#888;">Remova os itens para alterar os dados da nota.</MudText>
+            }
 
             <MudDivider Class="my-4" />
             <div class="d-flex align-center justify-space-between mb-3">
@@ -272,6 +276,7 @@
     private readonly Dictionary<CompraItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
     private readonly Dictionary<CompraItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<CompraItemDto, string> _valorTextos = new();
+    private bool CabecalhoBloqueado => _dto.Itens.Any(i => !i.Removido && _produtosSelecionados.GetValueOrDefault(i) != null);
 
     private void OnDataEmissaoAlterada()
     {
