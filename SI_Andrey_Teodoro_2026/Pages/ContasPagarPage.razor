@@ -62,11 +62,11 @@
             <MudTd><strong>@context.Descricao</strong></MudTd>
             <MudTd>@(context.NomeFornecedor ?? "—")</MudTd>
             <MudTd>
-                @if (context.MovimentacaoId.HasValue)
+                @if (context.CompraId.HasValue)
                 {
-                    <MudTooltip Text="Gerada automaticamente de uma entrada de estoque">
+                    <MudTooltip Text="Gerada automaticamente por uma compra">
                         <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Inventory2">
-                            @(string.IsNullOrWhiteSpace(context.NumeroNfMovimentacao) ? $"Mov. #{context.MovimentacaoId}" : $"NF {context.NumeroNfMovimentacao}")
+                            @(string.IsNullOrWhiteSpace(context.NumeroNfCompra) ? $"Compra #{context.CompraId}" : $"NF {context.NumeroNfCompra}")
                         </MudChip>
                     </MudTooltip>
                 }

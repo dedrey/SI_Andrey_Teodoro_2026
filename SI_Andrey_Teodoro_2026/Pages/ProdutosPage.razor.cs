@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Modals;
@@ -66,7 +66,10 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
     {
         var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var param = new DialogParameters<ModalVisualizarProduto> { { x => x.Id, id } };
-        await DialogService.ShowAsync<ModalVisualizarProduto>("Detalhes do Produto", param, opts);
+        var dialog = await DialogService.ShowAsync<ModalVisualizarProduto>("Detalhes do Produto", param, opts);
+        var result = await dialog.Result;
+        if (result is { Canceled: false } && result.Data is "editar")
+            await Editar(id);
     }
 
 }

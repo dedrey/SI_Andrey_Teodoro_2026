@@ -1,0 +1,385 @@
+@inject ICompraService CompraService
+@inject IFornecedorService FornecedorService
+@inject IProdutoService ProdutoService
+@inject ICondicaoPagamentoService CondicaoPagamentoService
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">@(SomenteLeitura ? "Visualizar Compra" : "Nova Compra")</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValido">
+            @if (SomenteLeitura && _dto.StatusCompra == "CANCELADO")
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true">
+                    <strong>Compra cancelada:</strong> @_dto.MotivoCancelamento
+                </MudAlert>
+            }
+            <MudGrid Spacing="2">
+                <MudItem xs="10" sm="6">
+                    <MudAutocomplete T="FornecedorListDto"
+                                     Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
+                                     ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(f => f?.RazaoSocial ?? "")"
+                                     Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     Required="true" RequiredError="Selecione um fornecedor"
+                                     ResetValueOnEmptyText="true" CoerceText="false" Disabled="@SomenteLeitura" />
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudTooltip Text="Novo fornecedor">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
+                                       OnClick="AbrirModalFornecedor" Disabled="@SomenteLeitura" />
+                    </MudTooltip>
+                </MudItem>
+                <MudItem xs="12" sm="5">
+                    <MudTextField @bind-Value="_dto.NumeroNf" Label="Número da NF (opcional)"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="60" FullWidth="true"
+                                  Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                </MudItem>
+
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao"
+                                   Label="Data de Emissão" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Required="true" RequiredError="Obrigatório" Editable="true"
+                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                                   AutoClose="true" MaxDate="DateTime.Today"
+                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudDatePicker @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada"
+                                   Label="Data de Chegada" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Required="true" RequiredError="Obrigatório" Editable="true"
+                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                                   AutoClose="true" MinDate="_dataEmissao"
+                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                </MudItem>
+                <MudItem xs="10" sm="3">
+                    <MudAutocomplete T="CondicaoPagamentoListDto"
+                                     Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
+                                     ValueChanged="@((CondicaoPagamentoListDto? c) => _dto.CondicaoPagamentoId = c?.Id)"
+                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                     ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
+                                     Label="Condição de Pagamento (opcional)" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
+                                     Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
+                                     HelperText="Se selecionada, gera as parcelas de conta a pagar" />
+                </MudItem>
+                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
+                    <MudTooltip Text="Nova condição de pagamento">
+                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
+                                       OnClick="AbrirModalCondicao" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)" />
+                    </MudTooltip>
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+            <div class="d-flex align-center justify-space-between mb-3">
+                <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+                    <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Size="Size.Small" Class="mr-1" />Itens da Compra
+                </MudText>
+                @if (!SomenteLeitura)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem"
+                               Disabled="@(!_dto.FornecedorId.HasValue)">
+                        Adicionar Item
+                    </MudButton>
+                }
+            </div>
+
+            @if (!_dto.FornecedorId.HasValue)
+            {
+                <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Selecione o fornecedor para liberar os itens da compra.</MudText>
+                </div>
+            }
+            else if (_dto.Itens.Count > 0)
+            {
+                <MudTable Items="@_dto.Itens" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                    <HeaderContent>
+                        <MudTh Style="font-weight:600;">Produto</MudTh>
+                        <MudTh Style="font-weight:600;">Variação</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Quantidade</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Custo Unit. (R$)</MudTh>
+                        @if (SomenteLeitura)
+                        {
+                            <MudTh Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
+                        }
+                        <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
+                        @if (!SomenteLeitura)
+                        {
+                            <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                        }
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <MudAutocomplete T="ProdutoListDto"
+                                             Value="_produtosSelecionados.GetValueOrDefault(context)"
+                                             ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
+                                             SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@SomenteLeitura" />
+                        </MudTd>
+                        <MudTd>
+                            <MudAutocomplete T="ProdutoVariacaoDto"
+                                             Value="@(_variacoesPorItem.TryGetValue(context, out var vs2) ? vs2.FirstOrDefault(v => v.IdOriginal == context.ProdutoVariacaoId) : null)"
+                                             ValueChanged="@((ProdutoVariacaoDto? v) => OnVariacaoAlterada(context, v?.IdOriginal ?? 0))"
+                                             SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
+                                             ToStringFunc="@(v => v == null ? "" : $"{v.Cor} / {v.Tamanho}")"
+                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                             Disabled="@(SomenteLeitura || !_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
+                                             ResetValueOnEmptyText="true" CoerceText="false" />
+                        </MudTd>
+                        <MudTd Style="text-align:center;">
+                            <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" Disabled="@SomenteLeitura" />
+                        </MudTd>
+                        <MudTd>
+                            <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                          Adornment="Adornment.Start" AdornmentText="R$" Disabled="@SomenteLeitura" />
+                        </MudTd>
+                        @if (SomenteLeitura)
+                        {
+                            <MudTd Style="text-align:right;">R$ @context.CustoUnitarioEfetivo.ToString("N2")</MudTd>
+                        }
+                        <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorTotal.ToString("N2")</MudTd>
+                        @if (!SomenteLeitura)
+                        {
+                            <MudTd Style="text-align:center;">
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
+                            </MudTd>
+                        }
+                    </RowTemplate>
+                    <FooterContent>
+                        <MudTd ColSpan="@(SomenteLeitura ? 5 : 4)" Style="text-align:right;font-weight:600;padding:8px 12px;">Subtotal:</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;">R$ @_dto.ValorSubtotal.ToString("N2")</MudTd>
+                        @if (!SomenteLeitura) { <MudTd></MudTd> }
+                    </FooterContent>
+                </MudTable>
+
+                <div class="d-flex justify-end mt-2 pa-2" style="border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
+                    <div style="min-width:280px;">
+                        <div class="d-flex justify-space-between mb-1">
+                            <MudText Typo="Typo.body2">Subtotal (produtos)</MudText>
+                            <MudText Typo="Typo.body2" Style="font-weight:600;">R$ @_dto.ValorSubtotal.ToString("N2")</MudText>
+                        </div>
+                        @if (_dto.ValorDesconto > 0)
+                        {
+                            <div class="d-flex justify-space-between mb-1">
+                                <MudText Typo="Typo.body2" Style="color:#2e7d32;">Desconto (itens)</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;color:#2e7d32;">- R$ @_dto.ValorDesconto.ToString("N2")</MudText>
+                            </div>
+                        }
+                        <div class="d-flex justify-space-between align-center mb-1">
+                            <MudText Typo="Typo.body2">Frete</MudText>
+                            <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => { _dto.ValorFrete = v; RecalcularTotais(); })"
+                                             HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Min="0" Format="N2" Style="width:130px;" Disabled="@SomenteLeitura" />
+                        </div>
+                        <div class="d-flex justify-space-between align-center mb-1">
+                            <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
+                            <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => { _dto.ValorOutrosAcrescimos = v; RecalcularTotais(); })"
+                                             HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Min="0" Format="N2" Style="width:130px;" Disabled="@SomenteLeitura" />
+                        </div>
+                        <MudDivider Class="my-1" />
+                        <div class="d-flex justify-space-between">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;">Total da Nota</MudText>
+                            <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                    <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Clique em "Adicionar Item" para incluir produtos na compra.</MudText>
+                </div>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">@(SomenteLeitura ? "Fechar" : "Cancelar")</MudButton>
+        @if (!SomenteLeitura)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                       Disabled="_salvando" Style="height:40px;font-weight:700;min-width:160px;">
+                @(_salvando ? "Lançando..." : "LANÇAR COMPRA")
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public CompraDto? DtoVisualizacao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dto = DtoVisualizacao ?? new CompraDto();
+        _dataEmissao = _dto.DataEmissao;
+        _dataChegada = _dto.DataChegada;
+        _mesEmissao = _dto.DataEmissao ?? DateTime.Today;
+        _mesChegada = _dto.DataChegada ?? DateTime.Today;
+        try
+        {
+            await Task.WhenAll(
+                Task.Run(async () => _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList()),
+                Task.Run(async () => _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList()),
+                Task.Run(async () => _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList())
+            );
+        }
+        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        foreach (var item in _dto.Itens)
+        {
+            var produtoMatch = _produtos.FirstOrDefault(p => p.Produto == item.NomeProduto);
+            _produtosSelecionados[item] = produtoMatch;
+            _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
+            if (produtoMatch != null)
+            {
+                var prodDto = await ProdutoService.ObterPorIdAsync(produtoMatch.Id);
+                _variacoesPorItem[item] = prodDto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+            }
+            else
+            {
+                _variacoesPorItem[item] = new();
+            }
+        }
+        RecalcularTotais();
+    }
+
+    private MudForm? _form;
+    private bool _formValido;
+    private bool _salvando;
+    private CompraDto _dto = new();
+    private DateTime? _dataEmissao;
+    private DateTime? _dataChegada;
+    private DateTime? _mesEmissao = DateTime.Today;
+    private DateTime? _mesChegada = DateTime.Today;
+    private List<FornecedorListDto> _fornecedores = new();
+    private List<ProdutoListDto> _produtos = new();
+    private List<CondicaoPagamentoListDto> _condicoes = new();
+    private readonly Dictionary<CompraItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
+    private readonly Dictionary<CompraItemDto, ProdutoListDto?> _produtosSelecionados = new();
+    private readonly Dictionary<CompraItemDto, string> _valorTextos = new();
+
+    private void OnDataEmissaoAlterada()
+    {
+        if (_dataChegada.HasValue && _dataEmissao.HasValue && _dataChegada.Value.Date < _dataEmissao.Value.Date)
+            _dataChegada = null;
+    }
+
+    private void AdicionarItem()
+    {
+        var item = new CompraItemDto();
+        _dto.Itens.Add(item);
+        _produtosSelecionados[item] = null;
+        _variacoesPorItem[item] = new();
+        _valorTextos[item] = "";
+        StateHasChanged();
+    }
+    private void RemoverItem(CompraItemDto item)
+    {
+        _dto.Itens.Remove(item);
+        _produtosSelecionados.Remove(item);
+        _variacoesPorItem.Remove(item);
+        _valorTextos.Remove(item);
+        RecalcularTotais();
+        StateHasChanged();
+    }
+
+    private async Task OnProdutoAlterado(CompraItemDto item, ProdutoListDto? produto)
+    {
+        _produtosSelecionados[item] = produto;
+        item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? "";
+        if (produto != null)
+        {
+            var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
+            _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+        }
+        else _variacoesPorItem[item] = new();
+        StateHasChanged();
+    }
+    private void OnVariacaoAlterada(CompraItemDto item, int variacaoId)
+    {
+        item.ProdutoVariacaoId = variacaoId;
+        if (_variacoesPorItem.TryGetValue(item, out var vars))
+        {
+            var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
+            if (v != null) { item.Cor = v.Cor; item.Tamanho = v.Tamanho; }
+        }
+        RecalcularTotais();
+        StateHasChanged();
+    }
+    private void OnQtdAlterada(CompraItemDto item, string? v)
+    {
+        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
+        item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
+        RecalcularTotais();
+    }
+    private string GetValorTexto(CompraItemDto item) { if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : ""; return _valorTextos[item]; }
+    private void OnValorAlterado(CompraItemDto item, string? texto)
+    {
+        if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; return; }
+        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
+        _valorTextos[item] = f;
+        item.ValorUnitario = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        RecalcularTotais();
+    }
+    private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
+    {
+        var r = string.IsNullOrWhiteSpace(busca) ? _produtos.Take(50) : _produtos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
+        return Task.FromResult(r);
+    }
+    private void RecalcularTotais()
+    {
+        _dto.ValorSubtotal = _dto.Itens.Sum(i => i.ValorUnitario * i.Quantidade);
+        _dto.ValorDesconto = _dto.Itens.Sum(i => i.ValorDesconto);
+        _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto + _dto.ValorFrete + _dto.ValorOutrosAcrescimos;
+    }
+
+    private async Task AbrirModalFornecedor()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
+    }
+
+    private async Task AbrirModalCondicao()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
+        if ((await dialog.Result) is { Canceled: false })
+            _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
+    }
+
+    private async Task Salvar()
+    {
+        if (!_dto.FornecedorId.HasValue) { Snackbar.Add("Selecione um fornecedor.", Severity.Warning); return; }
+        if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
+        if (!_dataEmissao.HasValue) { Snackbar.Add("Informe a data de emissão.", Severity.Warning); return; }
+        if (_dataEmissao.Value.Date > DateTime.Today) { Snackbar.Add("A data de emissão não pode ser maior que a data atual.", Severity.Warning); return; }
+        if (!_dataChegada.HasValue) { Snackbar.Add("Informe a data de chegada.", Severity.Warning); return; }
+        if (_dataChegada.Value.Date < _dataEmissao.Value.Date) { Snackbar.Add("A data de chegada não pode ser anterior à data de emissão.", Severity.Warning); return; }
+
+        _dto.DataEmissao = _dataEmissao;
+        _dto.DataChegada = _dataChegada;
+        _salvando = true;
+        var (sucesso, mensagem, _) = await CompraService.SalvarAsync(_dto);
+        _salvando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+    private void Fechar() => MudDialog.Cancel();
+}

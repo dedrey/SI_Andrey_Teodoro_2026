@@ -23,8 +23,8 @@ public class ContaPagarService : IContaPagarService
             IdOriginal = c.Id,
             FornecedorId = c.FornecedorId,
             NomeFornecedor = c.NomeFornecedor,
-            MovimentacaoId = c.MovimentacaoId,
-            NumeroNfMovimentacao = c.NumeroNfMovimentacao,
+            CompraId = c.CompraId,
+            NumeroNfCompra = c.NumeroNfCompra,
             Descricao = c.Descricao,
             DataVencimento = c.DataVencimento,
             DataPagamento = c.DataPagamento,
@@ -83,19 +83,5 @@ public class ContaPagarService : IContaPagarService
             return (true, "Conta cancelada.");
         }
         catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
-    }
-
-    public async Task GerarContaAutomaticaAsync(int? fornecedorId, int movimentacaoId, string numeroNf,
-        DateTime dataEntrada, int diasPrazo, decimal valorTotal)
-    {
-        if (diasPrazo <= 0 || valorTotal <= 0) return;
-
-        var descricao = string.IsNullOrWhiteSpace(numeroNf)
-            ? $"Entrada de mercadoria #{movimentacaoId}"
-            : $"NF {numeroNf} — Entrada de mercadoria";
-
-        var vencimento = dataEntrada.AddDays(diasPrazo);
-
-        await _repo.InserirAutomaticaAsync(fornecedorId, movimentacaoId, descricao, vencimento, valorTotal);
     }
 }

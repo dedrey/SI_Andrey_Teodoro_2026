@@ -12,6 +12,20 @@
                        OnClick="@(() => _drawerOpen = !_drawerOpen)" />
         <MudText Typo="Typo.h6" Class="ml-2" Style="font-weight:700;letter-spacing:0.5px;">Sistema</MudText>
         <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudText Typo="Typo.body2" Class="mr-3" Style="opacity:0.9;">
+                    @context.User.Identity?.Name
+                </MudText>
+                <form method="post" action="/Account/Logout" style="display:inline;">
+                    <AntiforgeryToken />
+                    <button type="submit" title="Sair"
+                            style="background:none;border:none;color:inherit;cursor:pointer;display:flex;align-items:center;padding:8px;">
+                        <MudIcon Icon="@Icons.Material.Filled.Logout" />
+                    </button>
+                </form>
+            </Authorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="1"
@@ -32,7 +46,7 @@
 
             <MudNavGroup Title="Pessoas" Icon="@Icons.Material.Filled.PeopleAlt" Expanded="false">
                 <MudNavLink Href="/clientes" Icon="@Icons.Material.Filled.Person">Clientes</MudNavLink>
-                <MudNavLink Href="/emitentes" Icon="@Icons.Material.Filled.Business">Emitentes</MudNavLink> 
+                <MudNavLink Href="/emitentes" Icon="@Icons.Material.Filled.Business">Emitentes</MudNavLink>
                 <MudNavLink Href="/fornecedores" Icon="@Icons.Material.Filled.LocalShipping">Fornecedores</MudNavLink>
             </MudNavGroup>
 
@@ -40,8 +54,6 @@
                 <MudNavLink Href="/transportadoras" Icon="@Icons.Material.Filled.LocalShipping">Transportadoras</MudNavLink>
                 <MudNavLink Href="/veiculos" Icon="@Icons.Material.Filled.DirectionsCar">Veículos</MudNavLink>
             </MudNavGroup>
-
-            @*<MudNavLink Href="/usuarios" Icon="@Icons.Material.Filled.ManageAccounts">Usuários</MudNavLink>*@
 
             <MudNavGroup Title="Cadastros Base" Icon="@Icons.Material.Filled.Tune" Expanded="false">
                 <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
@@ -59,6 +71,7 @@
                 <MudNavLink Href="/produtos" Icon="@Icons.Material.Filled.Inventory2">Produtos</MudNavLink>
                 <MudNavLink Href="/movimentacoes-estoque" Icon="@Icons.Material.Filled.SwapVert">Movimentações</MudNavLink>
             </MudNavGroup>
+            <MudNavLink Href="/compras" Icon="@Icons.Material.Filled.AddShoppingCart">Compras</MudNavLink>
             <MudNavLink Href="/vendas" Icon="@Icons.Material.Filled.ShoppingCart">Vendas</MudNavLink>
             <MudNavLink Href="/notas-fiscais" Icon="@Icons.Material.Filled.Description">Notas Fiscais</MudNavLink>
 

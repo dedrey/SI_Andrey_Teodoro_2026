@@ -1,27 +1,27 @@
-﻿namespace SI_Andrey_Teodoro_2026.Models;
+namespace SI_Andrey_Teodoro_2026.DTOs;
 
-public class Venda
+public class CompraListDto
 {
     public int Id { get; set; }
-    public int? EmitenteId { get; set; }
-    public int? ClienteId { get; set; }
-    public string NomeCliente { get; set; } = string.Empty;
-    public int? CondicaoPagamentoId { get; set; }
-    public string? NomeCondicao { get; set; }
-    public int? MovimentacaoId { get; set; }
+    public string NomeFornecedor { get; set; } = string.Empty;
+    public string? NumeroNf { get; set; }
+    public int TotalItens { get; set; }
     public decimal ValorSubtotal { get; set; }
-    public decimal DescontoPercentualAplicado { get; set; }
+    public decimal ValorFrete { get; set; }
+    public decimal ValorOutrosAcrescimos { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal { get; set; }
-    public string StatusVenda { get; set; } = "ABERTA";
+    public DateTime DataEmissao { get; set; }
+    public DateTime DataChegada { get; set; }
+    public string StatusCompra { get; set; } = string.Empty;
+    public string? MotivoCancelamento { get; set; }
     public DateTime CriadoEm { get; set; }
-    public DateTime AtualizadoEm { get; set; }
 }
 
-public class VendaItem
+public class CompraItemListDto
 {
     public int Id { get; set; }
-    public int VendaId { get; set; }
+    public int CompraId { get; set; }
     public int ProdutoVariacaoId { get; set; }
     public string NomeProduto { get; set; } = string.Empty;
     public string Cor { get; set; } = string.Empty;
@@ -30,4 +30,5 @@ public class VendaItem
     public decimal ValorUnitario { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal { get; set; }
+    public decimal CustoUnitarioEfetivo { get; set; }
 }

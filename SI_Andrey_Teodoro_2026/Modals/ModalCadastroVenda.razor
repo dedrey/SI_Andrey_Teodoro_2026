@@ -31,7 +31,7 @@
                 <MudItem xs="10" sm="5">
                     <MudAutocomplete T="CondicaoPagamentoListDto"
                                      Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
-                                     ValueChanged="@((CondicaoPagamentoListDto? c) => { _dto.CondicaoPagamentoId = c?.Id; RecalcularTotais(); })"
+                                     ValueChanged="@((CondicaoPagamentoListDto? c) => { _dto.CondicaoPagamentoId = c?.Id; _dto.DescontoPercentualAplicado = c?.DescontoPercentual ?? 0; RecalcularTotais(); })"
                                      SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                      ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
                                      Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
@@ -104,9 +104,9 @@
                             <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                           Adornment="Adornment.Start" AdornmentText="R$"
-                                          Error="@(GetAlertaFastFashion(context) == "bloquear")"
-                                          ErrorText="@(_custoPorItem.TryGetValue(context, out var c2) ? $"Abaixo do custo (R$ {c2:N2})" : "")" />
-                            @if (GetAlertaFastFashion(context) == "aviso")
+                                          Error="@AbaixoDoCusto(context)"
+                                          ErrorText="@(AbaixoDoCusto(context) ? $"⚠ Abaixo do custo (R$ {CustoDoItem(context):N2})" : "")" />
+                            @if (AbaixoDoCusto(context) && GetAlertaFastFashion(context) == "aviso")
                             {
                                 <MudText Style="font-size:0.7rem;color:#f59e0b;font-weight:600;">
                                     ⚡ Fast Fashion — venda abaixo do custo permitida
@@ -131,6 +131,12 @@
                         <div class="d-flex justify-space-between mb-1">
                             <MudText Typo="Typo.body2">Subtotal</MudText>
                             <MudText Typo="Typo.body2" Style="font-weight:600;">R$ @_dto.ValorSubtotal.ToString("N2")</MudText>
+                        </div>
+                        <div class="d-flex justify-space-between align-center mb-1">
+                            <MudText Typo="Typo.body2">Desconto (%)</MudText>
+                            <MudNumericField T="decimal" Value="_dto.DescontoPercentualAplicado" ValueChanged="OnDescontoPercentualAlterado"
+                                             HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Min="0" Max="100" Format="N2" Style="width:110px;" />
                         </div>
                         @if (_dto.ValorDesconto != 0)
                         {
@@ -219,12 +225,11 @@
             {
                 var prodDto = await ProdutoService.ObterPorIdAsync(produtoMatch.Id);
                 _variacoesPorItem[item] = prodDto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
-                _precoCustoPorItem[item] = prodDto?.PrecoCusto ?? 0;
                 var varSelecionada = _variacoesPorItem[item]
                     .FirstOrDefault(v => v.IdOriginal == item.ProdutoVariacaoId);
                 if (varSelecionada != null)
                 {
-                    _custoPorItem[item] = prodDto?.PrecoCusto ?? 0;
+                    _custoPorItem[item] = varSelecionada.PrecoCusto;
                     _dataCompraPorItem[item] = varSelecionada.DataUltimaCompra;
                 }
             }
@@ -247,7 +252,6 @@
     private readonly Dictionary<VendaItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<VendaItemDto, string> _valorTextos = new();
     private readonly Dictionary<VendaItemDto, decimal> _custoPorItem = new();
-    private readonly Dictionary<VendaItemDto, decimal> _precoCustoPorItem = new();
     private readonly Dictionary<VendaItemDto, DateTime?> _dataCompraPorItem = new();
 
     private static int GetEstoqueVar(List<ProdutoVariacaoDto> vars, int id)
@@ -260,7 +264,6 @@
         _produtosSelecionados[item] = null;
         _variacoesPorItem[item] = new();
         _valorTextos[item] = "";
-        _precoCustoPorItem[item] = 0;
         StateHasChanged();
     }
     private void RemoverItem(VendaItemDto item)
@@ -269,7 +272,8 @@
         _produtosSelecionados.Remove(item);
         _variacoesPorItem.Remove(item);
         _valorTextos.Remove(item);
-        _precoCustoPorItem.Remove(item);
+        _custoPorItem.Remove(item);
+        _dataCompraPorItem.Remove(item);
         RecalcularTotais();
         StateHasChanged();
     }
@@ -278,11 +282,12 @@
     {
         _produtosSelecionados[item] = produto;
         item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? "";
+        item.Cor = ""; item.Tamanho = "";
+        _custoPorItem[item] = 0; _dataCompraPorItem[item] = null;
         if (produto != null)
         {
             var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
             _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo && v.QuantidadeEstoque > 0).ToList() ?? new();
-            _precoCustoPorItem[item] = dto?.PrecoCusto ?? 0;
         }
         else _variacoesPorItem[item] = new();
         StateHasChanged();
@@ -295,9 +300,11 @@
             var v = vars.FirstOrDefault(x => x.IdOriginal == variacaoId);
             if (v != null)
             {
+                item.Cor = v.Cor;
+                item.Tamanho = v.Tamanho;
                 item.ValorUnitario = v.Preco;
                 _valorTextos[item] = v.Preco.ToString("N2");
-                _custoPorItem[item] = _precoCustoPorItem.TryGetValue(item, out var custo) ? custo : 0;
+                _custoPorItem[item] = v.PrecoCusto;
                 _dataCompraPorItem[item] = v.DataUltimaCompra;
             }
         }
@@ -324,12 +331,18 @@
         var r = string.IsNullOrWhiteSpace(busca) ? _produtos.Take(50) : _produtos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
     }
+    private void OnDescontoPercentualAlterado(decimal v)
+    {
+        _dto.DescontoPercentualAplicado = Math.Clamp(v, 0, 100);
+        RecalcularTotais();
+    }
     private void RecalcularTotais()
     {
         _dto.ValorSubtotal = _dto.Itens.Sum(i => i.ValorTotal);
         var cond = _condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId);
-        if (cond != null) { var desc = _dto.ValorSubtotal * (cond.DescontoPercentual / 100m); var acr = _dto.ValorSubtotal * (cond.AcrescimoPercentual / 100m); _dto.ValorDesconto = desc - acr; }
-        else _dto.ValorDesconto = 0;
+        var desc = _dto.ValorSubtotal * (_dto.DescontoPercentualAplicado / 100m);
+        var acr = cond != null ? _dto.ValorSubtotal * (cond.AcrescimoPercentual / 100m) : 0m;
+        _dto.ValorDesconto = desc - acr;
         _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto;
     }
 
@@ -348,10 +361,17 @@
         if ((await dialog.Result) is { Canceled: false })
             _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
     }
+    private decimal CustoDoItem(VendaItemDto item) => _custoPorItem.TryGetValue(item, out var custo) ? custo : 0;
+
+    private bool AbaixoDoCusto(VendaItemDto item)
+    {
+        var custo = CustoDoItem(item);
+        return custo > 0 && item.ValorUnitario > 0 && item.ValorUnitario < custo;
+    }
+
     private string? GetAlertaFastFashion(VendaItemDto item)
     {
-        if (!_custoPorItem.TryGetValue(item, out var custo) || custo <= 0) return null;
-        if (item.ValorUnitario <= 0 || item.ValorUnitario >= custo) return null;
+        if (!AbaixoDoCusto(item)) return null;
         _dataCompraPorItem.TryGetValue(item, out var dataCompra);
         bool fastFashion = dataCompra.HasValue && (DateTime.Today - dataCompra.Value).TotalDays > 90;
         return fastFashion ? "aviso" : "bloquear";

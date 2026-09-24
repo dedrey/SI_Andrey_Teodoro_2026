@@ -80,8 +80,8 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
             }
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
-            if (await _repo.ExisteNomeAsync(dto.CondicaoPagamento, ignorar))
-                return (false, $"Já existe uma condição de pagamento com o nome '{dto.CondicaoPagamento}'.", 0);
+            if (await _repo.ExisteNomeAsync(dto.CondicaoPagamento, dto.MetodoPagamentoId, ignorar))
+                return (false, $"Já existe uma condição de pagamento com o nome '{dto.CondicaoPagamento}' para esse método de pagamento.", 0);
 
             if (dto.IdOriginal == 0)
             {

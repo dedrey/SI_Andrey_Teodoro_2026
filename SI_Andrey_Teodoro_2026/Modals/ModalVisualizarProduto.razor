@@ -44,12 +44,9 @@
             </div>
 
             <div class="vis-section">
-                <div class="vis-section-title">Compra / Custo (vale para o produto inteiro)</div>
+                <div class="vis-section-title">Código de Barras</div>
                 <MudGrid Spacing="3" Justify="Justify.Center">
-                    <MudItem xs="6" sm="3"><div class="vis-field"><span class="vis-label">Código de Barras</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.CodigoBarras) ? "—" : _dto.CodigoBarras)</span></div></MudItem>
-                    <MudItem xs="6" sm="3"><div class="vis-field"><span class="vis-label">Compra</span><span class="vis-value">R$ @_dto.PrecoCompra.ToString("N2")</span></div></MudItem>
-                    <MudItem xs="6" sm="3"><div class="vis-field"><span class="vis-label">Frete</span><span class="vis-value">R$ @_dto.Frete.ToString("N2")</span></div></MudItem>
-                    <MudItem xs="6" sm="3"><div class="vis-field"><span class="vis-label">Custo</span><span class="vis-value" style="font-weight:700;">R$ @_dto.PrecoCusto.ToString("N2")</span></div></MudItem>
+                    <MudItem xs="12" sm="4"><div class="vis-field"><span class="vis-label">Código de Barras</span><span class="vis-value">@(string.IsNullOrWhiteSpace(_dto.CodigoBarras) ? "—" : _dto.CodigoBarras)</span></div></MudItem>
                 </MudGrid>
             </div>
 
@@ -72,7 +69,7 @@
                             <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
                             <MudTd Style="text-align:right;font-weight:600;">
                                 R$ @context.Preco.ToString("N2")
-                                @if (_dto.PrecoCusto > 0 && context.Preco < _dto.PrecoCusto)
+                                @if (context.PrecoCusto > 0 && context.Preco < context.PrecoCusto)
                                 {
                                     <MudTooltip Text="@(context.PermiteVendaAbaixoCusto ? "Fast Fashion — venda abaixo do custo permitida" : "Atenção: preço de venda abaixo do custo!")">
                                         <MudIcon Icon="@(context.PermiteVendaAbaixoCusto? Icons.Material.Filled.Bolt : Icons.Material.Filled.Warning)"
@@ -108,7 +105,10 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" OnClick="@(() => MudDialog.Cancel())">Fechar</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="@(() => MudDialog.Cancel())">Fechar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Editar" StartIcon="@Icons.Material.Filled.Edit">
+            Editar
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -165,4 +165,6 @@
         _dto = await ProdutoService.ObterPorIdAsync(Id);
         _carregando = false;
     }
+
+    private void Editar() => MudDialog.Close(DialogResult.Ok("editar"));
 }

@@ -14,6 +14,7 @@ public interface IVendaRepository
     Task AtualizarStatusAsync(int vendaId, string status, int? movimentacaoId = null, string? motivoCancelamento = null);
     Task AtualizarEstoqueAsync(int variacaoId, int delta);
     Task<int> ObterEstoqueAtualAsync(int variacaoId);
+    Task<(decimal PrecoCusto, DateTime? DataUltimaCompra)?> ObterCustoVariacaoAsync(int variacaoId);
     Task<int> InserirMovimentacaoSaidaAsync(int vendaId);
     Task InserirMovimentacaoItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario);
     Task<int> InserirContaReceberAsync(int clienteId, int vendaId, string descricao, DateTime vencimento,

@@ -14,6 +14,7 @@ public class VendaDto
     public int? EmitenteId { get; set; }
 
     public decimal ValorSubtotal { get; set; }
+    public decimal DescontoPercentualAplicado { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal { get; set; }
 
