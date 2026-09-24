@@ -39,8 +39,6 @@ public class CompraItemDto
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal => (ValorUnitario * Quantidade) - ValorDesconto;
 
-    /// Custo por unidade já com desconto do item + rateio de frete e outros acréscimos.
-    /// Calculado no CompraService ao salvar; é o que vira o custo da variação.
     public decimal CustoUnitarioEfetivo { get; set; }
 
     public int ProdutoId { get; set; }

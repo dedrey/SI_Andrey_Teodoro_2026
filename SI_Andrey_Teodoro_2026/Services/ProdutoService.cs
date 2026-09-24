@@ -76,14 +76,11 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
                 if (v.TamanhoId == 0) return (false, "Selecione o tamanho de uma variação.", 0);
                 if (v.Preco <= 0) return (false, "Variação: preço de venda deve ser maior que zero.", 0);
 
-                // Custo é por variação e vem da última compra lançada.
-                // Variação nova (ou nunca comprada) tem custo 0 → sem essa checagem.
                 if (v.PrecoCusto > 0 && v.Preco < v.PrecoCusto && !v.PermiteVendaAbaixoCusto)
                     return (false,
                         $"{v.Cor}/{v.Tamanho}: preço de venda (R$ {v.Preco:N2}) não pode ser menor que o custo " +
                         $"(R$ {v.PrecoCusto:N2}). A última compra desta variação foi há menos de 90 dias.", 0);
 
-                // Cor+tamanho repetidos dentro do MESMO lote sendo salvo agora (antes de bater no banco)
                 if (!combinacoesNoLote.Add((v.CorId, v.TamanhoId)))
                     return (false, "Há duas variações com a mesma cor e tamanho nesta tela — remova a duplicada.", 0);
 

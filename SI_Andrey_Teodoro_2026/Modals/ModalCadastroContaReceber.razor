@@ -25,7 +25,6 @@
 
         @if (_dto.IdOriginal != 0 && _contasDaVenda.Count > 1)
         {
-            <!-- Venda parcelada: mostra TODAS as parcelas/entrada da mesma venda -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:14px;">
                 <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;margin-bottom:8px;">
                     Histórico de Pagamentos da Venda
@@ -58,7 +57,6 @@
         }
         else if (_dto.IdOriginal != 0 && _dto.Baixas.Any())
         {
-            <!-- Conta isolada (manual ou sem parcelamento): mesmo layout visual do resumo de parcelas da venda -->
             <div class="d-flex justify-space-between align-center pa-2 mb-3" style="background:#f8f9fa;border-radius:8px;">
                 <div>
                     <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Valor Original</MudText>
@@ -235,7 +233,6 @@
             _mesExibido = DtoEdicao.DataVencimento;
             _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
 
-            // Se a conta vem de uma venda, carrega todas as parcelas/entrada dessa mesma venda
             if (DtoEdicao.VendaId.HasValue)
                 _contasDaVenda = await ContaReceberService.ObterContasDaVendaAsync(DtoEdicao.VendaId.Value);
         }
@@ -277,7 +274,6 @@
         var dialog = await DialogService.ShowAsync<ModalAnexarComprovante>("Anexar Comprovante", param, opts);
         if ((await dialog.Result) is { Canceled: false })
         {
-            // recarrega a conta pra já mostrar o comprovante anexado
             var atualizado = await ContaReceberService.ObterPorIdAsync(_dto.IdOriginal);
             if (atualizado != null) _dto.Baixas = atualizado.Baixas;
         }

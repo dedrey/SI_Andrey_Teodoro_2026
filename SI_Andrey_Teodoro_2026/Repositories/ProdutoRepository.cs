@@ -108,7 +108,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      m.marca              AS NomeMarca,
                      p.unidade_medida_id  AS UnidadeMedidaId,
                      u.unidade_medida     AS SiglaUnidade,
-                     -- Fornecedor e NF vêm da última compra lançada (mesma ordem usada no custo da variação)
                      (SELECT f2.razaosocial
                       FROM compras                     c2
                       INNER JOIN compras_itens         ci2 ON ci2.compra_id = c2.id
@@ -235,10 +234,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         return await conn.ExecuteScalarAsync<int>(sql, new { codigoBarras, idIgnorar }) > 0;
     }
 
-    /// Salva o produto inteiro (dados do produto + todas as variações + estoque) numa única
-    /// transação: ou tudo é gravado, ou nada é — evita o cenário de "salvou 2 de 6 variações
-    /// e travou no meio" quando alguma variação dá erro (ex: cor/tamanho duplicado).
-    /// Custo e data da última compra da variação NÃO são gravados aqui (vêm do módulo de Compras).
     public async Task<int> SalvarComVariacoesAsync(ProdutoDto dto, List<ProdutoVariacaoDto> variacoes)
     {
         using var conn = _factory.CreateConnection();

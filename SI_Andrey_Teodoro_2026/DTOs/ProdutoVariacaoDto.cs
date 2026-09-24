@@ -19,8 +19,6 @@ public class ProdutoVariacaoDto
     [Range(0.01, 999999.99, ErrorMessage = "Preço deve ser maior que zero")]
     public decimal Preco { get; set; }
 
-    /// Somente leitura: custo efetivo da última compra lançada (definido pelo módulo de Compras).
-    /// Não é gravado pelo cadastro de Produto.
     public decimal PrecoCusto { get; set; }
 
     public DateTime? DataUltimaCompra { get; set; }
@@ -33,7 +31,6 @@ public class ProdutoVariacaoDto
     public bool IsNova => IdOriginal == 0 && Id == 0;
     public bool Removida { get; set; } = false;
 
-    /// Fast Fashion: variação cuja última compra foi há mais de 90 dias pode ser vendida abaixo do custo.
     public bool PermiteVendaAbaixoCusto =>
         DataUltimaCompra.HasValue &&
         (DateTime.Today - DataUltimaCompra.Value).TotalDays > 90;

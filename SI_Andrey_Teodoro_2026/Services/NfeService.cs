@@ -71,8 +71,6 @@ public class NfeService : INfeService
         catch (Exception ex) { return (false, $"Erro ao gerar Nota Fiscal: {ex.Message}", 0); }
     }
 
-    /// Ao emitir a NF-e, a entrada da venda (se houver e ainda estiver em aberto) é considerada
-    /// paga na hora — evita ter que ir manualmente em Contas a Receber dar baixa nela depois.
     private async Task BaixarEntradaAutomaticamenteAsync(int vendaId)
     {
         try
@@ -90,8 +88,6 @@ public class NfeService : INfeService
         }
         catch
         {
-            // Não deixa a emissão da NF-e falhar por causa da baixa automática;
-            // se algo der errado aqui, a entrada continua em aberto e pode ser baixada manualmente.
         }
     }
 

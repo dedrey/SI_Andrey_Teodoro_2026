@@ -75,7 +75,6 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     {
         try
         {
-            // ── Validações ──────────────────────────────────────────────
             if (!dto.FornecedorId.HasValue)
                 return (false, "Selecione o fornecedor.", 0);
 
@@ -115,14 +114,12 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, $"{Desc(duplicada.First())} foi adicionado mais de uma vez. " +
                                "Junte as quantidades em um único item.", 0);
 
-            // ── Totais e rateio de custo ────────────────────────────────
             dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
             dto.ValorDesconto = itensValidos.Sum(i => i.ValorDesconto);
             dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + dto.ValorFrete + dto.ValorOutrosAcrescimos;
 
             RatearCusto(itensValidos, dto.ValorFrete + dto.ValorOutrosAcrescimos);
 
-            // ── Parcelas: calculadas antes da transação (só leitura) ────
             var parcelasGerar = new List<(int numero, DateTime vencimento, decimal valor)>();
             var totalParcelas = 0;
 
@@ -146,10 +143,9 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 }
             }
 
-            // ── Gravação: tudo ou nada ──────────────────────────────────
             using var conn = _factory.CreateConnection();
             if (conn.State != ConnectionState.Open) conn.Open();
-            using var tx = conn.BeginTransaction();   // return sem Commit => rollback no Dispose
+            using var tx = conn.BeginTransaction();
 
             var novoId = await _repo.InserirAsync(dto, tx);
 
@@ -160,8 +156,6 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 if (!await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, +item.Quantidade, tx))
                     return (false, $"{Desc(item)}: variação sem registro de estoque. Compra não foi gravada.", 0);
 
-                // Custo/data vêm da última compra LANCADO por data de emissão.
-                // Se esta compra tiver emissão mais antiga que outra já lançada, o custo não muda.
                 await _repo.RecalcularCustoVariacaoAsync(item.ProdutoVariacaoId, tx);
             }
 
@@ -216,7 +210,6 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             await _contaPagarRepo.CancelarPorCompraAsync(compraId, tx);
             await _repo.AtualizarStatusAsync(compraId, "CANCELADO", tx, motivoCancelamento: motivo);
 
-            // Depois do status: a compra cancelada já sai da busca da "última compra"
             foreach (var variacaoId in itens.Select(i => i.ProdutoVariacaoId).Distinct())
                 await _repo.RecalcularCustoVariacaoAsync(variacaoId, tx);
 
@@ -226,11 +219,6 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
         catch (Exception ex) { return (false, Erro(ex).mensagem); }
     }
 
-    // ═══════════════════════════ Auxiliares ═══════════════════════════
-
-    /// Rateia frete + outros acréscimos entre os itens, proporcional ao valor líquido
-    /// de cada item (VU × Qtd − desconto). Se todos os itens tiverem desconto de 100%,
-    /// rateia pela quantidade para não dividir por zero.
     private static void RatearCusto(List<CompraItemDto> itens, decimal acrescimos)
     {
         var baseValor = itens.Sum(i => i.ValorTotal);

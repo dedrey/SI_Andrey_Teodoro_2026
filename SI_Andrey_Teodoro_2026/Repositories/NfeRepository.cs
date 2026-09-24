@@ -118,7 +118,6 @@ public class NfeRepository : BaseRepository, INfeRepository
               WHERE np.nfe_id = @id
               ORDER BY np.numero_item", new { id });
 
-        // Converte Model -> DTO (camada de apresentação)
         return new NfeDto
         {
             Id = nfe.Id,
