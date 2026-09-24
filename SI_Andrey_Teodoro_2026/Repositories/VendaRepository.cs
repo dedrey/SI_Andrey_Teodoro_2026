@@ -97,6 +97,7 @@ public class VendaRepository : BaseRepository, IVendaRepository
                      cp.condicao_pagamento   AS NomeCondicao,
                      v.movimentacao_id       AS MovimentacaoId,
                      v.valor_subtotal        AS ValorSubtotal,
+                     v.desconto_percentual_aplicado AS DescontoPercentualAplicado,
                      v.valor_desconto        AS ValorDesconto,
                      v.valor_total           AS ValorTotal,
                      v.status_venda          AS StatusVenda,
@@ -136,15 +137,16 @@ public class VendaRepository : BaseRepository, IVendaRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO vendas (id, cliente_id, condicao_pagamento_id,
-                                  valor_subtotal, valor_desconto, valor_total, status_venda)
+                                  valor_subtotal, desconto_percentual_aplicado, valor_desconto, valor_total, status_venda)
               VALUES (@ProximoId, @ClienteId, @CondicaoPagamentoId,
-                      @ValorSubtotal, @ValorDesconto, @ValorTotal, 'ABERTA')",
+                      @ValorSubtotal, @DescontoPercentualAplicado, @ValorDesconto, @ValorTotal, 'ABERTA')",
             new
             {
                 ProximoId = proximoId,
                 dto.ClienteId,
                 dto.CondicaoPagamentoId,
                 dto.ValorSubtotal,
+                dto.DescontoPercentualAplicado,
                 dto.ValorDesconto,
                 dto.ValorTotal
             });
@@ -159,6 +161,7 @@ public class VendaRepository : BaseRepository, IVendaRepository
               SET cliente_id            = @ClienteId,
                   condicao_pagamento_id = @CondicaoPagamentoId,
                   valor_subtotal        = @ValorSubtotal,
+                  desconto_percentual_aplicado = @DescontoPercentualAplicado,
                   valor_desconto        = @ValorDesconto,
                   valor_total           = @ValorTotal,
                   atualizado_em         = NOW()
@@ -168,6 +171,7 @@ public class VendaRepository : BaseRepository, IVendaRepository
                 dto.ClienteId,
                 dto.CondicaoPagamentoId,
                 dto.ValorSubtotal,
+                dto.DescontoPercentualAplicado,
                 dto.ValorDesconto,
                 dto.ValorTotal,
                 dto.IdOriginal
@@ -238,6 +242,21 @@ public class VendaRepository : BaseRepository, IVendaRepository
         return await conn.ExecuteScalarAsync<int>(
             "SELECT COALESCE(quantidade, 0) FROM estoque WHERE produto_variacao_id = @variacaoId",
             new { variacaoId });
+    }
+
+    private class CustoVariacaoRow
+    {
+        public decimal PrecoCusto { get; set; }
+        public DateTime? DataUltimaCompra { get; set; }
+    }
+
+    public async Task<(decimal PrecoCusto, DateTime? DataUltimaCompra)?> ObterCustoVariacaoAsync(int variacaoId)
+    {
+        using var conn = _factory.CreateConnection();
+        var row = await conn.QueryFirstOrDefaultAsync<CustoVariacaoRow>(
+            @"SELECT preco_custo AS PrecoCusto, data_ultima_compra AS DataUltimaCompra
+              FROM produto_variacoes WHERE id = @variacaoId", new { variacaoId });
+        return row == null ? null : (row.PrecoCusto, row.DataUltimaCompra);
     }
 
     public async Task<int> InserirMovimentacaoSaidaAsync(int vendaId)

@@ -80,31 +80,12 @@
             </MudGrid>
 
             <MudDivider Class="my-4" />
-            <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:12px;">
-                Compra / Custo (vale para o produto inteiro, não muda por cor/tamanho)
-            </MudText>
             <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="6" md="3">
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
                                   Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   MaxLength="50" FullWidth="true" Immediate="true"
                                   HelperText="Um só código pra este produto (todas as variações)" />
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudTextField Value="@GetCompraTexto()" ValueChanged="@((string v) => OnCompraAlterado(v))"
-                                  Label="Compra (R$)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                  FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudTextField Value="@GetFreteTexto()" ValueChanged="@((string v) => OnFreteAlterado(v))"
-                                  Label="Frete (R$)" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                  FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" />
-                </MudItem>
-                <MudItem xs="12" sm="6" md="3">
-                    <MudTextField Value="@(_dto.PrecoCusto.ToString("N2"))" ReadOnly="true" Disabled="true"
-                                  Label="Custo (R$)" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
-                                  Style="background-color:#fafafa;" HelperText="Compra + Frete, calculado" />
                 </MudItem>
             </MudGrid>
 
@@ -160,8 +141,8 @@
                     </div>
                     <MudText Typo="Typo.caption" Style="color:#888;display:block;margin-top:8px;">
                         Cria uma variação pra cada combinação marcada (pulando as que já existem), já com o preço de venda
-                        copiado da última variação preenchida — é só ajustar o que for diferente. Código de barras,
-                        compra, frete e custo já valem pra todas (preenchidos ali em cima).
+                        copiado da última variação preenchida — é só ajustar o que for diferente. Código de barras
+                        já vale pra todas (preenchido ali em cima).
                     </MudText>
                 </MudExpansionPanel>
             </MudExpansionPanels>
@@ -176,13 +157,15 @@
                         <MudTh Style="font-weight:600;">Tamanho</MudTh>
                         <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Venda (R$)</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Custo</MudTh>
+                        <MudTh Style="font-weight:600;">Última Compra</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         @{
-                            bool fastFashion = context.IdOriginal > 0 && _dto.PrecoCusto > 0 && context.PermiteVendaAbaixoCusto;
-                            bool abaixoCusto = _dto.PrecoCusto > 0 && context.Preco < _dto.PrecoCusto;
+                            bool fastFashion = context.IdOriginal > 0 && context.PrecoCusto > 0 && context.PermiteVendaAbaixoCusto;
+                            bool abaixoCusto = context.PrecoCusto > 0 && context.Preco < context.PrecoCusto;
                         }
                         <MudTd>
                             <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
@@ -224,18 +207,16 @@
                                 </MudText>
                             }
                         </MudTd>
+                        <MudTd Style="text-align:right;color:#666;">
+                            @(context.PrecoCusto > 0 ? $"R$ {context.PrecoCusto.ToString("N2")}" : "—")
+                        </MudTd>
+                        <MudTd Style="color:#666;">
+                            @(context.DataUltimaCompra.HasValue ? context.DataUltimaCompra.Value.ToString("dd/MM/yyyy") : "—")
+                        </MudTd>
                         <MudTd Style="text-align:center;">
                             @if (context.IdOriginal > 0)
                             {
-                                <div>
-                                    <MudText Typo="Typo.body2" Style="font-weight:600;">@context.QuantidadeEstoque un.</MudText>
-                                    @if (context.DataUltimaCompra.HasValue)
-                                    {
-                                        <MudText Typo="Typo.caption" Style="color:#888;">
-                                            Última compra: @context.DataUltimaCompra.Value.ToString("dd/MM/yyyy")
-                                        </MudText>
-                                    }
-                                </div>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;">@context.QuantidadeEstoque un.</MudText>
                             }
                             else
                             {
@@ -291,8 +272,6 @@
     private List<CorListDto> _cores = new();
     private List<TamanhoListDto> _tamanhos = new();
     private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
-    private string _compraTexto = "";
-    private string _freteTexto = "";
     private string _replicarVendaTexto = "";
     private IReadOnlyCollection<int> _coresLote = new List<int>();
     private IReadOnlyCollection<int> _tamanhosLote = new List<int>();
@@ -302,9 +281,6 @@
     protected override async Task OnInitializedAsync()
     {
         _dto = DtoEdicao ?? new ProdutoDto();
-        _compraTexto = _dto.PrecoCompra > 0 ? _dto.PrecoCompra.ToString("N2") : "";
-        _freteTexto = _dto.Frete > 0 ? _dto.Frete.ToString("N2") : "";
-        _dto.PrecoCusto = _dto.PrecoCompra + _dto.Frete;
         if (DtoEdicao != null)
         {
             foreach (var v in _dto.Variacoes)
@@ -317,28 +293,6 @@
             Task.Run(async () => _cores = (await CorService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList())
         );
-    }
-
-    private string GetCompraTexto() => _compraTexto;
-    private void OnCompraAlterado(string? texto)
-    {
-        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _compraTexto = f;
-        _dto.PrecoCompra = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
-        _dto.PrecoCusto = _dto.PrecoCompra + _dto.Frete;
-        StateHasChanged();
-    }
-
-    private string GetFreteTexto() => _freteTexto;
-    private void OnFreteAlterado(string? texto)
-    {
-        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _freteTexto = f;
-        _dto.Frete = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
-        _dto.PrecoCusto = _dto.PrecoCompra + _dto.Frete;
-        StateHasChanged();
     }
 
     private void AdicionarVariacao()

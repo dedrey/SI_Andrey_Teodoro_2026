@@ -11,14 +11,14 @@
         </div>
     </TitleContent>
     <DialogContent>
-        @if (_dto.MovimentacaoId.HasValue)
+        @if (_dto.CompraId.HasValue)
         {
             <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Info" Size="Size.Small" />
                     <MudText Typo="Typo.body2" Style="color:#1565c0;">
-                        Gerada automaticamente pela entrada de estoque
-                        @(string.IsNullOrWhiteSpace(_dto.NumeroNfMovimentacao) ? $"#{_dto.MovimentacaoId}" : $"(NF {_dto.NumeroNfMovimentacao})")
+                        Gerada automaticamente pela Compra
+                        @(string.IsNullOrWhiteSpace(_dto.NumeroNfCompra) ? $"#{_dto.CompraId}" : $"(NF {_dto.NumeroNfCompra})")
                     </MudText>
                 </div>
             </div>
@@ -117,8 +117,8 @@
                 IdOriginal = DtoEdicao.IdOriginal,
                 FornecedorId = DtoEdicao.FornecedorId,
                 NomeFornecedor = DtoEdicao.NomeFornecedor,
-                MovimentacaoId = DtoEdicao.MovimentacaoId,
-                NumeroNfMovimentacao = DtoEdicao.NumeroNfMovimentacao,
+                CompraId = DtoEdicao.CompraId,
+                NumeroNfCompra = DtoEdicao.NumeroNfCompra,
                 Descricao = DtoEdicao.Descricao,
                 DataVencimento = DtoEdicao.DataVencimento,
                 DataPagamento = DtoEdicao.DataPagamento,

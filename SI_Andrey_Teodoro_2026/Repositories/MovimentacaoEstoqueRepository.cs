@@ -19,10 +19,8 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add(@"(m.tipo_movimentacao LIKE @Busca
                       OR m.observacao        LIKE @Busca
-                      OR m.numero_nf         LIKE @Busca
-                      OR f.razaosocial       LIKE @Busca
                       OR CAST(m.id AS CHAR) = @BuscaExata)");
-        if (filtro.StatusFiltro is "ENTRADA" or "SAIDA" or "AJUSTE")
+        if (filtro.StatusFiltro is "SAIDA" or "AJUSTE")
             where.Add("m.tipo_movimentacao = @StatusFiltro");
         var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
         var orderBy = filtro.OrdenarPor switch
@@ -41,14 +39,11 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
         };
         var total = await conn.ExecuteScalarAsync<int>(
             $@"SELECT COUNT(*) FROM movimentacoes_estoque m
-               LEFT JOIN fornecedores f ON f.id = m.fornecedor_id
                {whereClause}", param);
         var itens = await conn.QueryAsync<MovimentacaoEstoqueListDto>(
             $@"SELECT m.id,
                       m.tipo_movimentacao  AS TipoMovimentacao,
                       m.observacao,
-                      m.numero_nf          AS NumeroNf,
-                      f.razaosocial        AS NomeFornecedor,
                       COUNT(i.id)          AS TotalItens,
                       COALESCE(SUM(i.quantidade), 0)                   AS TotalQuantidade,
                       COALESCE(SUM(i.quantidade * i.valor_unitario), 0) AS ValorTotal,
@@ -56,11 +51,9 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
                       u.nome               AS NomeCriadoPor
                FROM movimentacoes_estoque m
                LEFT JOIN movimentacoes_estoque_itens i ON i.movimentacao_id = m.id
-               LEFT JOIN fornecedores f ON f.id = m.fornecedor_id
                LEFT JOIN usuarios     u ON u.id = m.criado_por
                {whereClause}
-               GROUP BY m.id, m.tipo_movimentacao, m.observacao, m.numero_nf,
-                        f.razaosocial, m.criado_em, u.nome
+               GROUP BY m.id, m.tipo_movimentacao, m.observacao, m.criado_em, u.nome
                ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset", param);
         return new PaginacaoDto<MovimentacaoEstoqueListDto>
         { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
@@ -73,14 +66,10 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             @"SELECT m.id,
                      m.tipo_movimentacao AS TipoMovimentacao,
                      m.observacao,
-                     m.numero_nf         AS NumeroNf,
-                     m.fornecedor_id     AS FornecedorId,
-                     f.razaosocial       AS NomeFornecedor,
                      m.criado_em         AS CriadoEm,
                      m.criado_por        AS CriadoPor,
                      u.nome              AS NomeCriadoPor
               FROM movimentacoes_estoque m
-              LEFT JOIN fornecedores f ON f.id  = m.fornecedor_id
               LEFT JOIN usuarios     u ON u.id  = m.criado_por
               WHERE m.id = @id", new { id });
     }
@@ -108,16 +97,14 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO movimentacoes_estoque
-                (id, tipo_movimentacao, observacao, numero_nf, fornecedor_id)
+                (id, tipo_movimentacao, observacao)
               VALUES
-                (@ProximoId, @TipoMovimentacao, @Observacao, @NumeroNf, @FornecedorId)",
+                (@ProximoId, @TipoMovimentacao, @Observacao)",
             new
             {
                 ProximoId = proximoId,
                 dto.TipoMovimentacao,
-                dto.Observacao,
-                dto.NumeroNf,
-                dto.FornecedorId
+                dto.Observacao
             });
         return proximoId;
     }

@@ -1,0 +1,56 @@
+@inject ICompraService CompraService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" />
+            <MudText Typo="Typo.h6">Cancelar Compra #@CompraId</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudText Class="mb-4" Style="color:#666;">
+            Informe o motivo do cancelamento. Este registro ficará salvo para auditoria.
+        </MudText>
+        <MudTextField @bind-Value="_motivo"
+                      Label="Motivo do cancelamento"
+                      Variant="Variant.Outlined"
+                      Lines="3"
+                      MaxLength="255"
+                      Counter="255"
+                      FullWidth="true"
+                      Immediate="true"
+                      Required="true"
+                      RequiredError="Informe o motivo" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_cancelando">Voltar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Cancel"
+                   OnClick="Confirmar"
+                   Disabled="@(_cancelando || string.IsNullOrWhiteSpace(_motivo))"
+                   Style="font-weight:700;">
+            @(_cancelando ? "Cancelando..." : "Confirmar Cancelamento")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public int CompraId { get; set; }
+
+    private string _motivo = string.Empty;
+    private bool _cancelando;
+
+    private async Task Confirmar()
+    {
+        if (string.IsNullOrWhiteSpace(_motivo)) return;
+        _cancelando = true;
+        var (sucesso, mensagem) = await CompraService.CancelarAsync(CompraId, _motivo.Trim());
+        _cancelando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private void Fechar() => MudDialog.Cancel();
+}

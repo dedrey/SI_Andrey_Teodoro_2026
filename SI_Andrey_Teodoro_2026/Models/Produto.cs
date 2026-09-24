@@ -6,9 +6,6 @@ public class Produto
     public string NomeProduto { get; set; } = string.Empty;
     public string? Descricao { get; set; }
     public string? CodigoBarras { get; set; }
-    public decimal PrecoCompra { get; set; }
-    public decimal Frete { get; set; }
-    public decimal PrecoCusto { get; set; }
     public int CategoriaId { get; set; }
     public string? NomeCategoria { get; set; }
     public int MarcaId { get; set; }
@@ -22,5 +19,4 @@ public class Produto
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
     public string? NumeroNfUltimaEntrada { get; set; }
-
 }

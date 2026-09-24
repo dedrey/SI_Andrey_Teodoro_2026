@@ -102,33 +102,29 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      p.produto            AS NomeProduto,
                      p.descricao          AS Descricao,
                      p.codigo_barras      AS CodigoBarras,
-                     p.preco_compra       AS PrecoCompra,
-                     p.frete              AS Frete,
-                     p.preco_custo        AS PrecoCusto,
                      p.categoria_id       AS CategoriaId,
                      c.categoria          AS NomeCategoria,
                      p.marca_id           AS MarcaId,
                      m.marca              AS NomeMarca,
                      p.unidade_medida_id  AS UnidadeMedidaId,
                      u.unidade_medida     AS SiglaUnidade,
-                     -- Fornecedor e NF vêm da última entrada vinculada às variações do produto
+                     -- Fornecedor e NF vêm da última compra lançada (mesma ordem usada no custo da variação)
                      (SELECT f2.razaosocial
-                      FROM movimentacoes_estoque       me
-                      INNER JOIN movimentacoes_estoque_itens mei ON mei.movimentacao_id = me.id
-                      INNER JOIN produto_variacoes     pv2       ON pv2.id = mei.produto_variacao_id
-                      INNER JOIN fornecedores          f2        ON f2.id  = me.fornecedor_id
+                      FROM compras                     c2
+                      INNER JOIN compras_itens         ci2 ON ci2.compra_id = c2.id
+                      INNER JOIN produto_variacoes     pv2 ON pv2.id = ci2.produto_variacao_id
+                      INNER JOIN fornecedores          f2  ON f2.id  = c2.fornecedor_id
                       WHERE pv2.produto_id = p.id
-                        AND me.tipo_movimentacao = 'ENTRADA'
-                        AND me.fornecedor_id IS NOT NULL
-                      ORDER BY me.criado_em DESC LIMIT 1) AS NomeFornecedor,
-                     (SELECT me2.numero_nf
-                      FROM movimentacoes_estoque       me2
-                      INNER JOIN movimentacoes_estoque_itens mei2 ON mei2.movimentacao_id = me2.id
-                      INNER JOIN produto_variacoes     pv3        ON pv3.id = mei2.produto_variacao_id
+                        AND c2.status_compra = 'LANCADO'
+                      ORDER BY c2.data_emissao DESC, c2.id DESC LIMIT 1) AS NomeFornecedor,
+                     (SELECT c3.numero_nf
+                      FROM compras                     c3
+                      INNER JOIN compras_itens         ci3 ON ci3.compra_id = c3.id
+                      INNER JOIN produto_variacoes     pv3 ON pv3.id = ci3.produto_variacao_id
                       WHERE pv3.produto_id = p.id
-                        AND me2.tipo_movimentacao = 'ENTRADA'
-                        AND me2.numero_nf IS NOT NULL
-                      ORDER BY me2.criado_em DESC LIMIT 1) AS NumeroNfUltimaEntrada,
+                        AND c3.status_compra = 'LANCADO'
+                        AND c3.numero_nf IS NOT NULL
+                      ORDER BY c3.data_emissao DESC, c3.id DESC LIMIT 1) AS NumeroNfUltimaEntrada,
                      p.ativo,
                      p.criado_em          AS CriadoEm,
                      p.atualizado_em      AS AtualizadoEm,
@@ -140,6 +136,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               LEFT  JOIN usuarios        ua ON ua.id = p.atualizado_por
               WHERE p.id = @id", new { id });
     }
+
     public async Task<List<ProdutoVariacaoDto>> ObterVariacoesPorProdutoAsync(int produtoId)
     {
         using var conn = _factory.CreateConnection();
@@ -152,6 +149,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                      pv.tamanho_id            AS TamanhoId,
                      ta.nome                  AS Tamanho,
                      pv.preco                 AS Preco,
+                     pv.preco_custo           AS PrecoCusto,
                      pv.data_ultima_compra    AS DataUltimaCompra,
                      pv.ativo                 AS Ativo,
                      COALESCE(e.quantidade, 0) AS QuantidadeEstoque,
@@ -172,9 +170,9 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         using var conn = _factory.CreateConnection();
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
-            @"INSERT INTO produtos (id, produto, descricao, codigo_barras, preco_compra, frete, preco_custo,
+            @"INSERT INTO produtos (id, produto, descricao, codigo_barras,
                                     categoria_id, marca_id, unidade_medida_id, ativo)
-              VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras, @PrecoCompra, @Frete, @PrecoCusto,
+              VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras,
                       @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
             new
             {
@@ -182,9 +180,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.Produto,
                 dto.Descricao,
                 dto.CodigoBarras,
-                dto.PrecoCompra,
-                dto.Frete,
-                dto.PrecoCusto,
                 dto.CategoriaId,
                 dto.MarcaId,
                 dto.UnidadeMedidaId,
@@ -202,9 +197,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                   produto           = @Produto,
                   descricao         = @Descricao,
                   codigo_barras     = @CodigoBarras,
-                  preco_compra      = @PrecoCompra,
-                  frete             = @Frete,
-                  preco_custo       = @PrecoCusto,
                   categoria_id      = @CategoriaId,
                   marca_id          = @MarcaId,
                   unidade_medida_id = @UnidadeMedidaId,
@@ -217,9 +209,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                 dto.Produto,
                 dto.Descricao,
                 dto.CodigoBarras,
-                dto.PrecoCompra,
-                dto.Frete,
-                dto.PrecoCusto,
                 dto.CategoriaId,
                 dto.MarcaId,
                 dto.UnidadeMedidaId
@@ -249,6 +238,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
     /// Salva o produto inteiro (dados do produto + todas as variações + estoque) numa única
     /// transação: ou tudo é gravado, ou nada é — evita o cenário de "salvou 2 de 6 variações
     /// e travou no meio" quando alguma variação dá erro (ex: cor/tamanho duplicado).
+    /// Custo e data da última compra da variação NÃO são gravados aqui (vêm do módulo de Compras).
     public async Task<int> SalvarComVariacoesAsync(ProdutoDto dto, List<ProdutoVariacaoDto> variacoes)
     {
         using var conn = _factory.CreateConnection();
@@ -261,9 +251,9 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             {
                 var proximoId = await ProximoIdAsync();
                 await conn.ExecuteAsync(
-                    @"INSERT INTO produtos (id, produto, descricao, codigo_barras, preco_compra, frete, preco_custo,
+                    @"INSERT INTO produtos (id, produto, descricao, codigo_barras,
                                             categoria_id, marca_id, unidade_medida_id, ativo)
-                      VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras, @PrecoCompra, @Frete, @PrecoCusto,
+                      VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras,
                               @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
                     new
                     {
@@ -271,9 +261,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                         dto.Produto,
                         dto.Descricao,
                         dto.CodigoBarras,
-                        dto.PrecoCompra,
-                        dto.Frete,
-                        dto.PrecoCusto,
                         dto.CategoriaId,
                         dto.MarcaId,
                         dto.UnidadeMedidaId,
@@ -290,9 +277,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                           produto           = @Produto,
                           descricao         = @Descricao,
                           codigo_barras     = @CodigoBarras,
-                          preco_compra      = @PrecoCompra,
-                          frete             = @Frete,
-                          preco_custo       = @PrecoCusto,
                           categoria_id      = @CategoriaId,
                           marca_id          = @MarcaId,
                           unidade_medida_id = @UnidadeMedidaId,
@@ -305,9 +289,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                         dto.Produto,
                         dto.Descricao,
                         dto.CodigoBarras,
-                        dto.PrecoCompra,
-                        dto.Frete,
-                        dto.PrecoCusto,
                         dto.CategoriaId,
                         dto.MarcaId,
                         dto.UnidadeMedidaId

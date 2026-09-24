@@ -4,12 +4,8 @@ public class MovimentacaoEstoqueDto
 {
     public int Id { get; set; }
     public int IdOriginal { get; set; }
-    public string TipoMovimentacao { get; set; } = "ENTRADA";
+    public string TipoMovimentacao { get; set; } = "SAIDA";
     public string? Observacao { get; set; }
-    public string? NumeroNf { get; set; }
-    public int? FornecedorId { get; set; }
-    public string? NomeFornecedor { get; set; }
-    public int? PrazoPagamentoDias { get; set; }
     public DateTime CriadoEm { get; set; }
     public List<MovimentacaoEstoqueItemDto> Itens { get; set; } = new();
 }

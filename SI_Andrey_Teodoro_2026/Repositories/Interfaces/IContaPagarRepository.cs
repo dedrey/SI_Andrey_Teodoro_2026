@@ -1,4 +1,5 @@
-﻿using SI_Andrey_Teodoro_2026.DTOs;
+﻿using System.Data;
+using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
 namespace SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
@@ -10,6 +11,10 @@ public interface IContaPagarRepository
     Task AtualizarAsync(ContaPagarDto dto);
     Task AtualizarStatusAsync(int id, string status, DateTime? dataPagamento = null, string? comprovanteArquivo = null);
 
-    Task<int> InserirAutomaticaAsync(int? fornecedorId, int movimentacaoId, string descricao,
-        DateTime dataVencimento, decimal valorOriginal);
+    // Usados pelo fluxo de Compra, dentro da transação do CompraService
+    Task<int> InserirAutomaticaAsync(int? fornecedorId, int compraId, string descricao,
+        DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx);
+    Task CancelarPorCompraAsync(int compraId, IDbTransaction tx);
+
+    Task<bool> ExisteParcelaPagaAsync(int compraId);
 }

@@ -30,9 +30,6 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             Produto = p.NomeProduto,
             Descricao = p.Descricao,
             CodigoBarras = p.CodigoBarras,
-            PrecoCompra = p.PrecoCompra,
-            Frete = p.Frete,
-            PrecoCusto = p.PrecoCusto,
             CategoriaId = p.CategoriaId,
             NomeCategoria = p.NomeCategoria,
             MarcaId = p.MarcaId,
@@ -56,7 +53,6 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             dto.Produto = dto.Produto.Trim();
             dto.Descricao = dto.Descricao?.Trim();
             dto.CodigoBarras = string.IsNullOrWhiteSpace(dto.CodigoBarras) ? null : dto.CodigoBarras.Trim();
-            dto.PrecoCusto = dto.PrecoCompra + dto.Frete;
 
             if (dto.CategoriaId == 0) return (false, "Selecione uma categoria.", 0);
             if (dto.MarcaId == 0) return (false, "Selecione uma marca.", 0);
@@ -79,10 +75,13 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
                 if (v.CorId == 0) return (false, "Selecione a cor de uma variação.", 0);
                 if (v.TamanhoId == 0) return (false, "Selecione o tamanho de uma variação.", 0);
                 if (v.Preco <= 0) return (false, "Variação: preço de venda deve ser maior que zero.", 0);
-                if (dto.PrecoCusto > 0 && v.Preco < dto.PrecoCusto && !v.PermiteVendaAbaixoCusto)
+
+                // Custo é por variação e vem da última compra lançada.
+                // Variação nova (ou nunca comprada) tem custo 0 → sem essa checagem.
+                if (v.PrecoCusto > 0 && v.Preco < v.PrecoCusto && !v.PermiteVendaAbaixoCusto)
                     return (false,
-                        $"Preço de venda (R$ {v.Preco:N2}) não pode ser menor que o custo " +
-                        $"(R$ {dto.PrecoCusto:N2}). O produto tem menos de 90 dias sem venda.", 0);
+                        $"{v.Cor}/{v.Tamanho}: preço de venda (R$ {v.Preco:N2}) não pode ser menor que o custo " +
+                        $"(R$ {v.PrecoCusto:N2}). A última compra desta variação foi há menos de 90 dias.", 0);
 
                 // Cor+tamanho repetidos dentro do MESMO lote sendo salvo agora (antes de bater no banco)
                 if (!combinacoesNoLote.Add((v.CorId, v.TamanhoId)))

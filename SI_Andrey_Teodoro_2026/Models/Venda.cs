@@ -10,6 +10,7 @@ public class Venda
     public string? NomeCondicao { get; set; }
     public int? MovimentacaoId { get; set; }
     public decimal ValorSubtotal { get; set; }
+    public decimal DescontoPercentualAplicado { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal { get; set; }
     public string StatusVenda { get; set; } = "ABERTA";

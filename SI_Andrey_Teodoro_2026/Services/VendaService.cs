@@ -36,6 +36,7 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
             CondicaoPagamentoId = v.CondicaoPagamentoId,
             NomeCondicao = v.NomeCondicao ?? string.Empty,
             ValorSubtotal = v.ValorSubtotal,
+            DescontoPercentualAplicado = v.DescontoPercentualAplicado,
             ValorDesconto = v.ValorDesconto,
             ValorTotal = v.ValorTotal,
             StatusVenda = v.StatusVenda,
@@ -77,22 +78,41 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                     return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: valor unitário deve ser maior que zero.", 0);
                 if (item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade)
                     return (false, $"{item.NomeProduto}: desconto não pode ser maior que o valor do item.", 0);
+
+                var custoVariacao = await _repo.ObterCustoVariacaoAsync(item.ProdutoVariacaoId);
+                if (custoVariacao.HasValue)
+                {
+                    var (precoCusto, dataUltimaCompra) = custoVariacao.Value;
+                    if (precoCusto > 0 && item.ValorUnitario < precoCusto)
+                    {
+                        bool fastFashion = dataUltimaCompra.HasValue && (DateTime.Today - dataUltimaCompra.Value).TotalDays > 90;
+                        if (!fastFashion)
+                            return (false,
+                                $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: preço de venda (R$ {item.ValorUnitario:N2}) " +
+                                $"abaixo do custo (R$ {precoCusto:N2}). Produto com menos de 90 dias no estoque.", 0);
+                    }
+                }
             }
 
             dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
             var descItens = itensValidos.Sum(i => i.ValorDesconto);
 
-            decimal descCond = 0, acrescCond = 0, jurosCond = 0;
+            if (dto.DescontoPercentualAplicado is < 0 or > 100)
+                return (false, "Desconto deve ser entre 0% e 100%.", 0);
+
+            decimal acrescCond = 0, jurosCond = 0;
             if (dto.CondicaoPagamentoId.HasValue)
             {
                 var cond = await _condicaoRepo.ObterPorIdAsync(dto.CondicaoPagamentoId.Value);
                 if (cond != null)
                 {
-                    descCond = cond.DescontoPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.DescontoPercentual / 100, 2) : 0m;
                     acrescCond = cond.AcrescimoPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.AcrescimoPercentual / 100, 2) : 0m;
                     jurosCond = cond.TaxaJurosPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.TaxaJurosPercentual / 100, 2) : 0m;
                 }
             }
+            var descCond = dto.DescontoPercentualAplicado > 0
+                ? Math.Round(dto.ValorSubtotal * dto.DescontoPercentualAplicado / 100, 2)
+                : 0m;
             dto.ValorDesconto = descItens + descCond;
             dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + acrescCond + jurosCond;
 

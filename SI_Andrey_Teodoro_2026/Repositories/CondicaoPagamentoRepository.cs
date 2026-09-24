@@ -189,12 +189,14 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
 
     public Task AlterarStatusAsync(int id, bool ativo) => AlterarStatusBaseAsync(id, ativo);
 
-    public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
+    public async Task<bool> ExisteNomeAsync(string nome, int metodoPagamentoId, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();
         var sql = idOriginalIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM condicoes_pagamentos WHERE condicao_pagamento = @nome AND id <> @idOriginalIgnorar"
-            : "SELECT COUNT(*) FROM condicoes_pagamentos WHERE condicao_pagamento = @nome";
-        return await conn.ExecuteScalarAsync<int>(sql, new { nome, idOriginalIgnorar }) > 0;
+            ? @"SELECT COUNT(*) FROM condicoes_pagamentos
+                WHERE condicao_pagamento = @nome AND metodo_pagamento_id = @metodoPagamentoId AND id <> @idOriginalIgnorar"
+            : @"SELECT COUNT(*) FROM condicoes_pagamentos
+                WHERE condicao_pagamento = @nome AND metodo_pagamento_id = @metodoPagamentoId";
+        return await conn.ExecuteScalarAsync<int>(sql, new { nome, metodoPagamentoId, idOriginalIgnorar }) > 0;
     }
 }

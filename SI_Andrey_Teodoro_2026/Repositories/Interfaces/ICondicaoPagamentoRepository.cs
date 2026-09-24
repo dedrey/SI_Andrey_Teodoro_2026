@@ -11,7 +11,7 @@ public interface ICondicaoPagamentoRepository
     Task<int> InserirAsync(CondicaoPagamentoDto dto);
     Task AtualizarAsync(CondicaoPagamentoDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
-    Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null);
+    Task<bool> ExisteNomeAsync(string nome, int metodoPagamentoId, int? idOriginalIgnorar = null);
     Task<List<CondicaoPagamentoParcelaDto>> ObterParcelasAsync(int condicaoId);
 
 }

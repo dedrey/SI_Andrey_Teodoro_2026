@@ -30,7 +30,6 @@ builder.Services.AddScoped<IPaisRepository, PaisRepository>();
 builder.Services.AddScoped<IEstadoRepository, EstadoRepository>();
 builder.Services.AddScoped<ICidadeRepository, CidadeRepository>();
 builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
-builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 builder.Services.AddScoped<IMarcaRepository, MarcaRepository>();
 builder.Services.AddScoped<IUnidadeMedidaRepository, UnidadeMedidaRepository>();
@@ -43,6 +42,7 @@ builder.Services.AddScoped<ICondicaoPagamentoRepository, CondicaoPagamentoReposi
 builder.Services.AddScoped<IProdutoRepository, ProdutoRepository>();
 builder.Services.AddScoped<IMovimentacaoEstoqueRepository, MovimentacaoEstoqueRepository>();
 builder.Services.AddScoped<IVendaRepository, VendaRepository>();
+builder.Services.AddScoped<ICompraRepository, CompraRepository>();
 builder.Services.AddScoped<ICorRepository, CorRepository>();
 builder.Services.AddScoped<ITamanhoRepository, TamanhoRepository>();
 builder.Services.AddScoped<IContaPagarRepository, ContaPagarRepository>();
@@ -54,7 +54,6 @@ builder.Services.AddScoped<IPaisService, PaisService>();
 builder.Services.AddScoped<IEstadoService, EstadoService>();
 builder.Services.AddScoped<ICidadeService, CidadeService>();
 builder.Services.AddScoped<IFornecedorService, FornecedorService>();
-builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ICategoriaService, CategoriaService>();
 builder.Services.AddScoped<IMarcaService, MarcaService>();
 builder.Services.AddScoped<IUnidadeMedidaService, UnidadeMedidaService>();
@@ -67,6 +66,7 @@ builder.Services.AddScoped<ICondicaoPagamentoService, CondicaoPagamentoService>(
 builder.Services.AddScoped<IProdutoService, ProdutoService>();
 builder.Services.AddScoped<IMovimentacaoEstoqueService, MovimentacaoEstoqueService>();
 builder.Services.AddScoped<IVendaService, VendaService>();
+builder.Services.AddScoped<ICompraService, CompraService>();
 builder.Services.AddScoped<ICorService, CorService>();
 builder.Services.AddScoped<ITamanhoService, TamanhoService>();
 builder.Services.AddScoped<IContaPagarService, ContaPagarService>();
@@ -80,5 +80,7 @@ if (!app.Environment.IsDevelopment()) { app.UseExceptionHandler("/Error"); app.U
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+
 app.Run();

@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
@@ -19,7 +20,7 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add(@"(cp.descricao   LIKE @Busca
                       OR f.razaosocial  LIKE @Busca
-                      OR me.numero_nf   LIKE @Busca
+                      OR co.numero_nf   LIKE @Busca
                       OR CAST(cp.id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
@@ -39,14 +40,14 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
         };
 
         var sqlCount = $@"SELECT COUNT(*) FROM contas_pagar cp
-                          LEFT JOIN fornecedores         f  ON f.id  = cp.fornecedor_id
-                          LEFT JOIN movimentacoes_estoque me ON me.id = cp.movimentacao_id
+                          LEFT JOIN fornecedores f  ON f.id  = cp.fornecedor_id
+                          LEFT JOIN compras      co ON co.id = cp.compra_id
                           {whereClause}";
 
         var sqlData = $@"SELECT cp.id,
                                  f.razaosocial      AS NomeFornecedor,
-                                 cp.movimentacao_id  AS MovimentacaoId,
-                                 me.numero_nf        AS NumeroNfMovimentacao,
+                                 cp.compra_id        AS CompraId,
+                                 co.numero_nf        AS NumeroNfCompra,
                                  cp.descricao,
                                  cp.data_vencimento   AS DataVencimento,
                                  cp.data_pagamento    AS DataPagamento,
@@ -55,8 +56,8 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                                  cp.status,
                                  cp.criado_em         AS CriadoEm
                           FROM contas_pagar cp
-                          LEFT JOIN fornecedores          f  ON f.id  = cp.fornecedor_id
-                          LEFT JOIN movimentacoes_estoque me ON me.id = cp.movimentacao_id
+                          LEFT JOIN fornecedores f  ON f.id  = cp.fornecedor_id
+                          LEFT JOIN compras      co ON co.id = cp.compra_id
                           {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
@@ -81,8 +82,8 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
             @"SELECT cp.id,
                      cp.fornecedor_id    AS FornecedorId,
                      f.razaosocial       AS NomeFornecedor,
-                     cp.movimentacao_id  AS MovimentacaoId,
-                     me.numero_nf        AS NumeroNfMovimentacao,
+                     cp.compra_id        AS CompraId,
+                     co.numero_nf        AS NumeroNfCompra,
                      cp.descricao,
                      cp.data_vencimento  AS DataVencimento,
                      cp.data_pagamento   AS DataPagamento,
@@ -95,9 +96,9 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                      cp.atualizado_em    AS AtualizadoEm,
                      ua.nome             AS NomeAtualizadoPor
               FROM contas_pagar cp
-              LEFT JOIN fornecedores          f  ON f.id  = cp.fornecedor_id
-              LEFT JOIN movimentacoes_estoque me ON me.id = cp.movimentacao_id
-              LEFT JOIN usuarios              ua ON ua.id = cp.atualizado_por
+              LEFT JOIN fornecedores f  ON f.id  = cp.fornecedor_id
+              LEFT JOIN compras      co ON co.id = cp.compra_id
+              LEFT JOIN usuarios     ua ON ua.id = cp.atualizado_por
               WHERE cp.id = @id", new { id });
     }
 
@@ -107,16 +108,16 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO contas_pagar
-                (id, fornecedor_id, movimentacao_id, descricao, data_vencimento, data_pagamento,
+                (id, fornecedor_id, compra_id, descricao, data_vencimento, data_pagamento,
                  valor_original, valor_saldo, status)
               VALUES
-                (@ProximoId, @FornecedorId, @MovimentacaoId, @Descricao, @DataVencimento, NULL,
+                (@ProximoId, @FornecedorId, @CompraId, @Descricao, @DataVencimento, NULL,
                  @ValorOriginal, @ValorOriginal, 'ABERTA')",
             new
             {
                 ProximoId = proximoId,
                 dto.FornecedorId,
-                dto.MovimentacaoId,
+                dto.CompraId,
                 dto.Descricao,
                 dto.DataVencimento,
                 dto.ValorOriginal
@@ -160,19 +161,39 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
             new { id, status, dataPagamento, comprovanteArquivo });
     }
 
-    public async Task<int> InserirAutomaticaAsync(int? fornecedorId, int movimentacaoId, string descricao,
-        DateTime dataVencimento, decimal valorOriginal)
+    // ═══════════════ Fluxo de Compra (transacional) ═══════════════
+
+    public async Task<int> InserirAutomaticaAsync(int? fornecedorId, int compraId, string descricao,
+        DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx)
     {
-        using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        // Id via AUTO_INCREMENT: com ProximoIdAsync() a parcela 2 repetiria o id da parcela 1
+        return await tx.Connection!.ExecuteScalarAsync<int>(
             @"INSERT INTO contas_pagar
-                (id, fornecedor_id, movimentacao_id, descricao, data_vencimento, data_pagamento,
+                (fornecedor_id, compra_id, descricao, data_vencimento, data_pagamento,
                  valor_original, valor_saldo, status)
               VALUES
-                (@ProximoId, @fornecedorId, @movimentacaoId, @descricao, @dataVencimento, NULL,
-                 @valorOriginal, @valorOriginal, 'ABERTA')",
-            new { ProximoId = proximoId, fornecedorId, movimentacaoId, descricao, dataVencimento, valorOriginal });
-        return proximoId;
+                (@fornecedorId, @compraId, @descricao, @dataVencimento, NULL,
+                 @valorOriginal, @valorOriginal, 'ABERTA');
+              SELECT LAST_INSERT_ID();",
+            new { fornecedorId, compraId, descricao, dataVencimento, valorOriginal }, tx);
+    }
+
+    public async Task CancelarPorCompraAsync(int compraId, IDbTransaction tx)
+    {
+        await tx.Connection!.ExecuteAsync(
+            @"UPDATE contas_pagar
+              SET status        = 'CANCELADA',
+                  valor_saldo   = 0,
+                  atualizado_em = NOW()
+              WHERE compra_id = @compraId AND status = 'ABERTA'",
+            new { compraId }, tx);
+    }
+
+    public async Task<bool> ExisteParcelaPagaAsync(int compraId)
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM contas_pagar WHERE compra_id = @compraId AND status = 'PAGA'",
+            new { compraId }) > 0;
     }
 }

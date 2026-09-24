@@ -9,8 +9,8 @@ public class ContaPagarDto
     public int? FornecedorId { get; set; }
     public string? NomeFornecedor { get; set; }
 
-    public int? MovimentacaoId { get; set; }
-    public string? NumeroNfMovimentacao { get; set; }
+    public int? CompraId { get; set; }
+    public string? NumeroNfCompra { get; set; }
 
     [Required(ErrorMessage = "Descrição é obrigatória")]
     [MinLength(3)]
@@ -38,8 +38,8 @@ public class ContaPagarListDto
 {
     public int Id { get; set; }
     public string? NomeFornecedor { get; set; }
-    public int? MovimentacaoId { get; set; }
-    public string? NumeroNfMovimentacao { get; set; }
+    public int? CompraId { get; set; }
+    public string? NumeroNfCompra { get; set; }
     public string Descricao { get; set; } = string.Empty;
     public DateTime DataVencimento { get; set; }
     public DateTime? DataPagamento { get; set; }
