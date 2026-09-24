@@ -45,7 +45,6 @@ public class EmitenteDto
     [EmailAddress(ErrorMessage = "E-mail inválido")]
     public string Email { get; set; } = string.Empty;
     [MaxLength(20)] public string? InscricaoEstadual { get; set; }
-    // [MaxLength(20)] public string? InscricaoMunicipal { get; set; }
     [Required]
     public string RegimeTributario { get; set; } = "SIMPLES";
 

@@ -161,12 +161,9 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
             new { id, status, dataPagamento, comprovanteArquivo });
     }
 
-    // ═══════════════ Fluxo de Compra (transacional) ═══════════════
-
     public async Task<int> InserirAutomaticaAsync(int? fornecedorId, int compraId, string descricao,
         DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx)
     {
-        // Id via AUTO_INCREMENT: com ProximoIdAsync() a parcela 2 repetiria o id da parcela 1
         return await tx.Connection!.ExecuteScalarAsync<int>(
             @"INSERT INTO contas_pagar
                 (fornecedor_id, compra_id, descricao, data_vencimento, data_pagamento,

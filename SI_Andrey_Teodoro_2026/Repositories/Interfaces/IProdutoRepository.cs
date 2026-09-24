@@ -16,7 +16,6 @@ public interface IProdutoRepository
     Task<int> SalvarComVariacoesAsync(ProdutoDto dto, List<ProdutoVariacaoDto> variacoes);
     Task AlterarStatusVariacaoAsync(int id, bool ativo);
 
-    // assinatura atualizada: usa int corId e int tamanhoId (não mais string)
     Task<bool> ExisteVariacaoAsync(int produtoId, int corId, int tamanhoId, int? idIgnorar = null);
 
     Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null);

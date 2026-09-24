@@ -13,8 +13,6 @@ public class CompraRepository : BaseRepository, ICompraRepository
 
     protected override string Tabela => "compras";
 
-    // ════════════════════════ LEITURAS ════════════════════════
-
     public async Task<PaginacaoDto<CompraListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
@@ -136,11 +134,8 @@ public class CompraRepository : BaseRepository, ICompraRepository
         return result.ToList();
     }
 
-    // ════════════════════ ESCRITAS (transacionais) ════════════════════
-
     public async Task<int> InserirAsync(CompraDto dto, IDbTransaction tx)
     {
-        // Id via AUTO_INCREMENT: ProximoIdAsync() usa outra conexão e não enxerga a transação
         return await tx.Connection!.ExecuteScalarAsync<int>(
             @"INSERT INTO compras
                 (fornecedor_id, numero_nf, data_emissao, data_chegada, condicao_pagamento_id,
@@ -196,8 +191,6 @@ public class CompraRepository : BaseRepository, ICompraRepository
 
     public async Task<bool> AtualizarEstoqueAsync(int variacaoId, int delta, IDbTransaction tx)
     {
-        // "quantidade >= -@delta" em vez de "quantidade + @delta >= 0":
-        // se a coluna for UNSIGNED, a soma negativa estouraria erro no próprio WHERE
         var linhas = await tx.Connection!.ExecuteAsync(
             @"UPDATE estoque
               SET quantidade = quantidade + @delta, atualizado_em = NOW()

@@ -12,7 +12,6 @@
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
-            <!-- Nome + Método -->
             <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="7">
                     <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento" Immediate="true"
@@ -38,7 +37,6 @@
                 </MudItem>
             </MudGrid>
 
-            <!-- Taxas -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
                 <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Taxas e Percentuais</div>
                 <MudGrid Spacing="2">
@@ -50,7 +48,6 @@
                 </MudGrid>
             </div>
 
-            <!-- Parcelas -->
             <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;">
@@ -178,7 +175,6 @@
         var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
         _metodos = metodos.ToList();
 
-        // Se não tem parcelas salvas, gera automaticamente com padrão 30*n dias
         if (_dto.Parcelas.Count == 0 && _dto.NumeroParcelas > 0)
             GerarParcelas();
     }
@@ -186,7 +182,6 @@
     private void OnNumeroParcelas(int valor)
     {
         _dto.NumeroParcelas = valor;
-        // ajusta lista sem perder dias já configurados
         while (_dto.Parcelas.Count < valor)
         {
             var n = _dto.Parcelas.Count + 1;
@@ -238,7 +233,6 @@
         var result = await dialog.Result;
         if (result is { Canceled: false })
         {
-            // recarrega a lista de métodos após cadastro
             var metodos = await MetodoPagamentoService.ObterTodosAtivosAsync();
             _metodos = metodos.ToList();
             if (result.Data is int novoId)

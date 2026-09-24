@@ -17,8 +17,6 @@ public class ProdutoDto
     [MaxLength(50)]
     public string? CodigoBarras { get; set; }
 
-    // Custo NÃO fica no produto: vem da última compra, por variação (ProdutoVariacaoDto.PrecoCusto)
-
     public int CategoriaId { get; set; }
     public string? NomeCategoria { get; set; }
 
@@ -28,7 +26,6 @@ public class ProdutoDto
     public int UnidadeMedidaId { get; set; }
     public string? SiglaUnidade { get; set; }
 
-    // Somente informativo: fornecedor e NF da última compra lançada
     public int? FornecedorId { get; set; }
     public string? NomeFornecedor { get; set; }
     public string? NumeroNfUltimaEntrada { get; set; }

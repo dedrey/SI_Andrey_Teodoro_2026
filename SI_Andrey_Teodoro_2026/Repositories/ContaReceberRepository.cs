@@ -84,8 +84,6 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                       OR CAST(cr.venda_id AS CHAR) = @BuscaExata)");
         var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
 
-        // Status é calculado depois de agrupar (uma venda com 5 parcelas só é "RECEBIDA"
-        // quando TODAS as parcelas estiverem quitadas), por isso o filtro de status vira HAVING.
         var having = filtro.StatusFiltro switch
         {
             "aberta" => "HAVING Status = 'ABERTA'",

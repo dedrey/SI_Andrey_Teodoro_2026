@@ -102,7 +102,6 @@
     private string _valorTexto = "";
     private List<FornecedorListDto> _fornecedores = new();
 
-    // Somente leitura quando a conta já está paga/cancelada
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
 
     protected override async Task OnInitializedAsync()

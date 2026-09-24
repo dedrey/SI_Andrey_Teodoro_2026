@@ -11,7 +11,6 @@ public interface IContaPagarRepository
     Task AtualizarAsync(ContaPagarDto dto);
     Task AtualizarStatusAsync(int id, string status, DateTime? dataPagamento = null, string? comprovanteArquivo = null);
 
-    // Usados pelo fluxo de Compra, dentro da transação do CompraService
     Task<int> InserirAutomaticaAsync(int? fornecedorId, int compraId, string descricao,
         DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx);
     Task CancelarPorCompraAsync(int compraId, IDbTransaction tx);

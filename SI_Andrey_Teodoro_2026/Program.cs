@@ -25,7 +25,6 @@ builder.Services.AddMudServices(config =>
 
 builder.Services.AddSingleton<DbConnectionFactory>();
 
-// ── Repositórios ──────────────────────────────────────────────
 builder.Services.AddScoped<IPaisRepository, PaisRepository>();
 builder.Services.AddScoped<IEstadoRepository, EstadoRepository>();
 builder.Services.AddScoped<ICidadeRepository, CidadeRepository>();
@@ -49,7 +48,6 @@ builder.Services.AddScoped<IContaPagarRepository, ContaPagarRepository>();
 builder.Services.AddScoped<IContaReceberRepository, ContaReceberRepository>();
 builder.Services.AddScoped<INfeRepository, NfeRepository>();
 
-// ── Serviços ──────────────────────────────────────────────────
 builder.Services.AddScoped<IPaisService, PaisService>();
 builder.Services.AddScoped<IEstadoService, EstadoService>();
 builder.Services.AddScoped<ICidadeService, CidadeService>();
