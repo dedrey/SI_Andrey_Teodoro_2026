@@ -374,12 +374,4 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             "UPDATE estoque SET quantidade = @quantidade, atualizado_em = NOW() WHERE produto_variacao_id = @variacaoId",
             new { variacaoId, quantidade });
     }
-
-    public async Task AtualizarDataUltimaCompraAsync(int variacaoId, DateTime data)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE produto_variacoes SET data_ultima_compra = @data WHERE id = @variacaoId",
-            new { variacaoId, data });
-    }
 }

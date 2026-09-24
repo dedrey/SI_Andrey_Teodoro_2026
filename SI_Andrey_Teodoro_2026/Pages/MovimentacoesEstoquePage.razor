@@ -19,7 +19,7 @@
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5"><MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" /></MudItem>
-        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem><MudSelectItem T="string" Value="@("SAIDA")">Saída</MudSelectItem><MudSelectItem T="string" Value="@("AJUSTE")">Ajuste</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem><MudSelectItem T="string" Value="@("ENTRADA")">Entrada</MudSelectItem><MudSelectItem T="string" Value="@("SAIDA")">Saída</MudSelectItem><MudSelectItem T="string" Value="@("AJUSTE")">Ajuste</MudSelectItem></MudSelect></MudItem>
         <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("data")">Data (recente)</MudSelectItem><MudSelectItem T="string" Value="@("id")">ID</MudSelectItem></MudSelect></MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton><MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" /></MudButton></MudItem>
     </MudGrid>
@@ -35,22 +35,24 @@
             <MudTh Style="font-weight:600;text-align:center;">Itens</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Qtd. Total</MudTh>
             <MudTh Style="font-weight:600;text-align:right;">Valor Total</MudTh>
+            <MudTh Style="font-weight:600;">Origem</MudTh>
             <MudTh Style="font-weight:600;">Observação</MudTh>
         </HeaderContent>
         <RowTemplate Context="mov">
             <MudTd Style="padding:4px 8px;"><MudIconButton Icon="@(_expandidos.Contains(mov.Id)?Icons.Material.Filled.KeyboardArrowDown:Icons.Material.Filled.KeyboardArrowRight)" Size="Size.Small" OnClick="@(async ()=>await ToggleDetalhe(mov.Id))"/></MudTd>
             <MudTd Style="color:#888;font-size:0.85rem;">@mov.Id</MudTd>
-            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(mov.TipoMovimentacao=="SAIDA"?Color.Error:Color.Warning)">@(mov.TipoMovimentacao=="SAIDA"?"↑ Saída":"⇅ Ajuste")</MudChip></MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(mov.TipoMovimentacao switch { "ENTRADA" => Color.Success, "SAIDA" => Color.Error, _ => Color.Warning })">@(mov.TipoMovimentacao switch { "ENTRADA" => "↓ Entrada", "SAIDA" => "↑ Saída", _ => "⇅ Ajuste" })</MudChip></MudTd>
             <MudTd>@mov.CriadoEm.ToString("dd/MM/yyyy HH:mm")</MudTd>
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Info">@mov.TotalItens @(mov.TotalItens==1?"item":"itens")</MudChip></MudTd>
             <MudTd Style="text-align:center;font-weight:600;">@mov.TotalQuantidade un.</MudTd>
             <MudTd Style="text-align:right;font-weight:600;">@if(mov.ValorTotal>0){<span>R$ @mov.ValorTotal.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd>
+            <MudTd>@if(mov.CompraId.HasValue){<span>Compra #@mov.CompraId</span>}else{<span style="color:#ccc;">—</span>}</MudTd>
             <MudTd Style="color:#888;font-size:0.85rem;">@if(!string.IsNullOrWhiteSpace(mov.Observacao)){@(mov.Observacao.Length>50?mov.Observacao[..50]+"…":mov.Observacao)}else{<span style="color:#ccc;">—</span>}</MudTd>
         </RowTemplate>
         <ChildRowContent>
             @if (_expandidos.Contains(context.Id))
             {
-                <MudTd ColSpan="8" Style="padding:0;background:var(--mud-palette-background-grey);">
+                <MudTd ColSpan="9"Style="padding:0;background:var(--mud-palette-background-grey);">
                     @if (_detalhesCache.TryGetValue(context.Id, out var itens) && itens != null)
                     {
                         <div style="padding:10px 20px 14px 48px;">

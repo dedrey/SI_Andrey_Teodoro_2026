@@ -6,6 +6,7 @@ public class MovimentacaoEstoqueDto
     public int IdOriginal { get; set; }
     public string TipoMovimentacao { get; set; } = "SAIDA";
     public string? Observacao { get; set; }
+    public int? CompraId { get; set; }
     public DateTime CriadoEm { get; set; }
     public List<MovimentacaoEstoqueItemDto> Itens { get; set; } = new();
 }

@@ -11,14 +11,17 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     private readonly ICompraRepository _repo;
     private readonly IContaPagarRepository _contaPagarRepo;
     private readonly ICondicaoPagamentoRepository _condicaoRepo;
+    private readonly IMovimentacaoEstoqueRepository _movRepo;
     private readonly DbConnectionFactory _factory;
 
     public CompraService(ICompraRepository repo, IContaPagarRepository contaPagarRepo,
-        ICondicaoPagamentoRepository condicaoRepo, DbConnectionFactory factory)
+        ICondicaoPagamentoRepository condicaoRepo, IMovimentacaoEstoqueRepository movRepo,
+        DbConnectionFactory factory)
     {
         _repo = repo;
         _contaPagarRepo = contaPagarRepo;
         _condicaoRepo = condicaoRepo;
+        _movRepo = movRepo;
         _factory = factory;
     }
 
@@ -149,12 +152,19 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             var novoId = await _repo.InserirAsync(dto, tx);
 
+            var obsEntrada = $"Compra #{novoId}" +
+                (string.IsNullOrWhiteSpace(dto.NumeroNf) ? "" : $" — NF {dto.NumeroNf}");
+            var movId = await _movRepo.InserirAsync("ENTRADA", obsEntrada, novoId, tx);
+
             foreach (var item in itensValidos)
             {
                 await _repo.InserirItemAsync(item, novoId, tx);
 
                 if (!await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, +item.Quantidade, tx))
                     return (false, $"{Desc(item)}: variação sem registro de estoque. Compra não foi gravada.", 0);
+
+                await _movRepo.InserirItemAsync(movId, item.ProdutoVariacaoId, item.Quantidade,
+                    item.CustoUnitarioEfetivo, tx);
 
                 await _repo.RecalcularCustoVariacaoAsync(item.ProdutoVariacaoId, tx);
             }
@@ -199,12 +209,19 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             if (conn.State != ConnectionState.Open) conn.Open();
             using var tx = conn.BeginTransaction();
 
+            var obsEstorno = $"Estorno — cancelamento da Compra #{compraId}: {motivo}";
+            if (obsEstorno.Length > 200) obsEstorno = obsEstorno[..200];
+            var movId = await _movRepo.InserirAsync("SAIDA", obsEstorno, compraId, tx);
+
             foreach (var item in itens)
             {
                 if (!await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, -item.Quantidade, tx))
                     return (false, $"Não é possível cancelar: estoque insuficiente de " +
                                    $"{item.NomeProduto} {item.Cor}/{item.Tamanho} para estornar " +
                                    $"{item.Quantidade} un. (parte já foi vendida).");
+
+                await _movRepo.InserirItemAsync(movId, item.ProdutoVariacaoId, item.Quantidade,
+                    item.CustoUnitarioEfetivo, tx);
             }
 
             await _contaPagarRepo.CancelarPorCompraAsync(compraId, tx);
