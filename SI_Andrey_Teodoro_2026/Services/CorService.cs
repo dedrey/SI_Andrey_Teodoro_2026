@@ -20,7 +20,7 @@ public class CorService : BaseService<CorDto, CorListDto>, ICorService
     {
         try
         {
-            dto.Nome = dto.Nome.Trim();
+            dto.Nome = dto.Nome.Trim().ToUpperInvariant();
             if (string.IsNullOrWhiteSpace(dto.Nome))
                 return (false, "Nome da cor é obrigatório.", 0);
 

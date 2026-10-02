@@ -25,7 +25,7 @@
                     </MudItem>
                 }
                 <MudItem xs="@(_dto.IdOriginal != 0 ? 9 : 12)" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
-                    <MudTextField Value="@_dto.Produto" ValueChanged="@((string v) => _dto.Produto = Cap(v))"
+                    <MudTextField Value="@_dto.Produto" ValueChanged="@((string v) => _dto.Produto = v)"
                                   Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null)" />
@@ -73,7 +73,7 @@
 
             <MudGrid Spacing="2" Class="mt-2">
                 <MudItem xs="12">
-                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = Cap(v))"
+                    <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
                                   Label="Descrição" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2" />
                 </MudItem>
@@ -276,7 +276,6 @@
     private IReadOnlyCollection<int> _coresLote = new List<int>();
     private IReadOnlyCollection<int> _tamanhosLote = new List<int>();
 
-    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 
     protected override async Task OnInitializedAsync()
     {

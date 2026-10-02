@@ -75,6 +75,14 @@ public partial class ComprasPage : BasePage<CompraListDto, CompraDto>
         await DialogService.ShowAsync<ModalCadastroCompra>("Visualizar Compra", param, opts);
     }
 
+    private static decimal CustoTotal(CompraListDto compra, List<CompraItemListDto> itens, CompraItemListDto item)
+    {
+        var custo = Math.Round(item.CustoUnitarioEfetivo * item.Quantidade, 2);
+        if (!ReferenceEquals(item, itens[^1])) return custo;
+        var diferenca = compra.ValorTotal - itens.Sum(i => Math.Round(i.CustoUnitarioEfetivo * i.Quantidade, 2));
+        return Math.Abs(diferenca) <= 0.01m * itens.Count ? custo + diferenca : custo;
+    }
+
     private async Task ToggleItens(int compraId)
     {
         if (_expandidos.Contains(compraId)) { _expandidos.Remove(compraId); return; }

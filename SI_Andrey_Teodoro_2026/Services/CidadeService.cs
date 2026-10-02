@@ -42,7 +42,7 @@ public class CidadeService : BaseService<CidadeDto, CidadeListDto>, ICidadeServi
     {
         try
         {
-            dto.NomeCidade = dto.NomeCidade.Trim();
+            dto.NomeCidade = dto.NomeCidade.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 

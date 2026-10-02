@@ -20,7 +20,7 @@ public class TamanhoService : BaseService<TamanhoDto, TamanhoListDto>, ITamanhoS
     {
         try
         {
-            dto.Nome = dto.Nome.Trim().ToUpper();
+            dto.Nome = dto.Nome.Trim().ToUpperInvariant();
             if (string.IsNullOrWhiteSpace(dto.Nome))
                 return (false, "Nome do tamanho é obrigatório.", 0);
 

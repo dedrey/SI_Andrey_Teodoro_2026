@@ -36,8 +36,8 @@ public class VeiculoService : BaseService<VeiculoDto, VeiculoListDto>, IVeiculoS
     {
         try
         {
-            dto.Placa = new string(dto.Placa.Where(char.IsLetterOrDigit).ToArray()).ToUpper();
-            dto.Uf = dto.Uf.Trim().ToUpper();
+            dto.Placa = new string(dto.Placa.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+            dto.Uf = dto.Uf.Trim().ToUpperInvariant();
 
             if (dto.TransportadoraId == 0)
                 return (false, "Selecione uma transportadora.", 0);

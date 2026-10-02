@@ -62,7 +62,7 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
             if (dto.TipoMovimentacao is not ("SAIDA" or "AJUSTE"))
                 return (false, "Tipo de movimentação inválido.", 0);
 
-            dto.Observacao = string.IsNullOrWhiteSpace(dto.Observacao) ? null : dto.Observacao.Trim();
+            dto.Observacao = string.IsNullOrWhiteSpace(dto.Observacao) ? null : dto.Observacao.Trim().ToUpperInvariant();
             if (dto.Observacao?.Length > 200)
                 return (false, "A observação deve ter no máximo 200 caracteres.", 0);
 

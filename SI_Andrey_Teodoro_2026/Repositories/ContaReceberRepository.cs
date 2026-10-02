@@ -107,8 +107,8 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                 MIN(cr.id)                                                AS Id,
                 MAX(c.nome_razaosocial)                                   AS NomeCliente,
                 CASE WHEN cr.venda_id IS NULL THEN MAX(cr.descricao)
-                     ELSE CONCAT('Venda #', cr.venda_id, ' — ', COUNT(*),
-                                  IF(COUNT(*) = 1, ' parcela', ' parcelas'))
+                     ELSE CONCAT('VENDA #', cr.venda_id, ' — ', COUNT(*),
+                                  IF(COUNT(*) = 1, ' PARCELA', ' PARCELAS'))
                 END                                                       AS Descricao,
                 COALESCE(MIN(CASE WHEN cr.status = 'ABERTA' THEN cr.data_vencimento END),
                          MIN(cr.data_vencimento))                         AS DataVencimento,

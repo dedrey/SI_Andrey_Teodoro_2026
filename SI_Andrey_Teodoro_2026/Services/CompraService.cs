@@ -78,6 +78,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     {
         try
         {
+            dto.NumeroNf = string.IsNullOrWhiteSpace(dto.NumeroNf) ? null : dto.NumeroNf.Trim().ToUpperInvariant();
+
             if (!dto.FornecedorId.HasValue)
                 return (false, "Selecione o fornecedor.", 0);
 
@@ -94,6 +96,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, "Informe a data de chegada.", 0);
             if (dto.DataChegada.Value.Date < dto.DataEmissao.Value.Date)
                 return (false, "A data de chegada não pode ser anterior à data de emissão.", 0);
+            if (dto.DataChegada.Value.Date > DateTime.Today)
+                return (false, "A data de chegada não pode ser maior que a data atual.", 0);
 
             if (dto.ValorFrete < 0)
                 return (false, "O frete não pode ser negativo.", 0);
@@ -152,7 +156,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             var novoId = await _repo.InserirAsync(dto, tx);
 
-            var obsEntrada = $"Compra #{novoId}" +
+            var obsEntrada = $"COMPRA #{novoId}" +
                 (string.IsNullOrWhiteSpace(dto.NumeroNf) ? "" : $" — NF {dto.NumeroNf}");
             var movId = await _movRepo.InserirAsync("ENTRADA", obsEntrada, novoId, tx);
 
@@ -172,8 +176,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             foreach (var (numero, vencimento, valor) in parcelasGerar)
             {
                 var descricao = totalParcelas == 1
-                    ? $"Compra #{novoId}" + (string.IsNullOrWhiteSpace(dto.NumeroNf) ? "" : $" — NF {dto.NumeroNf}")
-                    : $"Compra #{novoId} — Parcela {numero}/{totalParcelas}";
+                    ? $"COMPRA #{novoId}" + (string.IsNullOrWhiteSpace(dto.NumeroNf) ? "" : $" — NF {dto.NumeroNf}")
+                    : $"COMPRA #{novoId} — PARCELA {numero}/{totalParcelas}";
 
                 await _contaPagarRepo.InserirAutomaticaAsync(dto.FornecedorId, novoId, descricao, vencimento, valor, tx);
             }
@@ -192,7 +196,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
         {
             if (string.IsNullOrWhiteSpace(motivo))
                 return (false, "Informe o motivo do cancelamento.");
-            motivo = motivo.Trim();
+            motivo = motivo.Trim().ToUpperInvariant();
             if (motivo.Length > 255)
                 return (false, "O motivo do cancelamento deve ter no máximo 255 caracteres.");
 
@@ -209,7 +213,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             if (conn.State != ConnectionState.Open) conn.Open();
             using var tx = conn.BeginTransaction();
 
-            var obsEstorno = $"Estorno — cancelamento da Compra #{compraId}: {motivo}";
+            var obsEstorno = $"ESTORNO — CANCELAMENTO DA COMPRA #{compraId}: {motivo}";
             if (obsEstorno.Length > 200) obsEstorno = obsEstorno[..200];
             var movId = await _movRepo.InserirAsync("SAIDA", obsEstorno, compraId, tx);
 

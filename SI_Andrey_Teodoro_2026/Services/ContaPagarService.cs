@@ -41,7 +41,7 @@ public class ContaPagarService : IContaPagarService
     {
         try
         {
-            dto.Descricao = dto.Descricao.Trim();
+            dto.Descricao = dto.Descricao.Trim().ToUpperInvariant();
 
             if (string.IsNullOrWhiteSpace(dto.Descricao))
                 return (false, "Informe a descrição da conta.", 0);

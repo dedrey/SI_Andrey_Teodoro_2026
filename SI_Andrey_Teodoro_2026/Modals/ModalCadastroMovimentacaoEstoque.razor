@@ -6,158 +6,219 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.SwapVert" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">Nova Movimentação</MudText>
+            <MudText Typo="Typo.h6">@(SomenteLeitura ? "Visualizar Movimentação" : "Nova Movimentação")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
-            <MudGrid Spacing="2">
-                <MudItem xs="12" sm="4" md="3">
-                    <MudSelect T="string" @bind-Value="_dto.TipoMovimentacao" Label="Tipo *"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                        <MudSelectItem T="string" Value="@("SAIDA")">
-                            <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Error" Size="Size.Small" />Saída</div>
-                        </MudSelectItem>
-                        <MudSelectItem T="string" Value="@("AJUSTE")">
-                            <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Warning" Size="Size.Small" />Ajuste</div>
-                        </MudSelectItem>
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="8" md="9">
-                    <MudTextField @bind-Value="_dto.Observacao" Label="Observação (opcional)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="200" FullWidth="true" />
-                </MudItem>
-            </MudGrid>
+            @if (SomenteLeitura)
+            {
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4" md="2">
+                        <MudTextField Value="@DescricaoTipo(_dto.TipoMovimentacao)" Label="Tipo"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" md="3">
+                        <MudTextField Value="@_dto.CriadoEm.ToString("dd/MM/yyyy HH:mm")" Label="Data"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" md="2">
+                        <MudTextField Value="@(_dto.CompraId.HasValue ? $"Compra #{_dto.CompraId}" : "—")" Label="Origem"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="5">
+                        <MudTextField Value="@(string.IsNullOrWhiteSpace(_dto.Observacao) ? "—" : _dto.Observacao)" Label="Observação"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="true" />
+                    </MudItem>
+                </MudGrid>
 
-            <MudDivider Class="my-4" />
-            <div class="d-flex align-center justify-space-between mb-3">
-                <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+                <MudDivider Class="my-4" />
+                <MudText Typo="Typo.subtitle2" Class="mb-3" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
                     <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-1" />Itens da Movimentação
                 </MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem">
-                    Adicionar Item Manualmente
-                </MudButton>
-            </div>
-
-            <div class="d-flex flex-wrap align-end gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
-                <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
-                                 SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                 Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
-                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
-                <MudSelect T="int" @bind-SelectedValues="_variacoesLote" MultiSelection="true" Label="Variações (cor/tamanho)"
-                           Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:260px;"
-                           Disabled="@(_variacoesDisponiveisLote.Count == 0)"
-                           MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} variação(ões) selecionada(s)")">
-                    @foreach (var v in _variacoesDisponiveisLote)
-                    {
-                        <MudSelectItem T="int" Value="@v.IdOriginal">@v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)</MudSelectItem>
-                    }
-                </MudSelect>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlaylistAdd"
-                           OnClick="AdicionarVariacoesLote" Style="height:40px;" Disabled="@(_variacoesDisponiveisLote.Count == 0)">
-                    Adicionar Selecionadas
-                </MudButton>
-            </div>
-
-            @if (_dto.Itens.Any(i => !i.Removido))
-            {
-                <MudTable Items="@_dto.Itens.Where(i => !i.Removido)" Dense="true" Hover="false" Elevation="0"
-                          Style="border:1px solid #f0f0f0;border-radius:8px;">
+                <MudTable Items="@_dto.Itens" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
                     <HeaderContent>
                         <MudTh Style="font-weight:600;">Produto</MudTh>
-                        <MudTh Style="font-weight:600;">Variação</MudTh>
-                        <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
-                        <MudTh Style="font-weight:600;text-align:center;">@(_dto.TipoMovimentacao == "AJUSTE" ? "Qtd. Real" : "Quantidade")</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Cor</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Tamanho</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Quantidade</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Valor Unit.</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
-                        <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd>
-                            <MudAutocomplete T="ProdutoListDto"
-                                             Value="_produtosSelecionados.GetValueOrDefault(context)"
-                                             ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
-                                             SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
-                        </MudTd>
-                        <MudTd>
-                            <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                       Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
-                                <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                                @if (_variacoesPorItem.TryGetValue(context, out var vars))
-                                {
-                                    @foreach (var v in vars)
-                                    {
-                                        <MudSelectItem T="int" Value="@v.IdOriginal">
-                                            @v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)
-                                        </MudSelectItem>
-                                    }
-                                }
-                            </MudSelect>
-                        </MudTd>
-                        <MudTd Style="text-align:center;">
-                            <MudChip T="string" Size="Size.Small" Color="@(context.EstoqueAtual > 0 ? Color.Success : Color.Warning)">
-                                @context.EstoqueAtual un.
-                            </MudChip>
-                        </MudTd>
-                        <MudTd Style="text-align:center;">
-                            @if (_dto.TipoMovimentacao == "AJUSTE")
-                            {
-                                <MudTextField Value="@GetQtdRealTexto(context)" ValueChanged="@((string v) => OnQtdRealAlterada(context, v))"
-                                              Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:90px;" />
-                            }
-                            else
-                            {
-                                <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
-                                              Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" />
-                            }
-                        </MudTd>
-                        <MudTd>
-                            <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          Adornment="Adornment.Start" AdornmentText="R$"
-                                          Placeholder="Opcional" />
-                        </MudTd>
-                        <MudTd Style="text-align:right;font-weight:600;">
-                            R$ @((context.Quantidade * context.ValorUnitario).ToString("N2"))
-                        </MudTd>
-                        <MudTd Style="text-align:center;">
-                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small"
-                                           OnClick="@(() => RemoverItem(context))" />
-                        </MudTd>
+                        <MudTd Style="font-weight:600;">@context.NomeProduto</MudTd>
+                        <MudTd Style="text-align:center;">@context.Cor</MudTd>
+                        <MudTd Style="text-align:center;">@context.Tamanho</MudTd>
+                        <MudTd Style="text-align:center;font-weight:600;">@context.Quantidade un.</MudTd>
+                        <MudTd Style="text-align:right;">R$ @context.ValorUnitario.ToString("N2")</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;">R$ @((context.Quantidade * context.ValorUnitario).ToString("N2"))</MudTd>
                     </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2" Style="color:#bbb;padding:12px;">Nenhum item.</MudText>
+                    </NoRecordsContent>
                     <FooterContent>
-                        <MudTd ColSpan="3" Style="text-align:right;font-weight:600;padding:8px 12px;">Total:</MudTd>
-                        <MudTd Style="text-align:center;font-weight:700;">@_dto.Itens.Where(i => !i.Removido).Sum(i => i.Quantidade) un.</MudTd>
+                        <MudTd colspan="3" Style="text-align:right;font-weight:600;padding:8px 12px;">Total:</MudTd>
+                        <MudTd Style="text-align:center;font-weight:700;">@_dto.Itens.Sum(i => i.Quantidade) un.</MudTd>
                         <MudTd></MudTd>
-                        <MudTd Style="text-align:right;font-weight:700;color:#1a237e;">R$ @_dto.Itens.Where(i => !i.Removido).Sum(i => i.Quantidade * i.ValorUnitario).ToString("N2")</MudTd>
-                        <MudTd></MudTd>
+                        <MudTd Style="text-align:right;font-weight:700;color:#1a237e;">R$ @_dto.Itens.Sum(i => i.Quantidade * i.ValorUnitario).ToString("N2")</MudTd>
                     </FooterContent>
                 </MudTable>
             }
             else
             {
-                <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
-                    <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" />
-                    <MudText Typo="Typo.body2">Clique em "Adicionar Item" para incluir produtos.</MudText>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="4" md="3">
+                        <MudSelect T="string" @bind-Value="_dto.TipoMovimentacao" Label="Tipo *"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                            <MudSelectItem T="string" Value="@("SAIDA")">
+                                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Error" Size="Size.Small" />Saída</div>
+                            </MudSelectItem>
+                            <MudSelectItem T="string" Value="@("AJUSTE")">
+                                <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.Tune" Color="Color.Warning" Size="Size.Small" />Ajuste</div>
+                            </MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="8" md="9">
+                        <MudTextField @bind-Value="_dto.Observacao" Label="Observação (opcional)"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="200" FullWidth="true" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-4" />
+                <div class="d-flex align-center justify-space-between mb-3">
+                    <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+                        <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-1" />Itens da Movimentação
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem">
+                        Adicionar Item Manualmente
+                    </MudButton>
                 </div>
+
+                <div class="d-flex flex-wrap align-end gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
+                    <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
+                                     SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                     Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                    <MudSelect T="int" @bind-SelectedValues="_variacoesLote" MultiSelection="true" Label="Variações (cor/tamanho)"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:260px;"
+                               Disabled="@(_variacoesDisponiveisLote.Count == 0)"
+                               MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} variação(ões) selecionada(s)")">
+                        @foreach (var v in _variacoesDisponiveisLote)
+                        {
+                            <MudSelectItem T="int" Value="@v.IdOriginal">@v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                               OnClick="AdicionarVariacoesLote" Style="height:40px;" Disabled="@(_variacoesDisponiveisLote.Count == 0)">
+                        Adicionar Selecionadas
+                    </MudButton>
+                </div>
+
+                @if (_dto.Itens.Any(i => !i.Removido))
+                {
+                    <MudTable Items="@_dto.Itens.Where(i => !i.Removido)" Dense="true" Hover="false" Elevation="0"
+                              Style="border:1px solid #f0f0f0;border-radius:8px;">
+                        <HeaderContent>
+                            <MudTh Style="font-weight:600;">Produto</MudTh>
+                            <MudTh Style="font-weight:600;">Variação</MudTh>
+                            <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
+                            <MudTh Style="font-weight:600;text-align:center;">@(_dto.TipoMovimentacao == "AJUSTE" ? "Qtd. Real" : "Quantidade")</MudTh>
+                            <MudTh Style="font-weight:600;text-align:right;">Valor Unit.</MudTh>
+                            <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
+                            <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudAutocomplete T="ProdutoListDto"
+                                                 Value="_produtosSelecionados.GetValueOrDefault(context)"
+                                                 ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
+                                                 SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                                 Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                            </MudTd>
+                            <MudTd>
+                                <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
+                                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                           Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
+                                    <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
+                                    @if (_variacoesPorItem.TryGetValue(context, out var vars))
+                                    {
+                                        @foreach (var v in vars)
+                                        {
+                                            <MudSelectItem T="int" Value="@v.IdOriginal">
+                                                @v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)
+                                            </MudSelectItem>
+                                        }
+                                    }
+                                </MudSelect>
+                            </MudTd>
+                            <MudTd Style="text-align:center;">
+                                <MudChip T="string" Size="Size.Small" Color="@(context.EstoqueAtual > 0 ? Color.Success : Color.Warning)">
+                                    @context.EstoqueAtual un.
+                                </MudChip>
+                            </MudTd>
+                            <MudTd Style="text-align:center;">
+                                @if (_dto.TipoMovimentacao == "AJUSTE")
+                                {
+                                    <MudTextField Value="@GetQtdRealTexto(context)" ValueChanged="@((string v) => OnQtdRealAlterada(context, v))"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:90px;" />
+                                }
+                                else
+                                {
+                                    <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" />
+                                }
+                            </MudTd>
+                            <MudTd>
+                                <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
+                                              Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
+                                              Adornment="Adornment.Start" AdornmentText="R$"
+                                              Placeholder="Opcional" />
+                            </MudTd>
+                            <MudTd Style="text-align:right;font-weight:600;">
+                                R$ @((context.Quantidade * context.ValorUnitario).ToString("N2"))
+                            </MudTd>
+                            <MudTd Style="text-align:center;">
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small"
+                                               OnClick="@(() => RemoverItem(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                        <FooterContent>
+                            <MudTd ColSpan="3" Style="text-align:right;font-weight:600;padding:8px 12px;">Total:</MudTd>
+                            <MudTd Style="text-align:center;font-weight:700;">@_dto.Itens.Where(i => !i.Removido).Sum(i => i.Quantidade) un.</MudTd>
+                            <MudTd></MudTd>
+                            <MudTd Style="text-align:right;font-weight:700;color:#1a237e;">R$ @_dto.Itens.Where(i => !i.Removido).Sum(i => i.Quantidade * i.ValorUnitario).ToString("N2")</MudTd>
+                            <MudTd></MudTd>
+                        </FooterContent>
+                    </MudTable>
+                }
+                else
+                {
+                    <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                        <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" />
+                        <MudText Typo="Typo.body2">Clique em "Adicionar Item" para incluir produtos.</MudText>
+                    </div>
+                }
             }
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                   Disabled="_salvando" Style="height:40px;font-weight:700;min-width:160px;">
-            @(_salvando ? "Registrando..." : "REGISTRAR")
-        </MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">@(SomenteLeitura ? "Fechar" : "Cancelar")</MudButton>
+        @if (!SomenteLeitura)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                       Disabled="_salvando" Style="height:40px;font-weight:700;min-width:160px;">
+                @(_salvando ? "Registrando..." : "REGISTRAR")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public bool SomenteLeitura { get; set; }
+    [Parameter] public int? MovimentacaoId { get; set; }
 
     private MudForm? _form;
     private bool _formValido, _salvando;
@@ -173,9 +234,26 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try { _todosProdutos = (await ProdutoService.ObterTodosAtivosAsync()).ToList(); }
+        try
+        {
+            if (MovimentacaoId.HasValue)
+            {
+                var mov = await MovimentacaoService.ObterPorIdAsync(MovimentacaoId.Value);
+                if (mov == null) { Snackbar.Add("Movimentação não encontrada.", Severity.Warning); MudDialog.Cancel(); return; }
+                _dto = mov;
+            }
+            if (!SomenteLeitura)
+                _todosProdutos = (await ProdutoService.ObterTodosAtivosAsync()).ToList();
+        }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
+
+    private static string DescricaoTipo(string tipo) => tipo switch
+    {
+        "ENTRADA" => "Entrada",
+        "SAIDA" => "Saída",
+        _ => "Ajuste"
+    };
 
     private void AdicionarItem()
     {

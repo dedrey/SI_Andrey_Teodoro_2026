@@ -14,12 +14,12 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => _dto.RazaoSocial = Cap(v))" Label="Razão Social" Immediate="true"
+                    <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => _dto.RazaoSocial = v)" Label="Razão Social" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.NomeFantasia" ValueChanged="@((string? v) => _dto.NomeFantasia = v == null ? null : Cap(v))" Label="Nome Fantasia" Immediate="true"
+                    <MudTextField Value="@_dto.NomeFantasia" ValueChanged="@((string? v) => _dto.NomeFantasia = v)" Label="Nome Fantasia" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
@@ -29,7 +29,7 @@
                                   Validation="@((string v) => new string((v ?? "").Where(char.IsDigit).ToArray()).Length != 14 ? "CNPJ deve ter 14 dígitos" : null)" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.InscricaoEstadual" ValueChanged="@((string v) => _dto.InscricaoEstadual = Cap(v))" Label="Inscrição Estadual"
+                    <MudTextField Value="@_dto.InscricaoEstadual" ValueChanged="@((string v) => _dto.InscricaoEstadual = v)" Label="Inscrição Estadual"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="30" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="10" sm="5">
@@ -53,7 +53,7 @@
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => _dto.Email = Cap(v))" Label="E-mail"
+                    <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => _dto.Email = v)" Label="E-mail" Class="sem-maiusculas"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarEmail(v))"
@@ -66,22 +66,22 @@
                     </MudText>
                 </MudItem>
                 <MudItem xs="12" sm="5">
-                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => _dto.Endereco = Cap(v))" Label="Rua" Immediate="true"
+                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => _dto.Endereco = v)" Label="Rua" Immediate="true"
                                   Required="true" RequiredError="Obrigatório"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="2">
-                    <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => _dto.Numero = Cap(v))" Label="Número" Immediate="true"
+                    <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => _dto.Numero = v)" Label="Número" Immediate="true"
                                   Required="true" RequiredError="Obrigatório"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="10" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
-                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => _dto.Bairro = Cap(v))" Label="Bairro" Immediate="true"
+                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => _dto.Bairro = v)" Label="Bairro" Immediate="true"
                                   Required="true" RequiredError="Obrigatório"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="60" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.Complemento" ValueChanged="@((string v) => _dto.Complemento = Cap(v))" Label="Complemento" Immediate="true"
+                    <MudTextField Value="@_dto.Complemento" ValueChanged="@((string v) => _dto.Complemento = v)" Label="Complemento" Immediate="true"
                                   Required="true" RequiredError="Obrigatório"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
@@ -199,5 +199,4 @@
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";
         return System.Text.RegularExpressions.Regex.IsMatch(v, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$") ? null : "E-mail inválido";
     }
-    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 }

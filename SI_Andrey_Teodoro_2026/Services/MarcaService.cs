@@ -29,7 +29,7 @@ public class MarcaService : BaseService<MarcaDto, MarcaListDto>, IMarcaService
     {
         try
         {
-            dto.NomeMarca = CapitalizarPrimeira(dto.NomeMarca.Trim());
+            dto.NomeMarca = dto.NomeMarca.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
@@ -56,6 +56,4 @@ public class MarcaService : BaseService<MarcaDto, MarcaListDto>, IMarcaService
         }
         catch (Exception ex) { return ErroStatus(ex); }
     }
-    private static string CapitalizarPrimeira(string v)
-        => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

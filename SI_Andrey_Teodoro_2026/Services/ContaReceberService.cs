@@ -41,7 +41,7 @@ public class ContaReceberService : IContaReceberService
     {
         try
         {
-            dto.Descricao = dto.Descricao.Trim();
+            dto.Descricao = dto.Descricao.Trim().ToUpperInvariant();
 
             if (dto.ClienteId <= 0)
                 return (false, "Selecione um cliente.", 0);
@@ -79,6 +79,8 @@ public class ContaReceberService : IContaReceberService
     {
         try
         {
+            observacao = string.IsNullOrWhiteSpace(observacao) ? null : observacao.Trim().ToUpperInvariant();
+
             if (valorRecebido <= 0)
                 return (false, "Informe um valor de recebimento maior que zero.");
 
