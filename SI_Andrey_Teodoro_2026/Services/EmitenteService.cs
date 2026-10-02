@@ -49,19 +49,20 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
     {
         try
         {
-            dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim();
-            dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia.Trim();
-            dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim();
+            dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim().ToUpperInvariant();
+            dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia.Trim().ToUpperInvariant();
+            dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim().ToUpperInvariant();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
             dto.Email = dto.Email?.Trim() ?? string.Empty;
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
                 return (false, "E-mail inválido.", 0);
-            dto.Endereco = dto.Endereco.Trim();
-            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
+            dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
+            dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
+            dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant();
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);
-            dto.Bairro = dto.Bairro.Trim();
+            dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
 
             var cnpjLimpo = LimparDigitos(dto.Cnpj);
             var erroCnpj = ValidarCnpj(cnpjLimpo);

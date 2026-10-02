@@ -47,7 +47,7 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
     {
         try
         {
-            dto.CondicaoPagamento = CapitalizarPrimeira(dto.CondicaoPagamento.Trim());
+            dto.CondicaoPagamento = dto.CondicaoPagamento.Trim().ToUpperInvariant();
 
             if (dto.MetodoPagamentoId == 0)
                 return (false, "Selecione um método de pagamento.", 0);
@@ -101,6 +101,4 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
         catch (Exception ex) { return ErroStatus(ex); }
     }
 
-    private static string CapitalizarPrimeira(string v)
-        => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

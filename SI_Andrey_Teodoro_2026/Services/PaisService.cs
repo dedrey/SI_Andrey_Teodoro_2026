@@ -41,10 +41,11 @@ public class PaisService : BaseService<PaisDto, PaisListDto>, IPaisService
     {
         try
         {
-            dto.Sigla = dto.Sigla.ToUpper().Trim();
-            dto.NomePais = dto.NomePais.Trim();
+            dto.Sigla = dto.Sigla.Trim().ToUpperInvariant();
+            dto.NomePais = dto.NomePais.Trim().ToUpperInvariant();
             dto.Ddi = dto.Ddi.Trim();
-            dto.SimboleMoeda = dto.SimboleMoeda.ToUpper().Trim();
+            dto.Moeda = dto.Moeda.Trim().ToUpperInvariant();
+            dto.SimboleMoeda = dto.SimboleMoeda.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 

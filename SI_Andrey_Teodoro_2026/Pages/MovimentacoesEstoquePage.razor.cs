@@ -35,6 +35,13 @@ public partial class MovimentacoesEstoquePage : BasePage<MovimentacaoEstoqueList
         if ((await dialog.Result) is { Canceled: false }) { _detalhesCache.Clear(); _expandidos.Clear(); await CarregarDados(); }
     }
 
+    private async Task AbrirVisualizacao(int id)
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var param = new DialogParameters<ModalCadastroMovimentacaoEstoque> { { x => x.MovimentacaoId, id }, { x => x.SomenteLeitura, true } };
+        await DialogService.ShowAsync<ModalCadastroMovimentacaoEstoque>("Visualizar Movimentação", param, opts);
+    }
+
     private async Task ToggleDetalhe(int movId)
     {
         if (_expandidos.Contains(movId)) { _expandidos.Remove(movId); return; }

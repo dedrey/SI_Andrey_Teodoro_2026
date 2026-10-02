@@ -42,8 +42,8 @@ public class EstadoService : BaseService<EstadoDto, EstadoListDto>, IEstadoServi
     {
         try
         {
-            dto.Uf = dto.Uf.ToUpper().Trim();
-            dto.NomeEstado = dto.NomeEstado.Trim();
+            dto.Uf = dto.Uf.Trim().ToUpperInvariant();
+            dto.NomeEstado = dto.NomeEstado.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 

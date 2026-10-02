@@ -187,7 +187,7 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                         var valorEntrada = Math.Round(venda.ValorTotal * condicao.EntradaMinimaPercentual / 100, 2);
                         valorRestante = venda.ValorTotal - valorEntrada;
 
-                        var descricaoEntrada = $"Venda #{vendaId} — Entrada ({condicao.EntradaMinimaPercentual:N0}%)";
+                        var descricaoEntrada = $"VENDA #{vendaId} — ENTRADA ({condicao.EntradaMinimaPercentual:N0}%)";
                         await _repo.InserirContaReceberAsync(venda.ClienteId.Value, vendaId, descricaoEntrada,
                             DateTime.Today, valorEntrada);
                     }
@@ -209,8 +209,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                             : valorParcela;
 
                         var descricao = condicao.NumeroParcelas == 1
-                            ? $"Venda #{vendaId}" + (condicao.EntradaMinimaPercentual > 0 ? " — Saldo" : "")
-                            : $"Venda #{vendaId} — Parcela {p}/{condicao.NumeroParcelas}";
+                            ? $"VENDA #{vendaId}" + (condicao.EntradaMinimaPercentual > 0 ? " — SALDO" : "")
+                            : $"VENDA #{vendaId} — PARCELA {p}/{condicao.NumeroParcelas}";
                         bool pagamentoInstantaneo = condicao.NumeroParcelas == 1
                                                   && condicao.EntradaMinimaPercentual == 0
                                                   && diasVencimento == 0;
@@ -229,6 +229,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
     {
         try
         {
+            motivo = motivo?.Trim().ToUpperInvariant() ?? string.Empty;
+
             var venda = await _repo.ObterPorIdAsync(vendaId);
             if (venda == null) return (false, "Venda não encontrada.");
             if (venda.StatusVenda == "CANCELADA") return (false, "Venda já está cancelada.");

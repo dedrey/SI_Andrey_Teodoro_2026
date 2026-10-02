@@ -276,7 +276,7 @@ public class VendaRepository : BaseRepository, IVendaRepository
         await conn.ExecuteAsync(
             @"INSERT INTO movimentacoes_estoque (id, tipo_movimentacao, observacao)
               VALUES (@proximoId, 'SAIDA', @obs)",
-            new { proximoId, obs = $"Saída automática — Venda #{vendaId}" });
+            new { proximoId, obs = $"SAÍDA AUTOMÁTICA — VENDA #{vendaId}" });
 
         return proximoId;
     }
@@ -317,7 +317,7 @@ public class VendaRepository : BaseRepository, IVendaRepository
             await conn.ExecuteAsync(
                 @"INSERT INTO contas_receber_baixas
                     (id, conta_receber_id, data_recebimento, valor_recebido, observacao)
-                  VALUES (@proximoBaixaId, @proximoId, @vencimento, @valor, 'Pagamento instantâneo no ato da venda')",
+                  VALUES (@proximoBaixaId, @proximoId, @vencimento, @valor, 'PAGAMENTO INSTANTÂNEO NO ATO DA VENDA')",
                 new { proximoBaixaId, proximoId, vencimento, valor });
         }
 

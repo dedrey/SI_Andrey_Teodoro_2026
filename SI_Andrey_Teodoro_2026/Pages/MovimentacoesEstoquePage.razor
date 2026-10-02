@@ -37,6 +37,7 @@
             <MudTh Style="font-weight:600;text-align:right;">Valor Total</MudTh>
             <MudTh Style="font-weight:600;">Origem</MudTh>
             <MudTh Style="font-weight:600;">Observação</MudTh>
+            <MudTh Style="font-weight:600;text-align:center;">Ações</MudTh>
         </HeaderContent>
         <RowTemplate Context="mov">
             <MudTd Style="padding:4px 8px;"><MudIconButton Icon="@(_expandidos.Contains(mov.Id)?Icons.Material.Filled.KeyboardArrowDown:Icons.Material.Filled.KeyboardArrowRight)" Size="Size.Small" OnClick="@(async ()=>await ToggleDetalhe(mov.Id))"/></MudTd>
@@ -48,11 +49,17 @@
             <MudTd Style="text-align:right;font-weight:600;">@if(mov.ValorTotal>0){<span>R$ @mov.ValorTotal.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd>
             <MudTd>@if(mov.CompraId.HasValue){<span>Compra #@mov.CompraId</span>}else{<span style="color:#ccc;">—</span>}</MudTd>
             <MudTd Style="color:#888;font-size:0.85rem;">@if(!string.IsNullOrWhiteSpace(mov.Observacao)){@(mov.Observacao.Length>50?mov.Observacao[..50]+"…":mov.Observacao)}else{<span style="color:#ccc;">—</span>}</MudTd>
+            <MudTd Style="text-align:center;">
+                <MudTooltip Text="Visualizar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Default" Size="Size.Small"
+                                   OnClick="@(async () => await AbrirVisualizacao(mov.Id))"/>
+                </MudTooltip>
+            </MudTd>
         </RowTemplate>
         <ChildRowContent>
             @if (_expandidos.Contains(context.Id))
             {
-                <MudTd ColSpan="9"Style="padding:0;background:var(--mud-palette-background-grey);">
+                <MudTd ColSpan="10" Style="padding:0;background:var(--mud-palette-background-grey);">
                     @if (_detalhesCache.TryGetValue(context.Id, out var itens) && itens != null)
                     {
                         <div style="padding:10px 20px 14px 48px;">

@@ -14,7 +14,7 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2" Class="mb-2">
                 <MudItem xs="12" sm="7">
-                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = Cap(v))" Label="Condição de Pagamento" Immediate="true"
+                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = v)" Label="Condição de Pagamento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Disabled="@_readOnly" />
                 </MudItem>
@@ -257,7 +257,6 @@
         return true;
     }
 
-    private static string Cap(string? s) => string.IsNullOrWhiteSpace(s) ? s ?? "" : s.Trim().ToUpper();
 
     private void Fechar() => MudDialog.Cancel();
 }

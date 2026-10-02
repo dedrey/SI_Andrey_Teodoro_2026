@@ -30,8 +30,8 @@ public class UnidadeMedidaService : BaseService<UnidadeMedidaDto, UnidadeMedidaL
     {
         try
         {
-            dto.Sigla = dto.Sigla.Trim().ToUpper();
-            dto.Descricao = CapitalizarPrimeira(dto.Descricao.Trim());
+            dto.Sigla = dto.Sigla.Trim().ToUpperInvariant();
+            dto.Descricao = dto.Descricao.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
@@ -58,6 +58,4 @@ public class UnidadeMedidaService : BaseService<UnidadeMedidaDto, UnidadeMedidaL
         }
         catch (Exception ex) { return ErroStatus(ex); }
     }
-    private static string CapitalizarPrimeira(string v)
-        => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

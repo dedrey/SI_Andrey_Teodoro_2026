@@ -49,13 +49,13 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
     {
         try
         {
-            dto.RazaoSocial = dto.RazaoSocial.Trim();
-            dto.NomeFantasia = dto.NomeFantasia?.Trim();
-            dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim();
-            dto.Endereco = dto.Endereco.Trim();
-            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
-            dto.Complemento = dto.Complemento.Trim();
-            dto.Bairro = dto.Bairro.Trim();
+            dto.RazaoSocial = dto.RazaoSocial.Trim().ToUpperInvariant();
+            dto.NomeFantasia = dto.NomeFantasia?.Trim().ToUpperInvariant();
+            dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim().ToUpperInvariant();
+            dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
+            dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
+            dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
+            dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
             dto.Cep = dto.Cep.Trim();
 
             if (!dto.CidadeId.HasValue)

@@ -48,16 +48,16 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
     {
         try
         {
-            dto.RazaoSocial = dto.RazaoSocial.Trim();
-            dto.NomeFantasia = dto.NomeFantasia?.Trim();
+            dto.RazaoSocial = dto.RazaoSocial.Trim().ToUpperInvariant();
+            dto.NomeFantasia = dto.NomeFantasia?.Trim().ToUpperInvariant();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
             dto.Email = dto.Email?.Trim() ?? string.Empty;
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
                 return (false, "E-mail inválido.", 0);
-            dto.Endereco = dto.Endereco.Trim();
-            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
-            dto.Bairro = dto.Bairro.Trim();
-            dto.Complemento = dto.Complemento.Trim();
+            dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
+            dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
+            dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
+            dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
             dto.Cep = dto.Cep.Trim();
 
             if (!dto.CidadeId.HasValue)

@@ -50,8 +50,8 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
     {
         try
         {
-            dto.Produto = dto.Produto.Trim();
-            dto.Descricao = dto.Descricao?.Trim();
+            dto.Produto = dto.Produto.Trim().ToUpperInvariant();
+            dto.Descricao = dto.Descricao?.Trim().ToUpperInvariant();
             dto.CodigoBarras = string.IsNullOrWhiteSpace(dto.CodigoBarras) ? null : dto.CodigoBarras.Trim();
 
             if (dto.CategoriaId == 0) return (false, "Selecione uma categoria.", 0);

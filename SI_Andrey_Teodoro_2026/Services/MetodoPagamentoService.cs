@@ -30,8 +30,8 @@ public class MetodoPagamentoService : BaseService<MetodoPagamentoDto, MetodoPaga
     {
         try
         {
-            dto.Codigo = dto.Codigo.Trim().ToUpper();
-            dto.MetodoPagamento = CapitalizarPrimeira(dto.MetodoPagamento.Trim());
+            dto.Codigo = dto.Codigo.Trim().ToUpperInvariant();
+            dto.MetodoPagamento = dto.MetodoPagamento.Trim().ToUpperInvariant();
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
             if (await _repo.ExisteCodigoAsync(dto.Codigo, ignorar))
                 return (false, $"Já existe um método de pagamento com o código '{dto.Codigo}'.", 0);
@@ -56,6 +56,4 @@ public class MetodoPagamentoService : BaseService<MetodoPagamentoDto, MetodoPaga
         }
         catch (Exception ex) { return ErroStatus(ex); }
     }
-    private static string CapitalizarPrimeira(string v)
-        => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }

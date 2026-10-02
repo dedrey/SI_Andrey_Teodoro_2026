@@ -56,17 +56,20 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
     {
         try
         {
-            dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim();
-            dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim();
+            dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim().ToUpperInvariant();
+            dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim().ToUpperInvariant();
+            dto.DocumentoEstrangeiro = dto.DocumentoEstrangeiro?.Trim().ToUpperInvariant();
+            dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim().ToUpperInvariant();
+            dto.InscricaoMunicipal = dto.InscricaoMunicipal?.Trim().ToUpperInvariant();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
             dto.Celular = dto.Celular?.Trim();
             dto.Email = dto.Email?.Trim() ?? string.Empty;
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
                 return (false, "E-mail inválido.", 0);
-            dto.Endereco = dto.Endereco.Trim();
-            dto.Numero = dto.Numero?.Trim().ToUpper() ?? string.Empty;
-            dto.Bairro = dto.Bairro.Trim();
-            dto.Complemento = dto.Complemento.Trim();
+            dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
+            dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
+            dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
+            dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
             dto.Cep = dto.Cep.Trim();
 
             if (!dto.CidadeId.HasValue)

@@ -34,7 +34,7 @@ public class CategoriaService : BaseService<CategoriaDto, CategoriaListDto>, ICa
     {
         try
         {
-            dto.NomeCategoria = CapitalizarPrimeira(dto.NomeCategoria.Trim());
+            dto.NomeCategoria = dto.NomeCategoria.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
@@ -61,6 +61,4 @@ public class CategoriaService : BaseService<CategoriaDto, CategoriaListDto>, ICa
         }
         catch (Exception ex) { return ErroStatus(ex); }
     }
-    private static string CapitalizarPrimeira(string v)
-        => string.IsNullOrEmpty(v) ? v : char.ToUpper(v[0]) + v[1..];
 }
