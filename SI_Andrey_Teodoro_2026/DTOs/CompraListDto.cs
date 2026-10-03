@@ -4,10 +4,12 @@ public class CompraListDto
 {
     public int Id { get; set; }
     public string NomeFornecedor { get; set; } = string.Empty;
+    public string NomeTransportadora { get; set; } = string.Empty;
     public string? NumeroNf { get; set; }
     public int TotalItens { get; set; }
     public decimal ValorSubtotal { get; set; }
     public decimal ValorFrete { get; set; }
+    public decimal ValorSeguro { get; set; }
     public decimal ValorOutrosAcrescimos { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal { get; set; }

@@ -16,4 +16,5 @@ public interface IContaPagarRepository
     Task CancelarPorCompraAsync(int compraId, IDbTransaction tx);
 
     Task<bool> ExisteParcelaPagaAsync(int compraId);
+    Task<List<ContaPagarListDto>> ObterPorCompraAsync(int compraId);
 }

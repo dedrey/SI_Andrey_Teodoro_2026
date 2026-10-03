@@ -8,6 +8,9 @@ public class CompraDto
     public int? FornecedorId { get; set; }
     public string NomeFornecedor { get; set; } = string.Empty;
 
+    public int? TransportadoraId { get; set; }
+    public string NomeTransportadora { get; set; } = string.Empty;
+
     public string? NumeroNf { get; set; }
     public DateTime? DataEmissao { get; set; }
     public DateTime? DataChegada { get; set; }
@@ -17,6 +20,7 @@ public class CompraDto
 
     public decimal ValorSubtotal { get; set; }
     public decimal ValorFrete { get; set; }
+    public decimal ValorSeguro { get; set; }
     public decimal ValorOutrosAcrescimos { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal ValorTotal { get; set; }
@@ -27,6 +31,14 @@ public class CompraDto
     public DateTime? AtualizadoEm { get; set; }
 
     public List<CompraItemDto> Itens { get; set; } = new();
+    public List<CompraParcelaDto> Parcelas { get; set; } = new();
+}
+
+public class CompraParcelaDto
+{
+    public int Numero { get; set; }
+    public DateTime? DataVencimento { get; set; }
+    public decimal Valor { get; set; }
 }
 
 public class CompraItemDto
