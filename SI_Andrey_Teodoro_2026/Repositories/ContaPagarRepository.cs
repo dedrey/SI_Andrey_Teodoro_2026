@@ -193,4 +193,21 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
             "SELECT COUNT(*) FROM contas_pagar WHERE compra_id = @compraId AND status = 'PAGA'",
             new { compraId }) > 0;
     }
+
+    public async Task<List<ContaPagarListDto>> ObterPorCompraAsync(int compraId)
+    {
+        using var conn = _factory.CreateConnection();
+        var result = await conn.QueryAsync<ContaPagarListDto>(
+            @"SELECT id,
+                     compra_id       AS CompraId,
+                     descricao       AS Descricao,
+                     data_vencimento AS DataVencimento,
+                     data_pagamento  AS DataPagamento,
+                     valor_original  AS ValorOriginal,
+                     status          AS Status
+              FROM contas_pagar
+              WHERE compra_id = @compraId
+              ORDER BY data_vencimento, id", new { compraId });
+        return result.ToList();
+    }
 }

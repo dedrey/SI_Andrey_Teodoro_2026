@@ -41,6 +41,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             IdOriginal = c.Id,
             FornecedorId = c.FornecedorId,
             NomeFornecedor = c.NomeFornecedor,
+            TransportadoraId = c.TransportadoraId,
+            NomeTransportadora = c.NomeTransportadora,
             NumeroNf = c.NumeroNf,
             DataEmissao = c.DataEmissao,
             DataChegada = c.DataChegada,
@@ -48,6 +50,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             NomeCondicaoPagamento = c.NomeCondicaoPagamento ?? string.Empty,
             ValorSubtotal = c.ValorSubtotal,
             ValorFrete = c.ValorFrete,
+            ValorSeguro = c.ValorSeguro,
             ValorOutrosAcrescimos = c.ValorOutrosAcrescimos,
             ValorDesconto = c.ValorDesconto,
             ValorTotal = c.ValorTotal,
@@ -74,6 +77,36 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     public Task<List<CompraItemListDto>> ObterItensAsync(int compraId)
         => _repo.ObterItensPorCompraAsync(compraId);
 
+    public Task<List<ContaPagarListDto>> ObterContasPagarAsync(int compraId)
+        => _contaPagarRepo.ObterPorCompraAsync(compraId);
+
+    public async Task<List<CompraParcelaDto>> SimularParcelasAsync(int condicaoPagamentoId,
+        DateTime dataEmissao, decimal valorTotal, DateTime? primeiroVencimento = null)
+    {
+        var parcelas = new List<CompraParcelaDto>();
+        var condicao = await _condicaoRepo.ObterPorIdAsync(condicaoPagamentoId);
+        if (condicao == null || condicao.NumeroParcelas <= 0) return parcelas;
+
+        var n = condicao.NumeroParcelas;
+        var config = await _condicaoRepo.ObterParcelasAsync(condicaoPagamentoId);
+        var dias1 = config.FirstOrDefault(x => x.NumeroParcela == 1)?.DiasVencimento ?? 30;
+
+        var primeiro = (primeiroVencimento ?? dataEmissao.AddDays(dias1)).Date;
+        var valorParcela = Math.Round(valorTotal / n, 2);
+        var diferenca = valorTotal - valorParcela * n;
+
+        for (int p = 1; p <= n; p++)
+        {
+            parcelas.Add(new CompraParcelaDto
+            {
+                Numero = p,
+                DataVencimento = primeiro.AddMonths(p - 1),
+                Valor = p == n ? valorParcela + diferenca : valorParcela
+            });
+        }
+        return parcelas;
+    }
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CompraDto dto)
     {
         try
@@ -82,6 +115,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             if (!dto.FornecedorId.HasValue)
                 return (false, "Selecione o fornecedor.", 0);
+
+            if (!dto.TransportadoraId.HasValue) return (false, "Selecione a transportadora.", 0);
 
             var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
             if (itensValidos.Count == 0)
@@ -101,6 +136,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             if (dto.ValorFrete < 0)
                 return (false, "O frete não pode ser negativo.", 0);
+            if (dto.ValorSeguro < 0) return (false, "O seguro não pode ser negativo.", 0);
             if (dto.ValorOutrosAcrescimos < 0)
                 return (false, "Outros acréscimos não podem ser negativos.", 0);
 
@@ -123,32 +159,51 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
             dto.ValorDesconto = itensValidos.Sum(i => i.ValorDesconto);
-            dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + dto.ValorFrete + dto.ValorOutrosAcrescimos;
+            dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + dto.ValorFrete + dto.ValorSeguro + dto.ValorOutrosAcrescimos;
 
-            RatearCusto(itensValidos, dto.ValorFrete + dto.ValorOutrosAcrescimos);
+            RatearCusto(itensValidos, dto.ValorFrete + dto.ValorSeguro + dto.ValorOutrosAcrescimos);
 
-            var parcelasGerar = new List<(int numero, DateTime vencimento, decimal valor)>();
-            var totalParcelas = 0;
+            var parcelasGerar = new List<CompraParcelaDto>();
 
             if (dto.CondicaoPagamentoId.HasValue && dto.ValorTotal > 0)
             {
-                var condicao = await _condicaoRepo.ObterPorIdAsync(dto.CondicaoPagamentoId.Value);
-                if (condicao != null && condicao.NumeroParcelas > 0)
+                if (dto.Parcelas.Count == 0)
                 {
-                    totalParcelas = condicao.NumeroParcelas;
-                    var valorParcela = Math.Round(dto.ValorTotal / totalParcelas, 2);
-                    var diferenca = dto.ValorTotal - (valorParcela * totalParcelas);
-                    var configParcelas = await _condicaoRepo.ObterParcelasAsync(dto.CondicaoPagamentoId.Value);
+                    parcelasGerar = await SimularParcelasAsync(dto.CondicaoPagamentoId.Value,
+                        dto.DataEmissao.Value, dto.ValorTotal);
+                }
+                else
+                {
+                    var condicao = await _condicaoRepo.ObterPorIdAsync(dto.CondicaoPagamentoId.Value);
+                    if (condicao == null)
+                        return (false, "Condição de pagamento não encontrada.", 0);
+                    if (dto.Parcelas.Count != condicao.NumeroParcelas)
+                        return (false, $"A condição de pagamento exige {condicao.NumeroParcelas} parcela(s), " +
+                                       $"mas foram informadas {dto.Parcelas.Count}.", 0);
 
-                    for (int p = 1; p <= totalParcelas; p++)
+                    DateTime? anterior = null;
+                    foreach (var p in dto.Parcelas)
                     {
-                        var cfg = configParcelas.FirstOrDefault(x => x.NumeroParcela == p);
-                        var vencimento = dto.DataEmissao.Value.AddDays(cfg?.DiasVencimento ?? 30);
-                        var valor = p == totalParcelas ? valorParcela + diferenca : valorParcela;
-                        parcelasGerar.Add((p, vencimento, valor));
+                        if (!p.DataVencimento.HasValue)
+                            return (false, $"Parcela {p.Numero}: informe a data de vencimento.", 0);
+                        if (p.Valor <= 0)
+                            return (false, $"Parcela {p.Numero}: o valor deve ser maior que zero.", 0);
+                        if (p.DataVencimento.Value.Date < dto.DataEmissao.Value.Date)
+                            return (false, $"Parcela {p.Numero}: o vencimento não pode ser anterior à data de emissão.", 0);
+                        if (anterior.HasValue && p.DataVencimento.Value.Date < anterior.Value)
+                            return (false, $"Parcela {p.Numero}: os vencimentos devem estar em ordem crescente.", 0);
+                        anterior = p.DataVencimento.Value.Date;
                     }
+
+                    var soma = Math.Round(dto.Parcelas.Sum(p => p.Valor), 2);
+                    var total = Math.Round(dto.ValorTotal, 2);
+                    if (soma != total)
+                        return (false, $"A soma das parcelas (R$ {soma:N2}) é diferente do total da nota (R$ {total:N2}).", 0);
+
+                    parcelasGerar = dto.Parcelas;
                 }
             }
+            var totalParcelas = parcelasGerar.Count;
 
             using var conn = _factory.CreateConnection();
             if (conn.State != ConnectionState.Open) conn.Open();
@@ -173,13 +228,15 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 await _repo.RecalcularCustoVariacaoAsync(item.ProdutoVariacaoId, tx);
             }
 
-            foreach (var (numero, vencimento, valor) in parcelasGerar)
+            foreach (var parcela in parcelasGerar)
             {
+                var numero = parcela.Numero;
                 var descricao = totalParcelas == 1
                     ? $"COMPRA #{novoId}" + (string.IsNullOrWhiteSpace(dto.NumeroNf) ? "" : $" — NF {dto.NumeroNf}")
                     : $"COMPRA #{novoId} — PARCELA {numero}/{totalParcelas}";
 
-                await _contaPagarRepo.InserirAutomaticaAsync(dto.FornecedorId, novoId, descricao, vencimento, valor, tx);
+                await _contaPagarRepo.InserirAutomaticaAsync(dto.FornecedorId, novoId, descricao,
+                    parcela.DataVencimento!.Value.Date, parcela.Valor, tx);
             }
 
             tx.Commit();

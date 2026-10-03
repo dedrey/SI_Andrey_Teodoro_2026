@@ -19,7 +19,7 @@ public class CompraRepository : BaseRepository, ICompraRepository
         var where = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add(@"(f.razaosocial LIKE @Busca OR c.numero_nf LIKE @Busca OR CAST(c.id AS CHAR) = @BuscaExata)");
+            where.Add(@"(f.razaosocial LIKE @Busca OR t.razaosocial LIKE @Busca OR c.numero_nf LIKE @Busca OR CAST(c.id AS CHAR) = @BuscaExata)");
 
         where.Add(filtro.StatusFiltro switch
         {
@@ -38,14 +38,17 @@ public class CompraRepository : BaseRepository, ICompraRepository
 
         var sqlCount = $@"SELECT COUNT(*) FROM compras c
                           LEFT JOIN fornecedores f ON f.id = c.fornecedor_id
+                          LEFT JOIN transportadoras t ON t.id = c.transportadora_id
                           {whereClause}";
 
         var sqlData = $@"SELECT c.id,
                                 COALESCE(f.razaosocial, 'Sem fornecedor') AS NomeFornecedor,
+                                COALESCE(t.razaosocial, '') AS NomeTransportadora,
                                 c.numero_nf              AS NumeroNf,
                                 COUNT(ci.id)              AS TotalItens,
                                 c.valor_subtotal          AS ValorSubtotal,
                                 c.valor_frete             AS ValorFrete,
+                                c.valor_seguro            AS ValorSeguro,
                                 c.valor_outros_acrescimos AS ValorOutrosAcrescimos,
                                 c.valor_desconto          AS ValorDesconto,
                                 c.valor_total             AS ValorTotal,
@@ -56,9 +59,10 @@ public class CompraRepository : BaseRepository, ICompraRepository
                                 c.criado_em                AS CriadoEm
                          FROM compras c
                          LEFT JOIN fornecedores   f  ON f.id = c.fornecedor_id
+                         LEFT JOIN transportadoras t ON t.id = c.transportadora_id
                          LEFT JOIN compras_itens  ci ON ci.compra_id = c.id
                          {whereClause}
-                         GROUP BY c.id, f.razaosocial, c.numero_nf, c.valor_subtotal, c.valor_frete,
+                         GROUP BY c.id, f.razaosocial, t.razaosocial, c.numero_nf, c.valor_subtotal, c.valor_frete, c.valor_seguro,
                                   c.valor_outros_acrescimos, c.valor_desconto, c.valor_total,
                                   c.data_emissao, c.data_chegada, c.status_compra,
                                   c.motivo_cancelamento, c.criado_em
@@ -91,6 +95,8 @@ public class CompraRepository : BaseRepository, ICompraRepository
             @"SELECT c.id,
                      c.fornecedor_id            AS FornecedorId,
                      COALESCE(f.razaosocial, '') AS NomeFornecedor,
+                     c.transportadora_id         AS TransportadoraId,
+                     COALESCE(t.razaosocial, '') AS NomeTransportadora,
                      c.numero_nf                AS NumeroNf,
                      c.data_emissao              AS DataEmissao,
                      c.data_chegada              AS DataChegada,
@@ -98,6 +104,7 @@ public class CompraRepository : BaseRepository, ICompraRepository
                      cp.condicao_pagamento       AS NomeCondicaoPagamento,
                      c.valor_subtotal            AS ValorSubtotal,
                      c.valor_frete               AS ValorFrete,
+                     c.valor_seguro              AS ValorSeguro,
                      c.valor_outros_acrescimos   AS ValorOutrosAcrescimos,
                      c.valor_desconto            AS ValorDesconto,
                      c.valor_total               AS ValorTotal,
@@ -107,6 +114,7 @@ public class CompraRepository : BaseRepository, ICompraRepository
                      c.atualizado_em             AS AtualizadoEm
               FROM compras c
               LEFT JOIN fornecedores       f  ON f.id  = c.fornecedor_id
+              LEFT JOIN transportadoras    t  ON t.id  = c.transportadora_id
               LEFT JOIN condicoes_pagamentos cp ON cp.id = c.condicao_pagamento_id
               WHERE c.id = @id", new { id });
     }
@@ -138,21 +146,23 @@ public class CompraRepository : BaseRepository, ICompraRepository
     {
         return await tx.Connection!.ExecuteScalarAsync<int>(
             @"INSERT INTO compras
-                (fornecedor_id, numero_nf, data_emissao, data_chegada, condicao_pagamento_id,
-                 valor_subtotal, valor_frete, valor_outros_acrescimos, valor_desconto, valor_total, status_compra)
+                (fornecedor_id, transportadora_id, numero_nf, data_emissao, data_chegada, condicao_pagamento_id,
+                 valor_subtotal, valor_frete, valor_seguro, valor_outros_acrescimos, valor_desconto, valor_total, status_compra)
               VALUES
-                (@FornecedorId, @NumeroNf, @DataEmissao, @DataChegada, @CondicaoPagamentoId,
-                 @ValorSubtotal, @ValorFrete, @ValorOutrosAcrescimos, @ValorDesconto, @ValorTotal, 'LANCADO');
+                (@FornecedorId, @TransportadoraId, @NumeroNf, @DataEmissao, @DataChegada, @CondicaoPagamentoId,
+                 @ValorSubtotal, @ValorFrete, @ValorSeguro, @ValorOutrosAcrescimos, @ValorDesconto, @ValorTotal, 'LANCADO');
               SELECT LAST_INSERT_ID();",
             new
             {
                 dto.FornecedorId,
+                dto.TransportadoraId,
                 dto.NumeroNf,
                 dto.DataEmissao,
                 dto.DataChegada,
                 dto.CondicaoPagamentoId,
                 dto.ValorSubtotal,
                 dto.ValorFrete,
+                dto.ValorSeguro,
                 dto.ValorOutrosAcrescimos,
                 dto.ValorDesconto,
                 dto.ValorTotal
