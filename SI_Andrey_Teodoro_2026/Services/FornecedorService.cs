@@ -38,6 +38,8 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             Bairro = f.Bairro,
             Telefone = f.Telefone ?? string.Empty,
             Email = f.Email ?? string.Empty,
+            CondicaoPagamentoId = f.CondicaoPagamentoId,
+            NomeCondicaoPagamento = f.NomeCondicaoPagamento,
             Ativo = f.Ativo,
             AtualizadoEm = f.AtualizadoEm,
             NomeAtualizadoPor = f.NomeAtualizadoPor
@@ -62,6 +64,9 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);
+
+            if (!dto.CondicaoPagamentoId.HasValue)
+                return (false, "Selecione a condição de pagamento.", 0);
 
             if (dto.TipoPessoa == "PJ" && string.IsNullOrWhiteSpace(dto.NomeFantasia))
                 return (false, "Nome Fantasia é obrigatório para Pessoa Jurídica.", 0);

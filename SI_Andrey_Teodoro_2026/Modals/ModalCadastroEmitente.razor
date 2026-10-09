@@ -122,6 +122,7 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public EmitenteDto? DtoEdicao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
@@ -161,6 +162,7 @@
             };
             if (_dto.CidadeId.HasValue) _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
         }
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private Task<IEnumerable<CidadeListDto>> PesquisarCidade(string? busca, CancellationToken ct)
@@ -171,7 +173,7 @@
     }
     private async Task AbrirModalCidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)).ToList(); if (result.Data is int id) { _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == id); _dto.CidadeId = id; } }
@@ -186,7 +188,8 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-    private void Cancelar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, Cidade = _cidadeSelecionada?.Id };
+    private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
     private string MascaraCnpj(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 14) d = d[..14]; return d.Length switch { 0 => "", <= 2 => d, <= 5 => $"{d[..2]}.{d[2..]}", <= 8 => $"{d[..2]}.{d[2..5]}.{d[5..]}", <= 12 => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..]}", _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" }; }
     private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
     private static string? ValidarEmail(string? v)

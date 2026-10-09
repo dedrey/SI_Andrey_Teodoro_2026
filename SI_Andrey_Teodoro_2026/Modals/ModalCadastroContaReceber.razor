@@ -196,6 +196,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public ContaReceberDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
@@ -236,6 +237,7 @@
             if (DtoEdicao.VendaId.HasValue)
                 _contasDaVenda = await ContaReceberService.ObterContasDaVendaAsync(DtoEdicao.VendaId.Value);
         }
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private void OnValorAlterado(string? texto)
@@ -256,7 +258,7 @@
 
     private async Task AbrirModalCliente()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -270,7 +272,7 @@
     private async Task AbrirAnexarComprovante(int baixaId)
     {
         var param = new DialogParameters<ModalAnexarComprovante> { { x => x.BaixaId, baixaId } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalAnexarComprovante>("Anexar Comprovante", param, opts);
         if ((await dialog.Result) is { Canceled: false })
         {
@@ -295,6 +297,7 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Fechar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto.ClienteId, _dto.Descricao, _dto.ValorOriginal, _dataVencimento, _valorTexto };
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _somenteLeitura, _snapshot, DadosEditaveis());
 
 }

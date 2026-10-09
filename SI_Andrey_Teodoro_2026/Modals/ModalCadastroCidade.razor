@@ -107,6 +107,7 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public CidadeDto? DtoEdicao { get; set; }
     [Parameter] public int PaisIdInicial { get; set; }
     [Parameter] public int EstadoIdInicial { get; set; }
@@ -146,6 +147,7 @@
             if (PaisIdInicial > 0) { _dto.PaisId = PaisIdInicial; _estados = (await EstadoService.ObterPorPaisAsync(PaisIdInicial)).ToList(); }
             if (EstadoIdInicial > 0) _dto.EstadoId = EstadoIdInicial;
         }
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private async Task OnPaisAlterado(int paisId) { _dto.PaisId = paisId; _dto.EstadoId = 0; _paisNaoSelecionado = false; _estados = (await EstadoService.ObterPorPaisAsync(paisId)).ToList(); }
@@ -153,7 +155,7 @@
 
     private async Task AbrirModalPais()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _paises = (await PaisService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _dto.PaisId = id; _paisNaoSelecionado = false; _estados = (await EstadoService.ObterPorPaisAsync(id)).ToList(); } }
@@ -162,7 +164,7 @@
     private async Task AbrirModalEstado()
     {
         var param = new DialogParameters<ModalCadastroEstado> { { x => x.PaisIdInicial, _dto.PaisId } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", param, opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList(); if (result.Data is int id) { _dto.EstadoId = id; _estadoNaoSelecionado = false; } }
@@ -180,5 +182,6 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-    private void Cancelar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _dddTexto };
+    private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }

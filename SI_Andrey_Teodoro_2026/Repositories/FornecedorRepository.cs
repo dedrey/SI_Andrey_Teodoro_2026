@@ -43,10 +43,13 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                                   f.cpf_cnpj      AS CpfCnpj,
                                   c.cidade        AS NomeCidade,
                                   f.telefone, f.email,
+                                  f.condicao_pagamento_id AS CondicaoPagamentoId,
+                                  cp.condicao_pagamento   AS NomeCondicaoPagamento,
                                   f.ativo,
                                   f.criado_em AS CriadoEm
                           FROM fornecedores f
                           LEFT JOIN cidades c ON c.id = f.cidade_id
+                          LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
                           {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
@@ -82,12 +85,15 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                      c.cidade        AS NomeCidade,
                      f.endereco, f.numero, f.complemento, f.bairro, f.cep,
                      f.telefone, f.email,
+                     f.condicao_pagamento_id AS CondicaoPagamentoId,
+                     cp.condicao_pagamento   AS NomeCondicaoPagamento,
                      f.ativo,
                      f.criado_em     AS CriadoEm,
                      f.atualizado_em AS AtualizadoEm,
                      ua.nome         AS NomeAtualizadoPor
               FROM fornecedores f
               LEFT JOIN cidades  c  ON c.id  = f.cidade_id
+              LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
               LEFT JOIN usuarios ua ON ua.id = f.atualizado_por
               WHERE f.id = @id", new { id });
     }
@@ -99,10 +105,10 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
         await conn.ExecuteAsync(
             @"INSERT INTO fornecedores
                 (id, razaosocial, tipo_pessoa, nomefantasia, cpf_cnpj, cidade_id,
-                 endereco, numero, complemento, bairro, cep, telefone, email, ativo)
+                 endereco, numero, complemento, bairro, cep, telefone, email, condicao_pagamento_id, ativo)
               VALUES
                 (@ProximoId, @RazaoSocial, @TipoPessoa, @NomeFantasia, @CpfCnpj, @CidadeId,
-                 @Endereco, @Numero, @Complemento, @Bairro, @Cep, @Telefone, @Email, @Ativo)",
+                 @Endereco, @Numero, @Complemento, @Bairro, @Cep, @Telefone, @Email, @CondicaoPagamentoId, @Ativo)",
             new
             {
                 ProximoId = proximoId,
@@ -118,6 +124,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                 dto.Cep,
                 dto.Telefone,
                 dto.Email,
+                dto.CondicaoPagamentoId,
                 dto.Ativo
             });
         return proximoId;
@@ -141,6 +148,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                   cep          = @Cep,
                   telefone     = @Telefone,
                   email        = @Email,
+                  condicao_pagamento_id = @CondicaoPagamentoId,
                   atualizado_em = NOW()
               WHERE id = @IdOriginal",
             new
@@ -158,7 +166,8 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                 dto.Bairro,
                 dto.Cep,
                 dto.Telefone,
-                dto.Email
+                dto.Email,
+                dto.CondicaoPagamentoId
             });
     }
 
@@ -195,14 +204,17 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryAsync<FornecedorListDto>(
-            @"SELECT id,
-                 razaosocial AS RazaoSocial,
-                 nomefantasia AS NomeFantasia,
-                 tipo_pessoa AS TipoPessoa,
-                 cpf_cnpj AS CpfCnpj,
-                 ativo
-          FROM fornecedores
-          WHERE ativo = TRUE
-          ORDER BY razaosocial");
+            @"SELECT f.id,
+                 f.razaosocial AS RazaoSocial,
+                 f.nomefantasia AS NomeFantasia,
+                 f.tipo_pessoa AS TipoPessoa,
+                 f.cpf_cnpj AS CpfCnpj,
+                 f.condicao_pagamento_id AS CondicaoPagamentoId,
+                 cp.condicao_pagamento AS NomeCondicaoPagamento,
+                 f.ativo
+          FROM fornecedores f
+          LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
+          WHERE f.ativo = TRUE
+          ORDER BY f.razaosocial");
     }
 }

@@ -78,6 +78,7 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public VeiculoDto? DtoEdicao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
@@ -111,6 +112,7 @@
             _placaTexto = DtoEdicao.Placa;
             _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == DtoEdicao.TransportadoraId);
         }
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private void OnPlacaAlterada(string? v) { if (string.IsNullOrEmpty(v)) { _placaTexto = ""; _dto.Placa = ""; return; } var l = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper(); if (l.Length > 7) l = l[..7]; _placaTexto = l; _dto.Placa = l; }
@@ -120,7 +122,7 @@
 
     private async Task AbrirModalTransportadora()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == id); _dto.TransportadoraId = id; } }
@@ -137,5 +139,6 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-    private void Cancelar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _placaTexto, Transportadora = _transportadoraSelecionada?.Id };
+    private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }

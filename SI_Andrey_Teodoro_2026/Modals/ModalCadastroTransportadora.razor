@@ -125,6 +125,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public TransportadoraDto? DtoEdicao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
@@ -145,6 +146,7 @@
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
         if (_dto.CidadeId.HasValue)
             _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private void OnCidadeAlterada(CidadeListDto? cidade)
@@ -164,7 +166,7 @@
 
     private async Task AbrirModalCidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         if ((await dialog.Result) is { Canceled: false })
             _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
@@ -181,7 +183,8 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Fechar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _cnpjTexto, Cidade = _cidadeSelecionada?.Id };
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 
     private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
     private string MascaraCnpj(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 14) d = d[..14]; return d.Length switch { 0 => "", <= 2 => d, <= 5 => $"{d[..2]}.{d[2..]}", <= 8 => $"{d[..2]}.{d[2..5]}.{d[5..]}", <= 12 => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..]}", _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" }; }

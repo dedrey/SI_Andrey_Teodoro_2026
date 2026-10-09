@@ -149,7 +149,7 @@
             { x => x.ValorOriginal, parcela.ValorOriginal },
             { x => x.ValorSaldo, parcela.ValorSaldo }
         };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalRegistrarRecebimento>("Registrar Recebimento", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await Carregar();
     }
@@ -157,7 +157,7 @@
     private async Task AbrirAnexarComprovante(int baixaId)
     {
         var param = new DialogParameters<ModalAnexarComprovante> { { x => x.BaixaId, baixaId } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalAnexarComprovante>("Anexar Comprovante", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await Carregar();
     }
@@ -175,7 +175,7 @@
             { x => x.CorBotao, Color.Success }
         };
         var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar",
-            param, new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small });
+            param, new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small });
         if ((await dialog.Result) is not { Canceled: false }) return;
 
         _processandoBaixaTotal = true;

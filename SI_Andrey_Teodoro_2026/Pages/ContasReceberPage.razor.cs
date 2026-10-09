@@ -32,7 +32,7 @@ public partial class ContasReceberPage : ComponentBase
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroContaReceber>("Nova Conta a Receber", opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -42,7 +42,7 @@ public partial class ContasReceberPage : ComponentBase
         var dto = await ContaReceberService.ObterPorIdAsync(id);
         if (dto == null) return;
         var param = new DialogParameters<ModalCadastroContaReceber> { { x => x.DtoEdicao, dto } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroContaReceber>(
             dto.Status == "ABERTA" ? "Editar Conta a Receber" : "Detalhes da Conta", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
@@ -51,7 +51,7 @@ public partial class ContasReceberPage : ComponentBase
     private async Task VisualizarVenda(int vendaId)
     {
         var param = new DialogParameters<ModalDetalhesContaReceberVenda> { { x => x.VendaId, vendaId } };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalDetalhesContaReceberVenda>($"Venda #{vendaId}", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -65,7 +65,7 @@ public partial class ContasReceberPage : ComponentBase
             { x => x.ValorOriginal, conta.ValorOriginal },
             { x => x.ValorSaldo, conta.ValorSaldo }
         };
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalRegistrarRecebimento>("Registrar Recebimento", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
@@ -80,7 +80,7 @@ public partial class ContasReceberPage : ComponentBase
             { x => x.CorBotao, Color.Error }
         };
         var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar", param,
-            new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small });
+            new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small });
         if ((await dialog.Result) is { Canceled: false })
         {
             var (sucesso, mensagem) = await ContaReceberService.CancelarAsync(id);

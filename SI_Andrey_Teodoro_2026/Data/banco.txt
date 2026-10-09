@@ -103,6 +103,7 @@ CREATE TABLE fornecedores (
   cep            VARCHAR(9)   NULL COMMENT 'CEP no formato 00000-000',
   telefone       VARCHAR(15),
   email          VARCHAR(50),
+  condicao_pagamento_id INT NULL,
   ativo          BOOLEAN      NOT NULL DEFAULT TRUE,
   criado_em      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   criado_por     INT NULL,
@@ -623,3 +624,6 @@ CREATE TABLE contas_receber_baixas (
 -- ================================================================
 ALTER TABLE movimentacoes_estoque
   ADD CONSTRAINT fk_movest_compra FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE SET NULL;
+
+ALTER TABLE fornecedores
+  ADD CONSTRAINT fk_fornecedores_condicao FOREIGN KEY (condicao_pagamento_id) REFERENCES condicoes_pagamentos(id) ON DELETE SET NULL;

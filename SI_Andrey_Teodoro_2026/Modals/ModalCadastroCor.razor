@@ -1,4 +1,5 @@
-﻿@inject ICorService CorService
+﻿@inject IDialogService DialogService
+@inject ICorService CorService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -27,6 +28,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public CorDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
@@ -34,7 +36,10 @@
     private CorDto _dto = new();
 
     protected override void OnInitialized()
-        => _dto = DtoEdicao ?? new CorDto();
+    {
+        _dto = DtoEdicao ?? new CorDto();
+        _snapshot = DialogServiceExtensions.Snapshot(_dto);
+    }
 
     private async Task Salvar()
     {
@@ -46,6 +51,6 @@
         Snackbar.Add(msg, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(id));
     }
-    private void Fechar() => MudDialog.Cancel();
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, _dto);
 
 }

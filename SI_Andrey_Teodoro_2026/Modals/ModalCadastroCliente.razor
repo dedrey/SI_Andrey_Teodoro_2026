@@ -180,6 +180,7 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public ClienteDto? DtoEdicao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
@@ -229,6 +230,7 @@
 
             if (_dto.CidadeId.HasValue) _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
         }
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private void OnTipoPessoaAlterado(string tipo) { _dto.TipoPessoa = tipo; _docTexto = ""; _dto.CpfCnpj = ""; if (tipo == "PF") _dto.Celular = null; }
@@ -245,7 +247,7 @@
 
     private async Task AbrirModalCidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false }) { _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList(); if (result.Data is int id) { _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == id); _dto.CidadeId = id; } }
@@ -261,7 +263,8 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-    private void Cancelar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _docTexto, Cidade = _cidadeSelecionada?.Id };
+    private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 
     private string? ValidarDocumento(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); if (_dto.TipoPessoa == "PF" && d.Length != 11) return "CPF deve ter 11 dígitos"; if (_dto.TipoPessoa == "PJ" && d.Length != 14) return "CNPJ deve ter 14 dígitos"; return null; }
     private string? ValidarTel(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }

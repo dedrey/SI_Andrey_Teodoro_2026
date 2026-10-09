@@ -12,6 +12,8 @@ public class FornecedorListDto
     public string? Endereco { get; set; }
     public string? Telefone { get; set; }
     public string? Email { get; set; }
+    public int? CondicaoPagamentoId { get; set; }
+    public string NomeCondicaoPagamento { get; set; } = string.Empty;
     public bool Ativo { get; set; }
     public DateTime CriadoEm { get; set; }
     public DateTime? AtualizadoEm { get; set; }

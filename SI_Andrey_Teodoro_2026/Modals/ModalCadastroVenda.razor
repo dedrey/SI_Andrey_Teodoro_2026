@@ -200,6 +200,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public VendaDto? DtoEdicao { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -239,6 +240,7 @@
             }
         }
         RecalcularTotais();
+        _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 
     private MudForm? _form;
@@ -348,7 +350,7 @@
 
     private async Task AbrirModalCliente()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         if ((await dialog.Result) is { Canceled: false })
             _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
@@ -356,7 +358,7 @@
 
     private async Task AbrirModalCondicao()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
         if ((await dialog.Result) is { Canceled: false })
             _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
@@ -400,5 +402,5 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
-    private void Fechar() => MudDialog.Cancel();
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, _dto);
 }

@@ -92,6 +92,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public ContaPagarDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
@@ -129,6 +130,7 @@
             _mesExibido = DtoEdicao.DataVencimento;
             _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
         }
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private void OnValorAlterado(string? texto)
@@ -149,7 +151,7 @@
 
     private async Task AbrirModalFornecedor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -175,6 +177,7 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Fechar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _dataVencimento, _valorTexto };
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _somenteLeitura, _snapshot, DadosEditaveis());
 
 }
