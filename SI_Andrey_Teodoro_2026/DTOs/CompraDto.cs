@@ -11,7 +11,10 @@ public class CompraDto
     public int? TransportadoraId { get; set; }
     public string NomeTransportadora { get; set; } = string.Empty;
 
+    public string ModeloNf { get; set; } = string.Empty;
+    public int? SerieNf { get; set; }
     public string? NumeroNf { get; set; }
+    public string? ChaveAcesso { get; set; }
     public DateTime? DataEmissao { get; set; }
     public DateTime? DataChegada { get; set; }
 
@@ -32,6 +35,25 @@ public class CompraDto
 
     public List<CompraItemDto> Itens { get; set; } = new();
     public List<CompraParcelaDto> Parcelas { get; set; } = new();
+}
+
+public class CompraXmlDto
+{
+    public string ChaveAcesso { get; set; } = string.Empty;
+    public string ModeloNf { get; set; } = string.Empty;
+    public int SerieNf { get; set; }
+    public string NumeroNf { get; set; } = string.Empty;
+    public DateTime DataEmissao { get; set; }
+    public string CnpjEmitente { get; set; } = string.Empty;
+    public string NomeEmitente { get; set; } = string.Empty;
+    public string? CnpjTransportadora { get; set; }
+    public string? NomeTransportadora { get; set; }
+    public decimal ValorFrete { get; set; }
+    public decimal ValorSeguro { get; set; }
+    public decimal ValorOutros { get; set; }
+    public decimal ValorTotalNota { get; set; }
+    public int? FornecedorId { get; set; }
+    public int? TransportadoraId { get; set; }
 }
 
 public class CompraParcelaDto

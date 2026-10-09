@@ -1,6 +1,10 @@
 using System.Data;
+using System.Globalization;
+using System.Xml;
+using System.Xml.Linq;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -13,17 +17,23 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     private readonly ICondicaoPagamentoRepository _condicaoRepo;
     private readonly IMovimentacaoEstoqueRepository _movRepo;
     private readonly IFornecedorRepository _fornecedorRepo;
+    private readonly ITransportadoraRepository _transportadoraRepo;
     private readonly DbConnectionFactory _factory;
+
+    private static readonly string[] ModelosNf = { "55", "65", "01", "04" };
+    private const long TamanhoMaximoXml = 2 * 1024 * 1024;
+    private static readonly XNamespace NsNfe = "http://www.portalfiscal.inf.br/nfe";
 
     public CompraService(ICompraRepository repo, IContaPagarRepository contaPagarRepo,
         ICondicaoPagamentoRepository condicaoRepo, IMovimentacaoEstoqueRepository movRepo,
-        IFornecedorRepository fornecedorRepo, DbConnectionFactory factory)
+        IFornecedorRepository fornecedorRepo, ITransportadoraRepository transportadoraRepo, DbConnectionFactory factory)
     {
         _repo = repo;
         _contaPagarRepo = contaPagarRepo;
         _condicaoRepo = condicaoRepo;
         _movRepo = movRepo;
         _fornecedorRepo = fornecedorRepo;
+        _transportadoraRepo = transportadoraRepo;
         _factory = factory;
     }
 
@@ -45,7 +55,10 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             NomeFornecedor = c.NomeFornecedor,
             TransportadoraId = c.TransportadoraId,
             NomeTransportadora = c.NomeTransportadora,
+            ModeloNf = c.ModeloNf ?? string.Empty,
+            SerieNf = c.SerieNf,
             NumeroNf = c.NumeroNf,
+            ChaveAcesso = c.ChaveAcesso,
             DataEmissao = c.DataEmissao,
             DataChegada = c.DataChegada,
             CondicaoPagamentoId = c.CondicaoPagamentoId,
@@ -113,7 +126,9 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     {
         try
         {
-            dto.NumeroNf = string.IsNullOrWhiteSpace(dto.NumeroNf) ? null : dto.NumeroNf.Trim().ToUpperInvariant();
+            dto.ModeloNf = (dto.ModeloNf ?? "").Trim();
+            dto.NumeroNf = string.IsNullOrWhiteSpace(dto.NumeroNf) ? null : dto.NumeroNf.Trim();
+            dto.ChaveAcesso = string.IsNullOrWhiteSpace(dto.ChaveAcesso) ? null : ChaveNfeHelper.SomenteDigitos(dto.ChaveAcesso);
 
             if (!dto.FornecedorId.HasValue)
                 return (false, "Selecione o fornecedor.", 0);
@@ -142,6 +157,35 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, "A data de chegada não pode ser anterior à data de emissão.", 0);
             if (dto.DataChegada.Value.Date > DateTime.Today)
                 return (false, "A data de chegada não pode ser maior que a data atual.", 0);
+
+            if (!ModelosNf.Contains(dto.ModeloNf))
+                return (false, "Selecione o modelo da nota fiscal.", 0);
+            if (!dto.SerieNf.HasValue || dto.SerieNf < 0 || dto.SerieNf > 999)
+                return (false, "Informe a série da nota fiscal (0 a 999).", 0);
+            if (dto.NumeroNf == null || dto.NumeroNf.Length > 9 || !dto.NumeroNf.All(char.IsDigit))
+                return (false, "Informe o número da nota fiscal (somente números, até 9 dígitos).", 0);
+            dto.NumeroNf = dto.NumeroNf.TrimStart('0');
+            if (dto.NumeroNf.Length == 0) dto.NumeroNf = "0";
+
+            if (dto.ChaveAcesso != null)
+            {
+                if (!ChaveNfeHelper.Validar(dto.ChaveAcesso))
+                    return (false, "Chave de acesso inválida.", 0);
+
+                var (cnpj, modelo, serie, numero, ano, mes) = ChaveNfeHelper.Decompor(dto.ChaveAcesso);
+                var divergencias = new List<string>();
+                if (modelo != dto.ModeloNf) divergencias.Add("modelo");
+                if (serie != dto.SerieNf) divergencias.Add("série");
+                if (numero != dto.NumeroNf) divergencias.Add("número");
+                if (ano != dto.DataEmissao.Value.Year || mes != dto.DataEmissao.Value.Month) divergencias.Add("data de emissão");
+                if (cnpj != ChaveNfeHelper.SomenteDigitos(fornecedor.CpfCnpj)) divergencias.Add("CNPJ do fornecedor");
+                if (divergencias.Count > 0)
+                    return (false, $"A chave de acesso não confere com: {string.Join(", ", divergencias)}.", 0);
+            }
+
+            var compraExistente = await _repo.ObterCompraComMesmaNotaAsync(dto.FornecedorId.Value, dto.ModeloNf, dto.SerieNf.Value, dto.NumeroNf);
+            if (compraExistente.HasValue)
+                return (false, $"Esta nota já foi lançada na Compra #{compraExistente}.", 0);
 
             if (dto.ValorFrete < 0)
                 return (false, "O frete não pode ser negativo.", 0);
@@ -304,6 +348,94 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             return (true, "Compra cancelada com sucesso! Estoque estornado, custo recalculado e parcelas em aberto canceladas.");
         }
         catch (Exception ex) { return (false, Erro(ex).mensagem); }
+    }
+
+    public async Task<(bool sucesso, string mensagem, CompraXmlDto? dados)> LerXmlNfeAsync(Stream xml)
+    {
+        const string invalido = "Arquivo XML não é uma NF-e válida.";
+        try
+        {
+            using var ms = new MemoryStream();
+            var buffer = new byte[81920];
+            int lidos;
+            while ((lidos = await xml.ReadAsync(buffer)) > 0)
+            {
+                ms.Write(buffer, 0, lidos);
+                if (ms.Length > TamanhoMaximoXml)
+                    return (false, "O arquivo XML deve ter no máximo 2 MB.", null);
+            }
+            ms.Position = 0;
+
+            XDocument doc;
+            try
+            {
+                var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
+                using var reader = XmlReader.Create(ms, settings);
+                doc = XDocument.Load(reader);
+            }
+            catch (XmlException) { return (false, invalido, null); }
+
+            var raiz = doc.Root;
+            var nfe = raiz?.Name == NsNfe + "nfeProc" ? raiz.Element(NsNfe + "NFe")
+                    : raiz?.Name == NsNfe + "NFe" ? raiz
+                    : null;
+            var inf = nfe?.Element(NsNfe + "infNFe");
+            if (inf == null) return (false, invalido, null);
+
+            var ide = inf.Element(NsNfe + "ide");
+            var emit = inf.Element(NsNfe + "emit");
+            var transporta = inf.Element(NsNfe + "transp")?.Element(NsNfe + "transporta");
+            var tot = inf.Element(NsNfe + "total")?.Element(NsNfe + "ICMSTot");
+
+            var chave = ((string?)inf.Attribute("Id") ?? "").Trim();
+            if (chave.StartsWith("NFe")) chave = chave[3..];
+            if (!ChaveNfeHelper.Validar(chave))
+                return (false, "Chave de acesso do XML inválida.", null);
+
+            var modelo = ide?.Element(NsNfe + "mod")?.Value.Trim();
+            var serieTexto = ide?.Element(NsNfe + "serie")?.Value.Trim();
+            var numeroTexto = ide?.Element(NsNfe + "nNF")?.Value.Trim();
+            var emissaoTexto = (ide?.Element(NsNfe + "dhEmi") ?? ide?.Element(NsNfe + "dEmi"))?.Value.Trim();
+            if (string.IsNullOrEmpty(modelo) || !int.TryParse(serieTexto, out var serie)
+                || string.IsNullOrEmpty(numeroTexto) || !numeroTexto.All(char.IsDigit)
+                || emissaoTexto == null || emissaoTexto.Length < 10
+                || !DateTime.TryParseExact(emissaoTexto[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var emissao))
+                return (false, invalido, null);
+
+            var numero = numeroTexto.TrimStart('0');
+            var dados = new CompraXmlDto
+            {
+                ChaveAcesso = chave,
+                ModeloNf = modelo,
+                SerieNf = serie,
+                NumeroNf = numero.Length == 0 ? "0" : numero,
+                DataEmissao = emissao,
+                CnpjEmitente = ChaveNfeHelper.SomenteDigitos((emit?.Element(NsNfe + "CNPJ") ?? emit?.Element(NsNfe + "CPF"))?.Value),
+                NomeEmitente = emit?.Element(NsNfe + "xNome")?.Value.Trim() ?? string.Empty,
+                CnpjTransportadora = transporta == null ? null : ChaveNfeHelper.SomenteDigitos((transporta.Element(NsNfe + "CNPJ") ?? transporta.Element(NsNfe + "CPF"))?.Value),
+                NomeTransportadora = transporta?.Element(NsNfe + "xNome")?.Value.Trim(),
+                ValorFrete = Valor(tot, "vFrete"),
+                ValorSeguro = Valor(tot, "vSeg"),
+                ValorOutros = Valor(tot, "vOutro"),
+                ValorTotalNota = Valor(tot, "vNF")
+            };
+
+            if (dados.CnpjEmitente.Length > 0)
+                dados.FornecedorId = (await _fornecedorRepo.ObterTodosAtivosAsync())
+                    .FirstOrDefault(f => ChaveNfeHelper.SomenteDigitos(f.CpfCnpj) == dados.CnpjEmitente)?.Id;
+            if (!string.IsNullOrEmpty(dados.CnpjTransportadora))
+                dados.TransportadoraId = (await _transportadoraRepo.ObterTodosAtivosAsync())
+                    .FirstOrDefault(t => ChaveNfeHelper.SomenteDigitos(t.Cnpj) == dados.CnpjTransportadora)?.Id;
+
+            return (true, "XML lido com sucesso.", dados);
+        }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, null); }
+    }
+
+    private static decimal Valor(XElement? pai, string nome)
+    {
+        var texto = pai?.Element(NsNfe + nome)?.Value;
+        return decimal.TryParse(texto, NumberStyles.Number, CultureInfo.InvariantCulture, out var v) ? v : 0;
     }
 
     private static void RatearCusto(List<CompraItemDto> itens, decimal acrescimos)

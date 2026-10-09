@@ -7,7 +7,10 @@ public class Compra
     public string NomeFornecedor { get; set; } = string.Empty;
     public int? TransportadoraId { get; set; }
     public string NomeTransportadora { get; set; } = string.Empty;
+    public string? ModeloNf { get; set; }
+    public int? SerieNf { get; set; }
     public string? NumeroNf { get; set; }
+    public string? ChaveAcesso { get; set; }
     public DateTime DataEmissao { get; set; }
     public DateTime DataChegada { get; set; }
     public int? CondicaoPagamentoId { get; set; }

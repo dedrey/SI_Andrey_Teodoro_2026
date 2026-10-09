@@ -10,6 +10,18 @@
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Primary" Class="mr-2" />
             <MudText Typo="Typo.h6">@(SomenteLeitura ? "Visualizar Compra" : "Nova Compra")</MudText>
+            @if (!SomenteLeitura && _dto.Itens.Count == 0)
+            {
+                <MudFileUpload T="IBrowserFile" Accept=".xml" FilesChanged="ImportarXml" Class="ml-auto mr-8 mt-0">
+                    <CustomContent>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.UploadFile" Disabled="_importandoXml"
+                                   OnClick="@context.OpenFilePickerAsync">
+                            @(_importandoXml ? "Importando..." : "Importar XML")
+                        </MudButton>
+                    </CustomContent>
+                </MudFileUpload>
+            }
         </div>
     </TitleContent>
     <DialogContent>
@@ -55,11 +67,38 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudTextField @bind-Value="_dto.NumeroNf" Label="Número da NF (opcional)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="60" FullWidth="true"
+                    <MudSelect T="string" @bind-Value="_dto.ModeloNf" Label="Modelo*"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                               Required="true" RequiredError="Selecione o modelo"
+                               Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)">
+                        <MudSelectItem T="string" Value="@("55")">55 - NF-E</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("65")">65 - NFC-E</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("01")">01 - NOTA FISCAL MODELO 1/1A</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("04")">04 - NOTA FISCAL DE PRODUTOR</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" sm="2">
+                    <MudNumericField T="int?" @bind-Value="_dto.SerieNf" Label="Série*"
+                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                     Min="0" Max="999" HideSpinButtons="true"
+                                     Required="true" RequiredError="Obrigatório"
+                                     Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
+                </MudItem>
+                <MudItem xs="6" sm="2">
+                    <MudTextField T="string" @bind-Value="_dto.NumeroNf" Label="Número*"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                  Mask="@(new PatternMask("000000000"))"
+                                  Required="true" RequiredError="Obrigatório"
                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
-                <MudItem xs="12" sm="2">
+                <MudItem xs="12" sm="5">
+                    <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
+                                  Error="@(ErroChave != null)" ErrorText="@ErroChave" HelperText="@AvisoChave"
+                                  Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
+                </MudItem>
+
+                <MudItem xs="12" sm="3">
                     <MudDatePicker @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao"
                                    Label="Data de Emissão" Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
@@ -68,7 +107,7 @@
                                    Error="@(ErroEmissao != null)" ErrorText="@ErroEmissao"
                                    Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
-                <MudItem xs="12" sm="2">
+                <MudItem xs="12" sm="3">
                     <MudDatePicker @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada"
                                    Label="Data de Chegada" Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
@@ -77,7 +116,7 @@
                                    Error="@(ErroChegada != null)" ErrorText="@ErroChegada"
                                    Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
-                <MudItem xs="12" sm="5">
+                <MudItem xs="12" sm="6">
                     <MudTextField T="string" Value="@_dto.NomeCondicaoPagamento"
                                   Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                   ReadOnly="true" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
@@ -91,7 +130,7 @@
             }
             @if (!CabecalhoValido && !SomenteLeitura)
             {
-                <MudText Typo="Typo.caption" Style="color:#888;">Preencha o fornecedor, a transportadora e datas válidas para adicionar itens.</MudText>
+                <MudText Typo="Typo.caption" Style="color:#888;">Preencha fornecedor, transportadora, dados da nota e datas válidas para adicionar itens.</MudText>
             }
 
             <MudDivider Class="my-4" />
@@ -208,6 +247,13 @@
                             </MudButton>
                         }
                     </div>
+                }
+
+                @if (DivergenciaXml)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                        Total calculado (R$ @_dto.ValorTotal.ToString("N2")) diferente do total da NF no XML (R$ @_totalNotaXml!.Value.ToString("N2")).
+                    </MudAlert>
                 }
 
                 <MudGrid Spacing="2" Class="mt-2">
@@ -383,6 +429,7 @@
         _dataChegada = _dto.DataChegada;
         _mesEmissao = _dto.DataEmissao ?? DateTime.Today;
         _mesChegada = _dto.DataChegada ?? DateTime.Today;
+        _chaveTexto = ChaveNfeHelper.Formatar(_dto.ChaveAcesso);
         try
         {
             await Task.WhenAll(
@@ -459,8 +506,97 @@
     private bool CabecalhoValido => _dto.FornecedorId.HasValue
         && _dto.CondicaoPagamentoId.HasValue
         && _dto.TransportadoraId.HasValue
+        && NotaValida
         && _dataEmissao.HasValue && _dataChegada.HasValue
         && ErroEmissao == null && ErroChegada == null;
+
+    private const long TamanhoMaximoXml = 2 * 1024 * 1024;
+    private static readonly string[] ModelosNf = { "55", "65", "01", "04" };
+    private string _chaveTexto = string.Empty;
+    private string? _avisoChave;
+    private decimal? _totalNotaXml;
+    private bool _importandoXml;
+    private string ChaveDigitos => ChaveNfeHelper.SomenteDigitos(_chaveTexto);
+    private string? ErroChave => ChaveDigitos.Length == 44 && !ChaveNfeHelper.Validar(ChaveDigitos) ? "Chave de acesso inválida." : null;
+    private string? AvisoChave => _avisoChave
+        ?? (ChaveDigitos.Length is > 0 and < 44 ? $"{ChaveDigitos.Length}/44 dígitos" : null);
+    private bool NotaValida => ModelosNf.Contains(_dto.ModeloNf)
+        && _dto.SerieNf is >= 0 and <= 999
+        && !string.IsNullOrEmpty(_dto.NumeroNf) && _dto.NumeroNf.Length <= 9 && _dto.NumeroNf.All(char.IsDigit)
+        && (ChaveDigitos.Length == 0 || ChaveNfeHelper.Validar(ChaveDigitos));
+    private bool DivergenciaXml => _totalNotaXml.HasValue && _itensConfirmados
+        && Math.Round(_dto.ValorTotal, 2) != Math.Round(_totalNotaXml.Value, 2);
+
+    private void OnChaveAlterada(string? texto)
+    {
+        var chave = ChaveNfeHelper.SomenteDigitos(texto);
+        if (chave.Length > 44) chave = chave[..44];
+        _chaveTexto = ChaveNfeHelper.Formatar(chave);
+        _dto.ChaveAcesso = chave.Length == 0 ? null : chave;
+        _avisoChave = null;
+        if (!ChaveNfeHelper.Validar(chave)) return;
+
+        var (cnpj, modelo, serie, numero, _, _) = ChaveNfeHelper.Decompor(chave);
+        _dto.ModeloNf = modelo;
+        _dto.SerieNf = serie;
+        _dto.NumeroNf = numero;
+        if (_dto.FornecedorId.HasValue) return;
+
+        var fornecedor = _fornecedores.FirstOrDefault(f => ChaveNfeHelper.SomenteDigitos(f.CpfCnpj) == cnpj);
+        if (fornecedor != null) OnFornecedorAlterado(fornecedor);
+        else _avisoChave = $"Fornecedor com CNPJ {ChaveNfeHelper.FormatarCnpj(cnpj)} não cadastrado.";
+    }
+
+    private async Task ImportarXml(IBrowserFile? arquivo)
+    {
+        if (arquivo == null) return;
+        if (arquivo.Size > TamanhoMaximoXml) { Snackbar.Add("O arquivo XML deve ter no máximo 2 MB.", Severity.Warning); return; }
+
+        _importandoXml = true;
+        try
+        {
+            await using var stream = arquivo.OpenReadStream(TamanhoMaximoXml);
+            var (sucesso, mensagem, dados) = await CompraService.LerXmlNfeAsync(stream);
+            if (!sucesso || dados == null) { Snackbar.Add(mensagem, Severity.Error); return; }
+            AplicarXml(dados);
+            Snackbar.Add("XML importado. Confira os dados e adicione os itens.", Severity.Success);
+        }
+        catch (Exception ex) { Snackbar.Add($"Erro ao ler o XML: {ex.Message}", Severity.Error); }
+        finally { _importandoXml = false; }
+    }
+
+    private void AplicarXml(CompraXmlDto dados)
+    {
+        _chaveTexto = ChaveNfeHelper.Formatar(dados.ChaveAcesso);
+        _dto.ChaveAcesso = dados.ChaveAcesso;
+        _avisoChave = null;
+        _dto.ModeloNf = dados.ModeloNf;
+        _dto.SerieNf = dados.SerieNf;
+        _dto.NumeroNf = dados.NumeroNf;
+        _dataEmissao = dados.DataEmissao;
+        _mesEmissao = dados.DataEmissao;
+        _dataChegada = DateTime.Today;
+        _mesChegada = DateTime.Today;
+
+        var fornecedor = _fornecedores.FirstOrDefault(f => f.Id == dados.FornecedorId);
+        OnFornecedorAlterado(fornecedor);
+        if (fornecedor == null)
+            Snackbar.Add($"Fornecedor {dados.NomeEmitente} (CNPJ {ChaveNfeHelper.FormatarCnpj(dados.CnpjEmitente)}) não cadastrado. Selecione o fornecedor.", Severity.Warning);
+
+        var transportadora = _transportadoras.FirstOrDefault(t => t.Id == dados.TransportadoraId);
+        _dto.TransportadoraId = transportadora?.Id;
+        if (transportadora == null)
+            Snackbar.Add(string.IsNullOrEmpty(dados.CnpjTransportadora)
+                ? "O XML não informa transportadora. Selecione a transportadora."
+                : $"Transportadora {dados.NomeTransportadora} (CNPJ {ChaveNfeHelper.FormatarCnpj(dados.CnpjTransportadora)}) não cadastrada. Selecione a transportadora.",
+                Severity.Warning);
+
+        _dto.ValorFrete = dados.ValorFrete;
+        _dto.ValorSeguro = dados.ValorSeguro;
+        _dto.ValorOutrosAcrescimos = dados.ValorOutros;
+        _totalNotaXml = dados.ValorTotalNota;
+        RecalcularTotais();
+    }
 
     private string? ErroVencimento(CompraParcelaDto parcela)
     {
@@ -650,6 +786,6 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
-    private object DadosEditaveis() => new { _dto, _dataEmissao, _dataChegada, _parcelas, _primeiroVencimento };
+    private object DadosEditaveis() => new { _dto, _dataEmissao, _dataChegada, _parcelas, _primeiroVencimento, _totalNotaXml };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, SomenteLeitura, _snapshot, DadosEditaveis());
 }

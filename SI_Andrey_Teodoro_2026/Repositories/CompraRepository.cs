@@ -19,7 +19,7 @@ public class CompraRepository : BaseRepository, ICompraRepository
         var where = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add(@"(f.razaosocial LIKE @Busca OR t.razaosocial LIKE @Busca OR c.numero_nf LIKE @Busca OR CAST(c.id AS CHAR) = @BuscaExata)");
+            where.Add(@"(f.razaosocial LIKE @Busca OR t.razaosocial LIKE @Busca OR c.numero_nf LIKE @Busca OR c.chave_acesso LIKE @Busca OR CAST(c.id AS CHAR) = @BuscaExata)");
 
         where.Add(filtro.StatusFiltro switch
         {
@@ -44,7 +44,10 @@ public class CompraRepository : BaseRepository, ICompraRepository
         var sqlData = $@"SELECT c.id,
                                 COALESCE(f.razaosocial, 'Sem fornecedor') AS NomeFornecedor,
                                 COALESCE(t.razaosocial, '') AS NomeTransportadora,
-                                c.numero_nf              AS NumeroNf,
+                                c.modelo_nf               AS ModeloNf,
+                                c.serie_nf                AS SerieNf,
+                                c.numero_nf               AS NumeroNf,
+                                c.chave_acesso            AS ChaveAcesso,
                                 COUNT(ci.id)              AS TotalItens,
                                 c.valor_subtotal          AS ValorSubtotal,
                                 c.valor_frete             AS ValorFrete,
@@ -62,7 +65,7 @@ public class CompraRepository : BaseRepository, ICompraRepository
                          LEFT JOIN transportadoras t ON t.id = c.transportadora_id
                          LEFT JOIN compras_itens  ci ON ci.compra_id = c.id
                          {whereClause}
-                         GROUP BY c.id, f.razaosocial, t.razaosocial, c.numero_nf, c.valor_subtotal, c.valor_frete, c.valor_seguro,
+                         GROUP BY c.id, f.razaosocial, t.razaosocial, c.modelo_nf, c.serie_nf, c.numero_nf, c.chave_acesso, c.valor_subtotal, c.valor_frete, c.valor_seguro,
                                   c.valor_outros_acrescimos, c.valor_desconto, c.valor_total,
                                   c.data_emissao, c.data_chegada, c.status_compra,
                                   c.motivo_cancelamento, c.criado_em
@@ -97,7 +100,10 @@ public class CompraRepository : BaseRepository, ICompraRepository
                      COALESCE(f.razaosocial, '') AS NomeFornecedor,
                      c.transportadora_id         AS TransportadoraId,
                      COALESCE(t.razaosocial, '') AS NomeTransportadora,
-                     c.numero_nf                AS NumeroNf,
+                     c.modelo_nf                 AS ModeloNf,
+                     c.serie_nf                  AS SerieNf,
+                     c.numero_nf                 AS NumeroNf,
+                     c.chave_acesso              AS ChaveAcesso,
                      c.data_emissao              AS DataEmissao,
                      c.data_chegada              AS DataChegada,
                      c.condicao_pagamento_id     AS CondicaoPagamentoId,
@@ -117,6 +123,19 @@ public class CompraRepository : BaseRepository, ICompraRepository
               LEFT JOIN transportadoras    t  ON t.id  = c.transportadora_id
               LEFT JOIN condicoes_pagamentos cp ON cp.id = c.condicao_pagamento_id
               WHERE c.id = @id", new { id });
+    }
+
+    public async Task<int?> ObterCompraComMesmaNotaAsync(int fornecedorId, string modelo, int serie, string numero)
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.QueryFirstOrDefaultAsync<int?>(
+            @"SELECT id FROM compras
+              WHERE fornecedor_id = @fornecedorId
+                AND modelo_nf     = @modelo
+                AND serie_nf      = @serie
+                AND numero_nf     = @numero
+                AND status_compra = 'LANCADO'
+              LIMIT 1", new { fornecedorId, modelo, serie, numero });
     }
 
     public async Task<List<CompraItemListDto>> ObterItensPorCompraAsync(int compraId)
@@ -146,17 +165,20 @@ public class CompraRepository : BaseRepository, ICompraRepository
     {
         return await tx.Connection!.ExecuteScalarAsync<int>(
             @"INSERT INTO compras
-                (fornecedor_id, transportadora_id, numero_nf, data_emissao, data_chegada, condicao_pagamento_id,
+                (fornecedor_id, transportadora_id, modelo_nf, serie_nf, numero_nf, chave_acesso, data_emissao, data_chegada, condicao_pagamento_id,
                  valor_subtotal, valor_frete, valor_seguro, valor_outros_acrescimos, valor_desconto, valor_total, status_compra)
               VALUES
-                (@FornecedorId, @TransportadoraId, @NumeroNf, @DataEmissao, @DataChegada, @CondicaoPagamentoId,
+                (@FornecedorId, @TransportadoraId, @ModeloNf, @SerieNf, @NumeroNf, @ChaveAcesso, @DataEmissao, @DataChegada, @CondicaoPagamentoId,
                  @ValorSubtotal, @ValorFrete, @ValorSeguro, @ValorOutrosAcrescimos, @ValorDesconto, @ValorTotal, 'LANCADO');
               SELECT LAST_INSERT_ID();",
             new
             {
                 dto.FornecedorId,
                 dto.TransportadoraId,
+                dto.ModeloNf,
+                dto.SerieNf,
                 dto.NumeroNf,
+                dto.ChaveAcesso,
                 dto.DataEmissao,
                 dto.DataChegada,
                 dto.CondicaoPagamentoId,

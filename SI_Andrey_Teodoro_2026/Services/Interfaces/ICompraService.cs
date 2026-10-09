@@ -12,4 +12,5 @@ public interface ICompraService
         DateTime dataEmissao, decimal valorTotal, DateTime? primeiroVencimento = null);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CompraDto dto);
     Task<(bool sucesso, string mensagem)> CancelarAsync(int compraId, string motivo);
+    Task<(bool sucesso, string mensagem, CompraXmlDto? dados)> LerXmlNfeAsync(Stream xml);
 }
