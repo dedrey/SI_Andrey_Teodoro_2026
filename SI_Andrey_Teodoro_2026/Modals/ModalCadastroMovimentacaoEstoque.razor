@@ -1,3 +1,4 @@
+@inject IDialogService DialogService
 @inject IMovimentacaoEstoqueService MovimentacaoService
 @inject IProdutoService ProdutoService
 @inject ISnackbar Snackbar
@@ -217,6 +218,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public bool SomenteLeitura { get; set; }
     [Parameter] public int? MovimentacaoId { get; set; }
 
@@ -244,6 +246,7 @@
             }
             if (!SomenteLeitura)
                 _todosProdutos = (await ProdutoService.ObterTodosAtivosAsync()).ToList();
+            _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
         }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
@@ -405,5 +408,6 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Fechar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, Lote = _produtoSelecionadoLote?.Id, _variacoesLote };
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, SomenteLeitura, _snapshot, DadosEditaveis());
 }

@@ -9,7 +9,7 @@
         <MudText>@Mensagem</MudText>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancelar" Variant="Variant.Text">Cancelar</MudButton>
+        <MudButton OnClick="Cancelar" Variant="Variant.Text">@TextoCancelar</MudButton>
         <MudButton OnClick="Confirmar" Color="@CorBotao" Variant="Variant.Filled">@TextoBotao</MudButton>
     </DialogActions>
 </MudDialog>
@@ -20,6 +20,7 @@
     [Parameter] public string Mensagem   { get; set; } = "Deseja realmente continuar?";
     [Parameter] public string TextoBotao { get; set; } = "Confirmar";
     [Parameter] public Color  CorBotao   { get; set; } = Color.Error;
+    [Parameter] public string TextoCancelar { get; set; } = "Cancelar";
 
     void Confirmar() => MudDialog.Close(DialogResult.Ok(true));
     void Cancelar()  => MudDialog.Cancel();

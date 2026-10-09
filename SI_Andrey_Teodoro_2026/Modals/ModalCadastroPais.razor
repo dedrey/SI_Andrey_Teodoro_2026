@@ -1,4 +1,5 @@
-﻿@inject IPaisService PaisService
+﻿@inject IDialogService DialogService
+@inject IPaisService PaisService
 @inject ISnackbar Snackbar
 @using SI_Andrey_Teodoro_2026.DTOs
 @using SI_Andrey_Teodoro_2026.Services.Interfaces
@@ -76,6 +77,7 @@
 
 @code {
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public PaisDto? DtoEdicao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
@@ -101,6 +103,7 @@
                 AtualizadoEm = DtoEdicao.AtualizadoEm,
                 NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
+        _snapshot = DialogServiceExtensions.Snapshot(_dto);
         return base.OnInitializedAsync();
     }
 
@@ -114,7 +117,7 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-    private void Cancelar() => MudDialog.Cancel();
+    private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
     private string? ValidarNome(string? v, string campo) { if (string.IsNullOrWhiteSpace(v)) return $"{campo} obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$")) return "Apenas letras"; return null; }
     private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
 }

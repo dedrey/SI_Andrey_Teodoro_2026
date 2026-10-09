@@ -38,6 +38,8 @@ public class FornecedorDto
     [MaxLength(100)]
     [EmailAddress(ErrorMessage = "E-mail inválido")]
     public string Email { get; set; } = string.Empty;
+    public int? CondicaoPagamentoId { get; set; }
+    public string NomeCondicaoPagamento { get; set; } = string.Empty;
     public bool Ativo { get; set; } = true;
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }

@@ -12,16 +12,18 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
     private readonly IContaPagarRepository _contaPagarRepo;
     private readonly ICondicaoPagamentoRepository _condicaoRepo;
     private readonly IMovimentacaoEstoqueRepository _movRepo;
+    private readonly IFornecedorRepository _fornecedorRepo;
     private readonly DbConnectionFactory _factory;
 
     public CompraService(ICompraRepository repo, IContaPagarRepository contaPagarRepo,
         ICondicaoPagamentoRepository condicaoRepo, IMovimentacaoEstoqueRepository movRepo,
-        DbConnectionFactory factory)
+        IFornecedorRepository fornecedorRepo, DbConnectionFactory factory)
     {
         _repo = repo;
         _contaPagarRepo = contaPagarRepo;
         _condicaoRepo = condicaoRepo;
         _movRepo = movRepo;
+        _fornecedorRepo = fornecedorRepo;
         _factory = factory;
     }
 
@@ -115,6 +117,13 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             if (!dto.FornecedorId.HasValue)
                 return (false, "Selecione o fornecedor.", 0);
+
+            var fornecedor = await _fornecedorRepo.ObterPorIdAsync(dto.FornecedorId.Value);
+            if (fornecedor == null)
+                return (false, "Fornecedor não encontrado.", 0);
+            if (!fornecedor.CondicaoPagamentoId.HasValue)
+                return (false, "O fornecedor não possui condição de pagamento cadastrada. Atualize o cadastro do fornecedor.", 0);
+            dto.CondicaoPagamentoId = fornecedor.CondicaoPagamentoId;
 
             if (!dto.TransportadoraId.HasValue) return (false, "Selecione a transportadora.", 0);
 

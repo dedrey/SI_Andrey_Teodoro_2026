@@ -43,14 +43,14 @@ public partial class ComprasPage : BasePage<CompraListDto, CompraDto>
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCompra>("Nova Compra", opts);
         if ((await dialog.Result) is { Canceled: false }) { _itensCache.Clear(); _expandidos.Clear(); await CarregarDados(); }
     }
 
     private async Task AbrirCancelamento(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var param = new DialogParameters<ModalCancelamentoCompra> { { x => x.CompraId, id } };
         var dialog = await DialogService.ShowAsync<ModalCancelamentoCompra>("Cancelar Compra", param, opts);
         var result = await dialog.Result;
@@ -70,7 +70,7 @@ public partial class ComprasPage : BasePage<CompraListDto, CompraDto>
     {
         var dto = await CompraService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Compra não encontrada.", Severity.Warning); return; }
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
         var param = new DialogParameters<ModalCadastroCompra> { { x => x.DtoVisualizacao, dto }, { x => x.SomenteLeitura, true } };
         await DialogService.ShowAsync<ModalCadastroCompra>("Visualizar Compra", param, opts);
     }

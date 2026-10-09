@@ -2,7 +2,6 @@
 @inject IFornecedorService FornecedorService
 @inject ITransportadoraService TransportadoraService
 @inject IProdutoService ProdutoService
-@inject ICondicaoPagamentoService CondicaoPagamentoService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
@@ -25,7 +24,7 @@
                 <MudItem xs="10" sm="5">
                     <MudAutocomplete T="FornecedorListDto"
                                      Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
-                                     ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
+                                     ValueChanged="@((FornecedorListDto? f) => OnFornecedorAlterado(f))"
                                      SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                      ToStringFunc="@(f => f?.RazaoSocial ?? "")"
                                      Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
@@ -78,22 +77,12 @@
                                    Error="@(ErroChegada != null)" ErrorText="@ErroChegada"
                                    Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
-                <MudItem xs="10" sm="4">
-                    <MudAutocomplete T="CondicaoPagamentoListDto"
-                                     Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
-                                     ValueChanged="@((CondicaoPagamentoListDto? c) => _dto.CondicaoPagamentoId = c?.Id)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
-                                     Label="Condição de Pagamento (opcional)" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
-                                     Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)"
-                                     HelperText="Se selecionada, gera as parcelas de conta a pagar" />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Nova condição de pagamento">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                       OnClick="AbrirModalCondicao" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                    </MudTooltip>
+                <MudItem xs="12" sm="5">
+                    <MudTextField T="string" Value="@_dto.NomeCondicaoPagamento"
+                                  Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                  ReadOnly="true" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
+                                  Error="@(ErroCondicao != null)" ErrorText="@ErroCondicao"
+                                  HelperText="Definida no cadastro do fornecedor." />
                 </MudItem>
             </MudGrid>
             @if (CabecalhoBloqueado && !SomenteLeitura)
@@ -140,7 +129,7 @@
                         {
                             <MudTh Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
                         }
-                        <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;white-space:nowrap;min-width:120px;">Total</MudTh>
                         @if (!ItensTravados)
                         {
                             <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
@@ -185,7 +174,7 @@
                         {
                             <MudTd Style="text-align:right;">R$ @context.CustoUnitarioEfetivo.ToString("N2")</MudTd>
                         }
-                        <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorTotal.ToString("N2")</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;min-width:120px;">R$ @context.ValorTotal.ToString("N2")</MudTd>
                         @if (!ItensTravados)
                         {
                             <MudTd Style="text-align:center;">
@@ -195,7 +184,7 @@
                     </RowTemplate>
                     <FooterContent>
                         <MudTd ColSpan="@(SomenteLeitura ? 6 : 5)" Style="text-align:right;font-weight:600;padding:8px 12px;">Total dos itens:</MudTd>
-                        <MudTd Style="text-align:right;font-weight:600;">R$ @_dto.Itens.Sum(i => i.ValorTotal).ToString("N2")</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @_dto.Itens.Sum(i => i.ValorTotal).ToString("N2")</MudTd>
                         @if (!ItensTravados) { <MudTd></MudTd> }
                     </FooterContent>
                 </MudTable>
@@ -221,128 +210,143 @@
                     </div>
                 }
 
-                <div class="d-flex justify-end mt-2 pa-2" style="border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
-                    <div style="display:grid;grid-template-columns:170px 160px;grid-auto-rows:44px;column-gap:16px;align-items:center;">
-                        <MudText Typo="Typo.body2">Subtotal (produtos)</MudText>
-                        <MudText Typo="Typo.body2" Style="font-weight:600;text-align:right;">R$ @_dto.ValorSubtotal.ToString("N2")</MudText>
-                        <MudText Typo="Typo.body2" Style="color:#2e7d32;">Desconto</MudText>
-                        <MudText Typo="Typo.body2" Style="font-weight:600;color:#2e7d32;text-align:right;">- R$ @_dto.ValorDesconto.ToString("N2")</MudText>
-                        <MudText Typo="Typo.body2">Frete</MudText>
-                        <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = v))"
-                                         HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                         Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                         Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
-                        <MudText Typo="Typo.body2">Seguro</MudText>
-                        <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = v))"
-                                         HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                         Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                         Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
-                        <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
-                        <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = v))"
-                                         HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                         Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                         Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;">Total da Nota</MudText>
-                        <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;justify-content:flex-end;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
-                    </div>
-                </div>
-                @if (!SomenteLeitura && !_itensConfirmados)
-                {
-                    <div class="d-flex justify-end">
-                        <MudText Typo="Typo.caption" Style="color:#888;">Confirme os itens para informar frete, seguro e acréscimos.</MudText>
-                    </div>
-                }
-
-                @if (ExibirParcelas)
-                {
-                    <MudDivider Class="my-4" />
-                    <div class="d-flex align-center justify-space-between mb-3">
-                        <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
-                            <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" Class="mr-1" />Parcelas
-                        </MudText>
-                        @if (!SomenteLeitura)
-                        {
-                            <div class="d-flex align-center" style="gap:12px;">
-                                <div style="max-width:180px;">
-                                    <MudDatePicker Date="_primeiroVencimento" DateChanged="OnPrimeiroVencimentoAlterado" @bind-PickerMonth="_mesPrimeiroVencimento"
-                                                   Label="1º vencimento" Variant="Variant.Outlined" Margin="Margin.Dense" Editable="true"
-                                                   PickerVariant="PickerVariant.Dialog"
-                                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
-                                                   AutoClose="true" MinDate="_dataEmissao" />
-                                </div>
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                                           StartIcon="@Icons.Material.Filled.Refresh" OnClick="RecalcularParcelas">
-                                    Recalcular parcelas
-                                </MudButton>
-                            </div>
-                        }
-                    </div>
-
-                    @if (SomenteLeitura)
-                    {
-                        <MudTable Items="@_contasPagar" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
-                            <HeaderContent>
-                                <MudTh Style="font-weight:600;">Descrição</MudTh>
-                                <MudTh Style="font-weight:600;">Vencimento</MudTh>
-                                <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
-                                <MudTh Style="font-weight:600;text-align:center;">Status</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd>@context.Descricao</MudTd>
-                                <MudTd>@context.DataVencimento.ToString("dd/MM/yyyy")</MudTd>
-                                <MudTd Style="text-align:right;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
-                                <MudTd Style="text-align:center;">
-                                    <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => context.DataVencimento.Date < DateTime.Today ? Color.Error : Color.Warning })">
-                                        @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => context.DataVencimento.Date < DateTime.Today ? "Em Atraso" : "Aberta" })
-                                    </MudChip>
-                                </MudTd>
-                            </RowTemplate>
-                            <FooterContent>
-                                <MudTd ColSpan="2" Style="text-align:right;font-weight:600;padding:8px 12px;">Soma das parcelas:</MudTd>
-                                <MudTd Style="text-align:right;font-weight:600;">R$ @_contasPagar.Sum(c => c.ValorOriginal).ToString("N2")</MudTd>
-                                <MudTd></MudTd>
-                            </FooterContent>
-                        </MudTable>
-                    }
-                    else
-                    {
-                        <MudTable Items="@_parcelas" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
-                            <HeaderContent>
-                                <MudTh Style="font-weight:600;">Parcela</MudTh>
-                                <MudTh Style="font-weight:600;">Vencimento</MudTh>
-                                <MudTh Style="font-weight:600;text-align:right;">Valor (R$)</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd Style="font-weight:600;">@context.Numero/@_parcelas.Count</MudTd>
-                                <MudTd>
-                                    <MudDatePicker Date="context.DataVencimento" DateChanged="@((DateTime? d) => context.DataVencimento = d)"
-                                                   Variant="Variant.Outlined" Margin="Margin.Dense" Editable="true"
-                                                   PickerVariant="PickerVariant.Dialog"
-                                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
-                                                   AutoClose="true" MinDate="_dataEmissao"
-                                                   Error="@(ErroVencimento(context) != null)" ErrorText="@ErroVencimento(context)" />
-                                </MudTd>
-                                <MudTd>
-                                    <MudNumericField T="decimal" Value="context.Valor" ValueChanged="@((decimal v) => context.Valor = v)"
-                                                     HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                     Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Format="N2" FullWidth="true"
-                                                     Error="@(context.Valor <= 0)" ErrorText="O valor deve ser maior que zero." />
-                                </MudTd>
-                            </RowTemplate>
-                            <FooterContent>
-                                <MudTd ColSpan="2" Style="text-align:right;font-weight:600;padding:8px 12px;">Soma das parcelas:</MudTd>
-                                <MudTd Style="text-align:right;font-weight:600;">
-                                    R$ @SomaParcelas.ToString("N2")
-                                    @if (SomaParcelas != Math.Round(_dto.ValorTotal, 2))
+                <MudGrid Spacing="2" Class="mt-2">
+                    <MudItem xs="12" md="7" Class="d-flex">
+                        <div class="pa-3" style="flex:1;border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;min-width:0;">
+                            @if (ExibirParcelas)
+                            {
+                                <div class="d-flex align-center flex-wrap mb-3" style="gap:12px;">
+                                    <MudText Typo="Typo.subtitle2" Class="mr-auto" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" Class="mr-1" />Parcelas
+                                    </MudText>
+                                    @if (!SomenteLeitura)
                                     {
-                                        <div style="color:#c62828;font-size:0.8rem;">Diferença: R$ @((SomaParcelas - Math.Round(_dto.ValorTotal, 2)).ToString("N2"))</div>
+                                        <div style="width:170px;">
+                                            <MudDatePicker Date="_primeiroVencimento" DateChanged="OnPrimeiroVencimentoAlterado" @bind-PickerMonth="_mesPrimeiroVencimento"
+                                                           Label="1º vencimento" Variant="Variant.Outlined" Margin="Margin.Dense" Editable="true"
+                                                           PickerVariant="PickerVariant.Dialog"
+                                                           Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                                                           AutoClose="true" MinDate="_dataEmissao" />
+                                        </div>
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Filled.Refresh" OnClick="RecalcularParcelas">
+                                            Recalcular parcelas
+                                        </MudButton>
                                     }
-                                </MudTd>
-                            </FooterContent>
-                        </MudTable>
-                    }
-                }
+                                </div>
+
+                                @if (SomenteLeitura)
+                                {
+                                    <MudTable Items="@_contasPagar" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                                        <HeaderContent>
+                                            <MudTh Style="font-weight:600;">Descrição</MudTh>
+                                            <MudTh Style="font-weight:600;">Vencimento</MudTh>
+                                            <MudTh Style="font-weight:600;text-align:right;">Valor</MudTh>
+                                            <MudTh Style="font-weight:600;text-align:center;">Status</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd>@context.Descricao</MudTd>
+                                            <MudTd>@context.DataVencimento.ToString("dd/MM/yyyy")</MudTd>
+                                            <MudTd Style="text-align:right;white-space:nowrap;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
+                                            <MudTd Style="text-align:center;">
+                                                <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => context.DataVencimento.Date < DateTime.Today ? Color.Error : Color.Warning })">
+                                                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => context.DataVencimento.Date < DateTime.Today ? "Em Atraso" : "Aberta" })
+                                                </MudChip>
+                                            </MudTd>
+                                        </RowTemplate>
+                                        <FooterContent>
+                                            <MudTd ColSpan="2" Style="text-align:right;font-weight:600;padding:8px 12px;">Soma das parcelas:</MudTd>
+                                            <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @_contasPagar.Sum(c => c.ValorOriginal).ToString("N2")</MudTd>
+                                            <MudTd></MudTd>
+                                        </FooterContent>
+                                    </MudTable>
+                                }
+                                else
+                                {
+                                    <MudTable Items="@_parcelas" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                                        <HeaderContent>
+                                            <MudTh Style="font-weight:600;">Parcela</MudTh>
+                                            <MudTh Style="font-weight:600;">Vencimento</MudTh>
+                                            <MudTh Style="font-weight:600;text-align:right;">Valor (R$)</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd Style="font-weight:600;">@context.Numero/@_parcelas.Count</MudTd>
+                                            <MudTd>
+                                                <MudDatePicker Date="context.DataVencimento" DateChanged="@((DateTime? d) => OnVencimentoParcelaAlterado(context, d))"
+                                                               Variant="Variant.Outlined" Margin="Margin.Dense" Editable="true"
+                                                               PickerVariant="PickerVariant.Dialog"
+                                                               Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                                                               AutoClose="true" MinDate="_dataEmissao"
+                                                               Error="@(ErroVencimento(context) != null)" ErrorText="@ErroVencimento(context)" />
+                                            </MudTd>
+                                            <MudTd>
+                                                <MudNumericField T="decimal" Value="context.Valor" ValueChanged="@((decimal v) => context.Valor = v)"
+                                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                                 Format="N2" FullWidth="true"
+                                                                 Error="@(context.Valor <= 0)" ErrorText="O valor deve ser maior que zero." />
+                                            </MudTd>
+                                        </RowTemplate>
+                                        <FooterContent>
+                                            <MudTd ColSpan="2" Style="text-align:right;font-weight:600;padding:8px 12px;">Soma das parcelas:</MudTd>
+                                            <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">
+                                                R$ @SomaParcelas.ToString("N2")
+                                                @if (SomaParcelas != Math.Round(_dto.ValorTotal, 2))
+                                                {
+                                                    <div style="color:#c62828;font-size:0.8rem;">Diferença: R$ @((SomaParcelas - Math.Round(_dto.ValorTotal, 2)).ToString("N2"))</div>
+                                                }
+                                            </MudTd>
+                                        </FooterContent>
+                                    </MudTable>
+                                }
+                            }
+                            else
+                            {
+                                <div class="d-flex align-center justify-center pa-4" style="height:100%;color:#999;">
+                                    <MudIcon Icon="@Icons.Material.Filled.Payments" Size="Size.Small" Class="mr-2" />
+                                    <MudText Typo="Typo.body2">
+                                        @(SomenteLeitura
+                                            ? "Compra sem condição de pagamento: nenhuma conta a pagar será gerada."
+                                            : "Confirme os itens para ver a prévia das parcelas.")
+                                    </MudText>
+                                </div>
+                            }
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" md="5" Class="d-flex">
+                        <div class="pa-3" style="flex:1;border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
+                            <div style="display:grid;grid-template-columns:minmax(120px,1fr) minmax(140px,180px);grid-auto-rows:44px;column-gap:16px;align-items:center;">
+                                <MudText Typo="Typo.body2">Subtotal (produtos)</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;text-align:right;white-space:nowrap;">R$ @_dto.ValorSubtotal.ToString("N2")</MudText>
+                                <MudText Typo="Typo.body2" Style="color:#2e7d32;">Desconto</MudText>
+                                <MudText Typo="Typo.body2" Style="font-weight:600;color:#2e7d32;text-align:right;white-space:nowrap;">- R$ @_dto.ValorDesconto.ToString("N2")</MudText>
+                                <MudText Typo="Typo.body2">Frete</MudText>
+                                <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = v))"
+                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                 Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
+                                <MudText Typo="Typo.body2">Seguro</MudText>
+                                <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = v))"
+                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                 Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
+                                <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
+                                <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = v))"
+                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                 Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;">Total da Nota</MudText>
+                                <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
+                            </div>
+                            @if (!SomenteLeitura && !_itensConfirmados)
+                            {
+                                <div class="d-flex justify-end mt-1">
+                                    <MudText Typo="Typo.caption" Style="color:#888;">Confirme os itens para informar frete, seguro e acréscimos.</MudText>
+                                </div>
+                            }
+                        </div>
+                    </MudItem>
+                </MudGrid>
             }
             else
             {
@@ -367,6 +371,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public CompraDto? DtoVisualizacao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; }
 
@@ -383,8 +388,7 @@
             await Task.WhenAll(
                 Task.Run(async () => _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList()),
                 Task.Run(async () => _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList()),
-                Task.Run(async () => _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList()),
-                Task.Run(async () => _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList())
+                Task.Run(async () => _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList())
             );
         }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
@@ -406,6 +410,7 @@
             }
         }
         RecalcularTotais();
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private MudForm? _form;
@@ -437,7 +442,6 @@
             || _parcelas.Any(p => p.Valor <= 0 || ErroVencimento(p) != null)
             || SomaParcelas != Math.Round(_dto.ValorTotal, 2));
     private List<ProdutoListDto> _produtos = new();
-    private List<CondicaoPagamentoListDto> _condicoes = new();
     private readonly Dictionary<CompraItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
     private readonly Dictionary<CompraItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<CompraItemDto, string> _valorTextos = new();
@@ -450,7 +454,10 @@
         : _dataEmissao.HasValue && _dataChegada.HasValue && _dataChegada.Value.Date < _dataEmissao.Value.Date
             ? "A data de chegada não pode ser anterior à data de emissão."
         : null;
+    private string? ErroCondicao => _dto.FornecedorId.HasValue && !_dto.CondicaoPagamentoId.HasValue
+        ? "Fornecedor sem condição de pagamento. Atualize o cadastro do fornecedor." : null;
     private bool CabecalhoValido => _dto.FornecedorId.HasValue
+        && _dto.CondicaoPagamentoId.HasValue
         && _dto.TransportadoraId.HasValue
         && _dataEmissao.HasValue && _dataChegada.HasValue
         && ErroEmissao == null && ErroChegada == null;
@@ -501,6 +508,14 @@
         if (simuladas.Count != _parcelas.Count) { _parcelas = simuladas; return; }
         for (int i = 0; i < _parcelas.Count; i++)
             _parcelas[i].DataVencimento = simuladas[i].DataVencimento;
+    }
+
+    private void OnVencimentoParcelaAlterado(CompraParcelaDto parcela, DateTime? data)
+    {
+        parcela.DataVencimento = data;
+        if (_parcelas.IndexOf(parcela) != 0 || !data.HasValue) return;
+        _primeiroVencimento = data;
+        _mesPrimeiroVencimento = data;
     }
 
     private async Task OnAcrescimoAlterado(Action atribuir)
@@ -593,7 +608,7 @@
 
     private async Task AbrirModalFornecedor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         if ((await dialog.Result) is { Canceled: false })
             _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
@@ -601,18 +616,17 @@
 
     private async Task AbrirModalTransportadora()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
         if ((await dialog.Result) is { Canceled: false })
             _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
     }
 
-    private async Task AbrirModalCondicao()
+    private void OnFornecedorAlterado(FornecedorListDto? fornecedor)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
+        _dto.FornecedorId = fornecedor?.Id;
+        _dto.CondicaoPagamentoId = fornecedor?.CondicaoPagamentoId;
+        _dto.NomeCondicaoPagamento = fornecedor?.NomeCondicaoPagamento ?? string.Empty;
     }
 
     private async Task Salvar()
@@ -636,5 +650,6 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
-    private void Fechar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _dataEmissao, _dataChegada, _parcelas, _primeiroVencimento };
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, SomenteLeitura, _snapshot, DadosEditaveis());
 }

@@ -30,14 +30,14 @@ public partial class MovimentacoesEstoquePage : BasePage<MovimentacaoEstoqueList
 
     private async Task AbrirModalCadastro()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMovimentacaoEstoque>("Nova Movimentação", opts);
         if ((await dialog.Result) is { Canceled: false }) { _detalhesCache.Clear(); _expandidos.Clear(); await CarregarDados(); }
     }
 
     private async Task AbrirVisualizacao(int id)
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var param = new DialogParameters<ModalCadastroMovimentacaoEstoque> { { x => x.MovimentacaoId, id }, { x => x.SomenteLeitura, true } };
         await DialogService.ShowAsync<ModalCadastroMovimentacaoEstoque>("Visualizar Movimentação", param, opts);
     }

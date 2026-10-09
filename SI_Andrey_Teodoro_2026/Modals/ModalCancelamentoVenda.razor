@@ -1,4 +1,5 @@
-﻿@inject IVendaService VendaService
+﻿@inject IDialogService DialogService
+@inject IVendaService VendaService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -37,10 +38,13 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public int VendaId { get; set; }
 
     private string _motivo = string.Empty;
     private bool _cancelando;
+
+    protected override void OnInitialized() => _snapshot = DialogServiceExtensions.Snapshot(_motivo);
 
     private async Task Confirmar()
     {
@@ -52,5 +56,5 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private void Fechar() => MudDialog.Cancel();
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, _motivo);
 }

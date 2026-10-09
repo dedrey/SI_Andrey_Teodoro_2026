@@ -138,6 +138,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public CondicaoPagamentoDto? DtoEdicao { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
@@ -177,6 +178,7 @@
 
         if (_dto.Parcelas.Count == 0 && _dto.NumeroParcelas > 0)
             GerarParcelas();
+        _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 
     private void OnNumeroParcelas(int valor)
@@ -228,7 +230,7 @@
 
     private async Task AbrirNovoMetodo()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMetodoPagamento>("Novo Método de Pagamento", opts);
         var result = await dialog.Result;
         if (result is { Canceled: false })
@@ -258,5 +260,5 @@
     }
 
 
-    private void Fechar() => MudDialog.Cancel();
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
 }

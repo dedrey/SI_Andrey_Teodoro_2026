@@ -261,6 +261,7 @@
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    private string? _snapshot;
     [Parameter] public ProdutoDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
@@ -292,6 +293,7 @@
             Task.Run(async () => _cores = (await CorService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList())
         );
+        _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
     private void AdicionarVariacao()
@@ -389,35 +391,35 @@
 
     private async Task AbrirModalCor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCor>("Nova Cor", opts);
         if ((await dialog.Result) is { Canceled: false })
             _cores = (await CorService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalTamanho()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTamanho>("Novo Tamanho", opts);
         if ((await dialog.Result) is { Canceled: false })
             _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalCategoria()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Nova Categoria", opts);
         if ((await dialog.Result) is { Canceled: false })
             _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalMarca()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Nova Marca", opts);
         if ((await dialog.Result) is { Canceled: false })
             _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList();
     }
     private async Task AbrirModalUnidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Nova Unidade", opts);
         if ((await dialog.Result) is { Canceled: false })
             _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList();
@@ -432,5 +434,6 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
-    private void Fechar() => MudDialog.Cancel();
+    private object DadosEditaveis() => new { _dto, _replicarVendaTexto, _coresLote, _tamanhosLote };
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, DadosEditaveis());
 }
