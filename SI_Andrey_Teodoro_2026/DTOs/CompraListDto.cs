@@ -5,7 +5,10 @@ public class CompraListDto
     public int Id { get; set; }
     public string NomeFornecedor { get; set; } = string.Empty;
     public string NomeTransportadora { get; set; } = string.Empty;
+    public string? ModeloNf { get; set; }
+    public int? SerieNf { get; set; }
     public string? NumeroNf { get; set; }
+    public string? ChaveAcesso { get; set; }
     public int TotalItens { get; set; }
     public decimal ValorSubtotal { get; set; }
     public decimal ValorFrete { get; set; }

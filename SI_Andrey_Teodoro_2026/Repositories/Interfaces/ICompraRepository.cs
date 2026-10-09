@@ -8,6 +8,7 @@ public interface ICompraRepository
     Task<PaginacaoDto<CompraListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<Compra?> ObterPorIdAsync(int id);
     Task<List<CompraItemListDto>> ObterItensPorCompraAsync(int compraId);
+    Task<int?> ObterCompraComMesmaNotaAsync(int fornecedorId, string modelo, int serie, string numero);
 
     Task<int> InserirAsync(CompraDto dto, IDbTransaction tx);
     Task InserirItemAsync(CompraItemDto item, int compraId, IDbTransaction tx);

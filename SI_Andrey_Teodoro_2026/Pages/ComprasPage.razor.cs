@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Modals;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -73,6 +74,14 @@ public partial class ComprasPage : BasePage<CompraListDto, CompraDto>
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
         var param = new DialogParameters<ModalCadastroCompra> { { x => x.DtoVisualizacao, dto }, { x => x.SomenteLeitura, true } };
         await DialogService.ShowAsync<ModalCadastroCompra>("Visualizar Compra", param, opts);
+    }
+
+    private static string NotaFiscal(CompraListDto compra)
+    {
+        if (string.IsNullOrWhiteSpace(compra.NumeroNf)) return "—";
+        return string.IsNullOrWhiteSpace(compra.ModeloNf) || !compra.SerieNf.HasValue
+            ? compra.NumeroNf
+            : $"{compra.ModeloNf}/{compra.SerieNf}/{compra.NumeroNf}";
     }
 
     private static decimal CustoTotal(CompraListDto compra, List<CompraItemListDto> itens, CompraItemListDto item)
