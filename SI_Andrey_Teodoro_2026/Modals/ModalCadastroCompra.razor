@@ -10,7 +10,7 @@
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.AddShoppingCart" Color="Color.Primary" Class="mr-2" />
             <MudText Typo="Typo.h6">@(SomenteLeitura ? "Visualizar Compra" : "Nova Compra")</MudText>
-            @if (!SomenteLeitura && _dto.Itens.Count == 0)
+            @if (ImportarXmlVisivel)
             {
                 <MudFileUpload @ref="_uploadXml" T="IBrowserFile" Accept=".xml" FilesChanged="ImportarXml" Class="ml-auto mr-8 mt-0">
                     <CustomContent>
@@ -163,7 +163,8 @@
                         <MudTh Style="font-weight:600;">Variação</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Quantidade</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Custo Unit. (R$)</MudTh>
-                        <MudTh Style="font-weight:600;text-align:right;">Desconto (R$)</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Desc. %</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Desc. R$</MudTh>
                         @if (SomenteLeitura)
                         {
                             <MudTh Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
@@ -203,17 +204,26 @@
                                           Adornment="Adornment.Start" AdornmentText="R$" Disabled="@ItensTravados" />
                         </MudTd>
                         <MudTd>
-                            <MudNumericField T="decimal" Value="context.ValorDesconto" ValueChanged="@((decimal v) => { context.ValorDesconto = v; RecalcularTotais(); })"
+                            <MudNumericField T="decimal" Value="context.DescontoPercentual" ValueChanged="@((decimal v) => OnDescontoPercentualAlterado(context, v))"
+                                             HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Adornment="Adornment.End" AdornmentText="%" Class="input-direita mt-0"
+                                             Format="N2" FullWidth="true" Disabled="@ItensTravados"
+                                             Validation="@(new Func<decimal, string?>(v => ErroPercentual(v)))"
+                                             Error="@(ErroPercentual(context.DescontoPercentual) != null)" ErrorText="@ErroPercentual(context.DescontoPercentual)" />
+                        </MudTd>
+                        <MudTd>
+                            <MudNumericField T="decimal" Value="context.ValorDesconto" ValueChanged="@((decimal v) => OnDescontoValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
                                              Format="N2" FullWidth="true" Disabled="@ItensTravados"
-                                             Error="@DescontoInvalido(context)" ErrorText="Desconto maior que o valor do item." />
+                                             Validation="@(new Func<decimal, string?>(v => ErroDescontoValor(context, v)))"
+                                             Error="@(ErroDescontoValor(context, context.ValorDesconto) != null)" ErrorText="@ErroDescontoValor(context, context.ValorDesconto)" />
                         </MudTd>
                         @if (SomenteLeitura)
                         {
                             <MudTd Style="text-align:right;">R$ @context.CustoUnitarioEfetivo.ToString("N2")</MudTd>
                         }
-                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;min-width:120px;">R$ @context.ValorTotal.ToString("N2")</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;min-width:120px;">R$ @TotalItem(context).ToString("N2")</MudTd>
                         @if (!ItensTravados)
                         {
                             <MudTd Style="text-align:center;">
@@ -222,8 +232,8 @@
                         }
                     </RowTemplate>
                     <FooterContent>
-                        <MudTd ColSpan="@(SomenteLeitura ? 6 : 5)" Style="text-align:right;font-weight:600;padding:8px 12px;">Total dos itens:</MudTd>
-                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @_dto.Itens.Sum(i => i.ValorTotal).ToString("N2")</MudTd>
+                        <MudTd ColSpan="@(SomenteLeitura ? 7 : 6)" Style="text-align:right;font-weight:600;padding:8px 12px;">Total dos itens:</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @_dto.Itens.Sum(TotalItem).ToString("N2")</MudTd>
                         @if (!ItensTravados) { <MudTd></MudTd> }
                     </FooterContent>
                 </MudTable>
@@ -435,7 +445,7 @@
     private bool ItensTravados => SomenteLeitura || _itensConfirmados;
     private bool PodeConfirmarItens => CabecalhoValido
         && _dto.Itens.Count > 0
-        && _dto.Itens.All(i => i.ProdutoVariacaoId > 0 && i.Quantidade > 0 && i.ValorUnitario > 0 && !DescontoInvalido(i))
+        && _dto.Itens.All(i => i.ProdutoVariacaoId > 0 && i.Quantidade > 0 && i.ValorUnitario > 0 && !DescontoInvalido(i) && !PercentualInvalido(i))
         && _dto.Itens.Select(i => i.ProdutoVariacaoId).Distinct().Count() == _dto.Itens.Count;
     private CompraDto _dto = new();
     private DateTime? _dataEmissao;
@@ -453,7 +463,19 @@
     private readonly Dictionary<CompraItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
     private readonly Dictionary<CompraItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<CompraItemDto, string> _valorTextos = new();
+    private readonly Dictionary<CompraItemDto, bool> _ultimoDescontoPercentual = new();
     private bool CabecalhoBloqueado => _dto.Itens.Any(i => !i.Removido && _produtosSelecionados.GetValueOrDefault(i) != null);
+    private bool ImportarXmlVisivel => !SomenteLeitura && !CabecalhoBloqueado;
+    private (bool visivel, bool importando)? _estadoTitulo;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        var estado = (ImportarXmlVisivel, _importandoXml);
+        if (_estadoTitulo == estado) return;
+        var jaRenderizado = _estadoTitulo.HasValue;
+        _estadoTitulo = estado;
+        if (jaRenderizado) MudDialog.StateHasChanged();
+    }
     private string? ErroEmissao => _dataEmissao.HasValue && _dataEmissao.Value.Date > DateTime.Today
         ? "A data de emissão não pode ser maior que a data atual." : null;
     private string? ErroChegada =>
@@ -608,6 +630,7 @@
         _produtosSelecionados.Remove(item);
         _variacoesPorItem.Remove(item);
         _valorTextos.Remove(item);
+        _ultimoDescontoPercentual.Remove(item);
         RecalcularTotais();
         StateHasChanged();
     }
@@ -639,19 +662,54 @@
     {
         var d = new string((v ?? "").Where(char.IsDigit).ToArray());
         item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
+        SincronizarDesconto(item);
         RecalcularTotais();
     }
     private string GetValorTexto(CompraItemDto item) { if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : ""; return _valorTextos[item]; }
     private void OnValorAlterado(CompraItemDto item, string? texto)
     {
-        if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; return; }
+        if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; SincronizarDesconto(item); RecalcularTotais(); return; }
         var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
         _valorTextos[item] = f;
         item.ValorUnitario = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        SincronizarDesconto(item);
         RecalcularTotais();
+    }
+    private void OnDescontoPercentualAlterado(CompraItemDto item, decimal percentual)
+    {
+        item.DescontoPercentual = percentual;
+        _ultimoDescontoPercentual[item] = true;
+        SincronizarDesconto(item);
+        RecalcularTotais();
+    }
+    private void OnDescontoValorAlterado(CompraItemDto item, decimal valor)
+    {
+        item.ValorDesconto = valor;
+        _ultimoDescontoPercentual[item] = false;
+        SincronizarDesconto(item);
+        RecalcularTotais();
+    }
+    private void SincronizarDesconto(CompraItemDto item)
+    {
+        var bruto = item.ValorUnitario * item.Quantidade;
+        if (_ultimoDescontoPercentual.GetValueOrDefault(item))
+            item.ValorDesconto = Math.Round(bruto * item.DescontoPercentual / 100, 2);
+        else
+            item.DescontoPercentual = bruto > 0 ? Math.Round(item.ValorDesconto / bruto * 100, 4) : 0;
     }
     private static bool DescontoInvalido(CompraItemDto item) =>
         item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade;
+    private static bool PercentualInvalido(CompraItemDto item) => ErroPercentual(item.DescontoPercentual) != null;
+    private static string? ErroPercentual(decimal percentual) =>
+        percentual < 0 || percentual > 100 ? "Entre 0% e 100%." : null;
+    private static string? ErroDescontoValor(CompraItemDto item, decimal valor) =>
+        valor < 0 ? "Não pode ser negativo."
+        : valor > item.ValorUnitario * item.Quantidade ? "Maior que o valor do item."
+        : null;
+    private static decimal DescontoLimitado(CompraItemDto item) =>
+        Math.Clamp(item.ValorDesconto, 0, Math.Max(item.ValorUnitario * item.Quantidade, 0));
+    private static decimal TotalItem(CompraItemDto item) =>
+        item.ValorUnitario * item.Quantidade - DescontoLimitado(item);
     private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
     {
         var r = string.IsNullOrWhiteSpace(busca) ? _produtos.Take(50) : _produtos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
@@ -660,7 +718,7 @@
     private void RecalcularTotais()
     {
         _dto.ValorSubtotal = _dto.Itens.Sum(i => i.ValorUnitario * i.Quantidade);
-        _dto.ValorDesconto = _dto.Itens.Sum(i => i.ValorDesconto);
+        _dto.ValorDesconto = _dto.Itens.Sum(DescontoLimitado);
         _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto + _dto.ValorFrete + _dto.ValorSeguro + _dto.ValorOutrosAcrescimos;
     }
 
