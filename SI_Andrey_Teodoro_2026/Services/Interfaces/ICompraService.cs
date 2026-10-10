@@ -9,7 +9,7 @@ public interface ICompraService
     Task<List<CompraItemListDto>> ObterItensAsync(int compraId);
     Task<List<ContaPagarListDto>> ObterContasPagarAsync(int compraId);
     Task<List<CompraParcelaDto>> SimularParcelasAsync(int condicaoPagamentoId,
-        DateTime dataEmissao, decimal valorTotal, DateTime? primeiroVencimento = null);
+        DateTime dataEmissao, decimal valorTotal);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CompraDto dto);
     Task<(bool sucesso, string mensagem)> CancelarAsync(int compraId, string motivo);
     Task<(bool sucesso, string mensagem, CompraXmlDto? dados)> LerXmlNfeAsync(Stream xml);

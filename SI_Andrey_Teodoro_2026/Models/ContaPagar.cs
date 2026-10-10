@@ -7,6 +7,7 @@ public class ContaPagar
     public string? NomeFornecedor { get; set; }
     public int? CompraId { get; set; }
     public string? NumeroNfCompra { get; set; }
+    public DateTime? DataEmissaoCompra { get; set; }
     public string Descricao { get; set; } = string.Empty;
     public DateTime DataVencimento { get; set; }
     public DateTime? DataPagamento { get; set; }

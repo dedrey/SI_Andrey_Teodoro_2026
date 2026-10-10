@@ -84,6 +84,7 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                      f.razaosocial       AS NomeFornecedor,
                      cp.compra_id        AS CompraId,
                      co.numero_nf        AS NumeroNfCompra,
+                     co.data_emissao     AS DataEmissaoCompra,
                      cp.descricao,
                      cp.data_vencimento  AS DataVencimento,
                      cp.data_pagamento   AS DataPagamento,
