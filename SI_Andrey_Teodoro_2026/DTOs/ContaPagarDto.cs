@@ -11,6 +11,7 @@ public class ContaPagarDto
 
     public int? CompraId { get; set; }
     public string? NumeroNfCompra { get; set; }
+    public DateTime? DataEmissaoCompra { get; set; }
 
     [Required(ErrorMessage = "Descrição é obrigatória")]
     [MinLength(3)]

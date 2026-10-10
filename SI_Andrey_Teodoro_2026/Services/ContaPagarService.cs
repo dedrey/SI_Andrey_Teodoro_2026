@@ -25,6 +25,7 @@ public class ContaPagarService : IContaPagarService
             NomeFornecedor = c.NomeFornecedor,
             CompraId = c.CompraId,
             NumeroNfCompra = c.NumeroNfCompra,
+            DataEmissaoCompra = c.DataEmissaoCompra,
             Descricao = c.Descricao,
             DataVencimento = c.DataVencimento,
             DataPagamento = c.DataPagamento,
@@ -41,6 +42,26 @@ public class ContaPagarService : IContaPagarService
     {
         try
         {
+            if (dto.IdOriginal != 0)
+            {
+                var existente = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (existente == null)
+                    return (false, "Conta a pagar não encontrada.", 0);
+                if (existente.CompraId.HasValue)
+                {
+                    if (dto.DataVencimento == default)
+                        return (false, "Informe a data de vencimento.", 0);
+                    if (existente.DataEmissaoCompra.HasValue && dto.DataVencimento.Date < existente.DataEmissaoCompra.Value.Date)
+                        return (false, $"O vencimento não pode ser anterior à emissão da nota ({existente.DataEmissaoCompra.Value:dd/MM/yyyy}).", 0);
+
+                    dto.FornecedorId = existente.FornecedorId;
+                    dto.Descricao = existente.Descricao;
+                    dto.ValorOriginal = existente.ValorOriginal;
+                    await _repo.AtualizarAsync(dto);
+                    return (true, "Conta a pagar atualizada com sucesso!", dto.Id);
+                }
+            }
+
             dto.Descricao = dto.Descricao.Trim().ToUpperInvariant();
 
             if (string.IsNullOrWhiteSpace(dto.Descricao))

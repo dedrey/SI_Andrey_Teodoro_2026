@@ -96,7 +96,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
         => _contaPagarRepo.ObterPorCompraAsync(compraId);
 
     public async Task<List<CompraParcelaDto>> SimularParcelasAsync(int condicaoPagamentoId,
-        DateTime dataEmissao, decimal valorTotal, DateTime? primeiroVencimento = null)
+        DateTime dataEmissao, decimal valorTotal)
     {
         var parcelas = new List<CompraParcelaDto>();
         var condicao = await _condicaoRepo.ObterPorIdAsync(condicaoPagamentoId);
@@ -104,18 +104,17 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
         var n = condicao.NumeroParcelas;
         var config = await _condicaoRepo.ObterParcelasAsync(condicaoPagamentoId);
-        var dias1 = config.FirstOrDefault(x => x.NumeroParcela == 1)?.DiasVencimento ?? 30;
 
-        var primeiro = (primeiroVencimento ?? dataEmissao.AddDays(dias1)).Date;
         var valorParcela = Math.Round(valorTotal / n, 2);
         var diferenca = valorTotal - valorParcela * n;
 
         for (int p = 1; p <= n; p++)
         {
+            var dias = config.FirstOrDefault(x => x.NumeroParcela == p)?.DiasVencimento ?? 30 * p;
             parcelas.Add(new CompraParcelaDto
             {
                 Numero = p,
-                DataVencimento = primeiro.AddMonths(p - 1),
+                DataVencimento = dataEmissao.Date.AddDays(dias),
                 Valor = p == n ? valorParcela + diferenca : valorParcela
             });
         }
@@ -219,43 +218,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             var parcelasGerar = new List<CompraParcelaDto>();
 
             if (dto.CondicaoPagamentoId.HasValue && dto.ValorTotal > 0)
-            {
-                if (dto.Parcelas.Count == 0)
-                {
-                    parcelasGerar = await SimularParcelasAsync(dto.CondicaoPagamentoId.Value,
-                        dto.DataEmissao.Value, dto.ValorTotal);
-                }
-                else
-                {
-                    var condicao = await _condicaoRepo.ObterPorIdAsync(dto.CondicaoPagamentoId.Value);
-                    if (condicao == null)
-                        return (false, "Condição de pagamento não encontrada.", 0);
-                    if (dto.Parcelas.Count != condicao.NumeroParcelas)
-                        return (false, $"A condição de pagamento exige {condicao.NumeroParcelas} parcela(s), " +
-                                       $"mas foram informadas {dto.Parcelas.Count}.", 0);
-
-                    DateTime? anterior = null;
-                    foreach (var p in dto.Parcelas)
-                    {
-                        if (!p.DataVencimento.HasValue)
-                            return (false, $"Parcela {p.Numero}: informe a data de vencimento.", 0);
-                        if (p.Valor <= 0)
-                            return (false, $"Parcela {p.Numero}: o valor deve ser maior que zero.", 0);
-                        if (p.DataVencimento.Value.Date < dto.DataEmissao.Value.Date)
-                            return (false, $"Parcela {p.Numero}: o vencimento não pode ser anterior à data de emissão.", 0);
-                        if (anterior.HasValue && p.DataVencimento.Value.Date < anterior.Value)
-                            return (false, $"Parcela {p.Numero}: os vencimentos devem estar em ordem crescente.", 0);
-                        anterior = p.DataVencimento.Value.Date;
-                    }
-
-                    var soma = Math.Round(dto.Parcelas.Sum(p => p.Valor), 2);
-                    var total = Math.Round(dto.ValorTotal, 2);
-                    if (soma != total)
-                        return (false, $"A soma das parcelas (R$ {soma:N2}) é diferente do total da nota (R$ {total:N2}).", 0);
-
-                    parcelasGerar = dto.Parcelas;
-                }
-            }
+                parcelasGerar = await SimularParcelasAsync(dto.CondicaoPagamentoId.Value,
+                    dto.DataEmissao.Value, dto.ValorTotal);
             var totalParcelas = parcelasGerar.Count;
 
             using var conn = _factory.CreateConnection();

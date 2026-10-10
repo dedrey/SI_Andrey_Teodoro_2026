@@ -29,7 +29,7 @@
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = v)" Label="Descrição"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="150" FullWidth="true"
-                                  ReadOnly="@_somenteLeitura"
+                                  ReadOnly="@_somenteLeitura" Disabled="@DaCompra"
                                   Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
                 </MudItem>
                 <MudItem xs="10" sm="8">
@@ -41,13 +41,13 @@
                                      Label="Fornecedor (opcional)"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
-                                     Disabled="@_somenteLeitura"
+                                     Disabled="@(_somenteLeitura || DaCompra)"
                                      Placeholder="Deixe vazio para despesas fixas (luz, água, aluguel...)" />
                 </MudItem>
                 <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
                     <MudTooltip Text="Novo fornecedor">
                         <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                       Size="Size.Medium" OnClick="AbrirModalFornecedor" Disabled="@_somenteLeitura" />
+                                       Size="Size.Medium" OnClick="AbrirModalFornecedor" Disabled="@(_somenteLeitura || DaCompra)" />
                     </MudTooltip>
                 </MudItem>
 
@@ -68,7 +68,7 @@
                     <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
                                   Label="ValorDescrição" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura" />
+                                  Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura" Disabled="@DaCompra" />
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
@@ -76,6 +76,10 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
                 </MudItem>
             </MudGrid>
+            @if (DaCompra)
+            {
+                <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">Valor e fornecedor vêm da Compra #@_dto.CompraId.</MudText>
+            }
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -104,6 +108,7 @@
     private List<FornecedorListDto> _fornecedores = new();
 
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
+    private bool DaCompra => _dto.CompraId.HasValue;
 
     protected override async Task OnInitializedAsync()
     {

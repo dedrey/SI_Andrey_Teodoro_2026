@@ -34,7 +34,6 @@ public class CompraDto
     public DateTime? AtualizadoEm { get; set; }
 
     public List<CompraItemDto> Itens { get; set; } = new();
-    public List<CompraParcelaDto> Parcelas { get; set; } = new();
 }
 
 public class CompraXmlDto
