@@ -70,6 +70,7 @@ public class CompraItemDto
     public int Quantidade { get; set; }
     public decimal ValorUnitario { get; set; }
     public decimal ValorDesconto { get; set; }
+    public decimal DescontoPercentual { get; set; }
     public decimal ValorTotal => (ValorUnitario * Quantidade) - ValorDesconto;
 
     public decimal CustoUnitarioEfetivo { get; set; }

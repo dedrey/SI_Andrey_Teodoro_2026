@@ -504,6 +504,7 @@ CREATE TABLE compras_itens (
   quantidade             INT           NOT NULL,
   valor_unitario         DECIMAL(14,2) NOT NULL,
   valor_desconto         DECIMAL(14,2) NOT NULL DEFAULT 0,
+  desconto_percentual    DECIMAL(7,4)  NOT NULL DEFAULT 0,
   valor_total            DECIMAL(14,2) NOT NULL,
   -- Custo por unidade: valor líquido do item + rateio de frete/outros acréscimos (proporcional ao valor)
   custo_unitario_efetivo DECIMAL(14,4) NOT NULL DEFAULT 0,

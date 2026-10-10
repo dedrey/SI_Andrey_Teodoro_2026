@@ -84,6 +84,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 Quantidade = i.Quantidade,
                 ValorUnitario = i.ValorUnitario,
                 ValorDesconto = i.ValorDesconto,
+                DescontoPercentual = i.DescontoPercentual,
                 CustoUnitarioEfetivo = i.CustoUnitarioEfetivo
             }).ToList()
         };
@@ -202,6 +203,15 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                     return (false, $"{Desc(item)}: custo unitário deve ser maior que zero.", 0);
                 if (item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade)
                     return (false, $"{Desc(item)}: desconto não pode ser maior que o valor do item.", 0);
+                if (item.DescontoPercentual < 0 || item.DescontoPercentual > 100)
+                    return (false, $"{Desc(item)}: desconto deve estar entre 0% e 100%.", 0);
+
+                var bruto = item.ValorUnitario * item.Quantidade;
+                var valorPeloPercentual = Math.Round(bruto * item.DescontoPercentual / 100, 2);
+                var percentualPeloValor = bruto > 0 ? Math.Round(item.ValorDesconto / bruto * 100, 4) : 0;
+                if (Math.Abs(item.ValorDesconto - valorPeloPercentual) > 0.01m
+                    && Math.Abs(item.DescontoPercentual - percentualPeloValor) > 0.01m)
+                    item.DescontoPercentual = percentualPeloValor;
             }
 
             var duplicada = itensValidos.GroupBy(i => i.ProdutoVariacaoId).FirstOrDefault(g => g.Count() > 1);
