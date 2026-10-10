@@ -170,7 +170,7 @@
                             <MudTh Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
                         }
                         <MudTh Style="font-weight:600;text-align:right;white-space:nowrap;min-width:120px;">Total</MudTh>
-                        @if (!ItensTravados)
+                        @if (!SomenteLeitura)
                         {
                             <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                         }
@@ -182,7 +182,7 @@
                                              ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
                                              SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
                                              Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@ItensTravados" />
+                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@LinhaBloqueada(context)" />
                         </MudTd>
                         <MudTd>
                             <MudAutocomplete T="ProdutoVariacaoDto"
@@ -191,23 +191,23 @@
                                              SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
                                              ToStringFunc="@(v => v == null ? "" : $"{v.Cor} / {v.Tamanho}")"
                                              Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Disabled="@(ItensTravados || !_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
+                                             Disabled="@(LinhaBloqueada(context) || !_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
                                              ResetValueOnEmptyText="true" CoerceText="false" />
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" Disabled="@ItensTravados" />
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" Disabled="@LinhaBloqueada(context)" />
                         </MudTd>
                         <MudTd>
                             <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          Adornment="Adornment.Start" AdornmentText="R$" Disabled="@ItensTravados" />
+                                          Adornment="Adornment.Start" AdornmentText="R$" Disabled="@LinhaBloqueada(context)" />
                         </MudTd>
                         <MudTd>
                             <MudNumericField T="decimal" Value="context.DescontoPercentual" ValueChanged="@((decimal v) => OnDescontoPercentualAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.End" AdornmentText="%" Class="input-direita mt-0"
-                                             Format="N2" FullWidth="true" Disabled="@ItensTravados"
+                                             Format="N2" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Validation="@(new Func<decimal, string?>(v => ErroPercentual(v)))"
                                              Error="@(ErroPercentual(context.DescontoPercentual) != null)" ErrorText="@ErroPercentual(context.DescontoPercentual)" />
                         </MudTd>
@@ -215,7 +215,7 @@
                             <MudNumericField T="decimal" Value="context.ValorDesconto" ValueChanged="@((decimal v) => OnDescontoValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                             Format="N2" FullWidth="true" Disabled="@ItensTravados"
+                                             Format="N2" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Validation="@(new Func<decimal, string?>(v => ErroDescontoValor(context, v)))"
                                              Error="@(ErroDescontoValor(context, context.ValorDesconto) != null)" ErrorText="@ErroDescontoValor(context, context.ValorDesconto)" />
                         </MudTd>
@@ -224,38 +224,43 @@
                             <MudTd Style="text-align:right;">R$ @context.CustoUnitarioEfetivo.ToString("N2")</MudTd>
                         }
                         <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;min-width:120px;">R$ @TotalItem(context).ToString("N2")</MudTd>
-                        @if (!ItensTravados)
+                        @if (!SomenteLeitura)
                         {
                             <MudTd Style="text-align:center;">
-                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
+                                @if (!_itensConfirmados)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
+                                }
+                                else if (_indiceEmEdicao == _dto.Itens.IndexOf(context))
+                                {
+                                    <MudTooltip Text="Confirmar item">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="@(() => ConfirmarLinha(context))" />
+                                    </MudTooltip>
+                                }
+                                else
+                                {
+                                    <MudTooltip Text="Editar item">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                                       Disabled="@_indiceEmEdicao.HasValue" OnClick="@(() => EditarLinha(context))" />
+                                    </MudTooltip>
+                                }
                             </MudTd>
                         }
                     </RowTemplate>
                     <FooterContent>
                         <MudTd ColSpan="@(SomenteLeitura ? 7 : 6)" Style="text-align:right;font-weight:600;padding:8px 12px;">Total dos itens:</MudTd>
                         <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @_dto.Itens.Sum(TotalItem).ToString("N2")</MudTd>
-                        @if (!ItensTravados) { <MudTd></MudTd> }
+                        @if (!SomenteLeitura) { <MudTd></MudTd> }
                     </FooterContent>
                 </MudTable>
 
-                @if (!SomenteLeitura)
+                @if (!SomenteLeitura && _itensConfirmados)
                 {
                     <div class="d-flex justify-end mt-2">
-                        @if (_itensConfirmados)
-                        {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.Edit" OnClick="EditarItens">
-                                Editar itens
-                            </MudButton>
-                        }
-                        else
-                        {
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                                       StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="ConfirmarItens"
-                                       Disabled="@(!PodeConfirmarItens)">
-                                Confirmar itens
-                            </MudButton>
-                        }
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Edit" OnClick="EditarItens">
+                            Editar itens
+                        </MudButton>
                     </div>
                 }
 
@@ -331,7 +336,7 @@
                                     <MudText Typo="Typo.body2">
                                         @(SomenteLeitura
                                             ? "Compra sem condição de pagamento: nenhuma conta a pagar será gerada."
-                                            : "Confirme os itens para ver a prévia das parcelas.")
+                                            : "Informe frete, seguro ou acréscimos (ou clique em Lançar compra) para travar os itens e ver a prévia das parcelas.")
                                     </MudText>
                                 </div>
                             }
@@ -345,27 +350,33 @@
                                 <MudText Typo="Typo.body2" Style="color:#2e7d32;">Desconto</MudText>
                                 <MudText Typo="Typo.body2" Style="font-weight:600;color:#2e7d32;text-align:right;white-space:nowrap;">- R$ @_dto.ValorDesconto.ToString("N2")</MudText>
                                 <MudText Typo="Typo.body2">Frete</MudText>
-                                <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = v))"
-                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                 Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
+                                <div @onfocusin="OnAcrescimoFocado">
+                                    <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = v))"
+                                                     HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                     Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                     Min="0" Format="N2" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                </div>
                                 <MudText Typo="Typo.body2">Seguro</MudText>
-                                <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = v))"
-                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                 Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
+                                <div @onfocusin="OnAcrescimoFocado">
+                                    <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = v))"
+                                                     HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                     Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                     Min="0" Format="N2" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                </div>
                                 <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
-                                <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = v))"
-                                                 HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                 Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                 Min="0" Format="N2" FullWidth="true" Disabled="@(SomenteLeitura || !_itensConfirmados)" />
+                                <div @onfocusin="OnAcrescimoFocado">
+                                    <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = v))"
+                                                     HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                     Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                                     Min="0" Format="N2" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                </div>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:700;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;">Total da Nota</MudText>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
                             </div>
                             @if (!SomenteLeitura && !_itensConfirmados)
                             {
                                 <div class="d-flex justify-end mt-1">
-                                    <MudText Typo="Typo.caption" Style="color:#888;">Confirme os itens para informar frete, seguro e acréscimos.</MudText>
+                                    <MudText Typo="Typo.caption" Style="color:#888;">Ao entrar em frete, seguro ou acréscimos, os itens são travados.</MudText>
                                 </div>
                             }
                         </div>
@@ -386,7 +397,7 @@
         @if (!SomenteLeitura)
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                       Disabled="@(_salvando || !_itensConfirmados)" Style="height:40px;font-weight:700;min-width:160px;">
+                       Disabled="@(_salvando || _indiceEmEdicao.HasValue)" Style="height:40px;font-weight:700;min-width:160px;">
                 @(_salvando ? "Lançando..." : "LANÇAR COMPRA")
             </MudButton>
         }
@@ -443,10 +454,10 @@
     private bool _salvando;
     private bool _itensConfirmados;
     private bool ItensTravados => SomenteLeitura || _itensConfirmados;
-    private bool PodeConfirmarItens => CabecalhoValido
-        && _dto.Itens.Count > 0
-        && _dto.Itens.All(i => i.ProdutoVariacaoId > 0 && i.Quantidade > 0 && i.ValorUnitario > 0 && !DescontoInvalido(i) && !PercentualInvalido(i))
-        && _dto.Itens.Select(i => i.ProdutoVariacaoId).Distinct().Count() == _dto.Itens.Count;
+    private int? _indiceEmEdicao;
+    private bool PodeConfirmarItens => ErroConfirmacaoItens() == null;
+    private bool AcrescimosBloqueados => SomenteLeitura || !PodeConfirmarItens || _indiceEmEdicao.HasValue;
+    private bool LinhaBloqueada(CompraItemDto item) => SomenteLeitura || (_itensConfirmados && _indiceEmEdicao != _dto.Itens.IndexOf(item));
     private CompraDto _dto = new();
     private DateTime? _dataEmissao;
     private DateTime? _dataChegada;
@@ -590,15 +601,58 @@
             : new();
     }
 
-    private async Task ConfirmarItens()
+    private string? ErroItem(CompraItemDto item)
     {
+        if (item.ProdutoVariacaoId <= 0) return "Selecione o produto e a variação de todos os itens.";
+        if (item.Quantidade <= 0) return "Informe a quantidade de todos os itens.";
+        if (item.ValorUnitario <= 0) return "Informe o custo unitário de todos os itens.";
+        if (PercentualInvalido(item)) return "O desconto % deve ficar entre 0% e 100%.";
+        if (DescontoInvalido(item)) return "O desconto não pode ser negativo nem maior que o valor do item.";
+        if (_dto.Itens.Any(i => i != item && i.ProdutoVariacaoId == item.ProdutoVariacaoId)) return "Há itens com a mesma variação de produto.";
+        return null;
+    }
+
+    private string? ErroConfirmacaoItens()
+    {
+        if (!CabecalhoValido) return "Preencha fornecedor, transportadora, dados da nota e datas válidas.";
+        if (_dto.Itens.Count == 0) return "Adicione pelo menos um item.";
+        return _dto.Itens.Select(ErroItem).FirstOrDefault(e => e != null);
+    }
+
+    private async Task<bool> TravarItens()
+    {
+        var erro = ErroConfirmacaoItens();
+        if (erro != null) { Snackbar.Add(erro, Severity.Warning); return false; }
         _itensConfirmados = true;
+        await RecalcularParcelas();
+        return true;
+    }
+
+    private async Task OnAcrescimoFocado()
+    {
+        if (_itensConfirmados || _indiceEmEdicao.HasValue) return;
+        await TravarItens();
+    }
+
+    private void EditarLinha(CompraItemDto item)
+    {
+        if (_indiceEmEdicao.HasValue) return;
+        _indiceEmEdicao = _dto.Itens.IndexOf(item);
+    }
+
+    private async Task ConfirmarLinha(CompraItemDto item)
+    {
+        var erro = ErroItem(item);
+        if (erro != null) { Snackbar.Add(erro, Severity.Warning); return; }
+        _indiceEmEdicao = null;
+        RecalcularTotais();
         await RecalcularParcelas();
     }
 
     private void EditarItens()
     {
         _itensConfirmados = false;
+        _indiceEmEdicao = null;
         _parcelas = new();
     }
 
@@ -747,7 +801,13 @@
 
     private async Task Salvar()
     {
-        if (!_itensConfirmados) return;
+        if (_indiceEmEdicao.HasValue) return;
+        if (!_itensConfirmados)
+        {
+            if (await TravarItens())
+                Snackbar.Add("Itens travados. Confira as parcelas e clique em Lançar compra novamente.", Severity.Info);
+            return;
+        }
         if (!_dto.FornecedorId.HasValue) { Snackbar.Add("Selecione um fornecedor.", Severity.Warning); return; }
         if (!_dto.TransportadoraId.HasValue) { Snackbar.Add("Selecione uma transportadora.", Severity.Warning); return; }
         if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
