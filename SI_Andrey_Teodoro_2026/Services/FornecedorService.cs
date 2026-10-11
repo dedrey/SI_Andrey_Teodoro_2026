@@ -59,7 +59,7 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
             dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
-            dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
+            dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant() ?? string.Empty;
             dto.Cep = dto.Cep.Trim();
 
             if (!dto.CidadeId.HasValue)

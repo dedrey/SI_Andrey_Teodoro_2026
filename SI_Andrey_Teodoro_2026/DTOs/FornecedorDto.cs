@@ -23,7 +23,6 @@ public class FornecedorDto
     public string Endereco { get; set; } = string.Empty;
     [Required(ErrorMessage = "Número é obrigatório")]
     [MaxLength(10)] public string Numero { get; set; } = string.Empty;
-    [Required(ErrorMessage = "Complemento é obrigatório")]
     [MaxLength(50)] public string Complemento { get; set; } = string.Empty;
     [Required(ErrorMessage = "Bairro é obrigatório")]
     [MinLength(2)]
