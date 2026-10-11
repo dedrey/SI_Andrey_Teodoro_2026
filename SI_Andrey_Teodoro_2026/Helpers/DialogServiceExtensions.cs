@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MudBlazor;
 using SI_Andrey_Teodoro_2026.Components.Shared;
+using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Modals;
 
 namespace SI_Andrey_Teodoro_2026.Helpers;
 
@@ -41,5 +43,28 @@ public static class DialogServiceExtensions
     {
         if (somenteLeitura || snapshot is null || snapshot == Snapshot(dadosAtuais) || await dialogService.ConfirmarDescarteAsync())
             dialog.Cancel();
+    }
+
+    public static async Task<TItem?> PesquisarAsync<TItem>(
+        this IDialogService dialogService,
+        string titulo,
+        Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar,
+        List<ColunaPesquisa<TItem>> colunas,
+        string? statusFiltro = null) where TItem : class
+    {
+        var param = new DialogParameters<ModalPesquisa<TItem>>
+        {
+            { x => x.Titulo,       titulo },
+            { x => x.Buscar,       buscar },
+            { x => x.Colunas,      colunas },
+            { x => x.StatusFiltro, statusFiltro }
+        };
+
+        var dialog = await dialogService.ShowAsync<ModalPesquisa<TItem>>(
+            titulo, param,
+            new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true });
+
+        var result = await dialog.Result;
+        return result is { Canceled: false } ? result.Data as TItem : null;
     }
 }

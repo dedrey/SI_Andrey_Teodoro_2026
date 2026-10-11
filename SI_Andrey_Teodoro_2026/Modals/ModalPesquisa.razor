@@ -1,0 +1,112 @@
+@typeparam TItem where TItem : class
+
+<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center">
+            <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Class="mr-2" />
+            <MudText Typo="Typo.h6">@Titulo</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField T="string" @bind-Value="_busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" FullWidth="true"
+                      AutoFocus="true" Immediate="true" DebounceInterval="300" OnDebounceIntervalElapsed="BuscaAlterada" Class="mb-3" />
+        <div tabindex="0" @onkeydown="TeclaPressionada" style="outline:none;">
+            <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
+                <MudTable @ref="_tabela" T="TItem" ServerData="CarregarDados" Dense="true" Hover="true" RowsPerPage="10"
+                          LoadingProgressColor="Color.Primary" OnRowClick="LinhaClicada" RowStyleFunc="EstiloLinha">
+                    <HeaderContent>
+                        @foreach (var coluna in Colunas)
+                        {
+                            <MudTh Style="@($"font-weight:600;{(coluna.AlinharDireita ? "text-align:right;" : "")}")">@coluna.Titulo</MudTh>
+                        }
+                    </HeaderContent>
+                    <RowTemplate>
+                        @foreach (var coluna in Colunas)
+                        {
+                            <MudTd Style="@($"cursor:pointer;user-select:none;{(coluna.AlinharDireita ? "text-align:right;" : "")}")">@coluna.Texto(context)</MudTd>
+                        }
+                    </RowTemplate>
+                    <NoRecordsContent><div class="d-flex flex-column align-center pa-6" style="color:#bbb;"><MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" /><MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText></div></NoRecordsContent>
+                    <LoadingContent><MudText Typo="Typo.body2" Style="color:#999;">Carregando...</MudText></LoadingContent>
+                    <PagerContent><MudTablePager HideRowsPerPage="true" InfoFormat="{first_item}-{last_item} de {all_items}" /></PagerContent>
+                </MudTable>
+            </MudPaper>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancelar" Style="height:40px;">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirmar" Disabled="@(_selecionado == null)"
+                   StartIcon="@Icons.Material.Filled.Check" Style="height:40px;font-weight:700;">Selecionar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Parameter] public string Titulo { get; set; } = "Pesquisar";
+    [Parameter] public Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> Buscar { get; set; } = null!;
+    [Parameter] public List<ColunaPesquisa<TItem>> Colunas { get; set; } = new();
+    [Parameter] public string? StatusFiltro { get; set; }
+
+    private MudTable<TItem>? _tabela;
+    private string? _busca;
+    private TItem? _selecionado;
+    private List<TItem> _itensPagina = new();
+
+    private async Task<TableData<TItem>> CarregarDados(TableState state, CancellationToken ct)
+    {
+        _selecionado = null;
+        try
+        {
+            var filtro = new FiltroConsultaDto
+            {
+                Busca = string.IsNullOrWhiteSpace(_busca) ? null : _busca.Trim(),
+                StatusFiltro = StatusFiltro ?? "todos",
+                Pagina = state.Page + 1,
+                TamanhoPagina = state.PageSize
+            };
+            var resultado = await Buscar(filtro);
+            _itensPagina = resultado.Itens;
+            return new TableData<TItem> { Items = resultado.Itens, TotalItems = resultado.TotalItens };
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro ao pesquisar: {ex.Message}", Severity.Error);
+            _itensPagina = new();
+            return new TableData<TItem> { Items = new List<TItem>(), TotalItems = 0 };
+        }
+    }
+
+    private async Task BuscaAlterada(string _)
+    {
+        if (_tabela == null) return;
+        if (_tabela.CurrentPage == 0) await _tabela.ReloadServerData();
+        else _tabela.NavigateTo(0);
+    }
+
+    private void LinhaClicada(TableRowClickEventArgs<TItem> args)
+    {
+        _selecionado = args.Item;
+        if (args.MouseEventArgs?.Detail >= 2) Confirmar();
+    }
+
+    private string EstiloLinha(TItem item, int indice) =>
+        ReferenceEquals(item, _selecionado) ? "background-color:var(--mud-palette-primary-hover);" : "";
+
+    private void TeclaPressionada(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") { Confirmar(); return; }
+        if (_itensPagina.Count == 0 || (e.Key != "ArrowDown" && e.Key != "ArrowUp")) return;
+        var indice = _selecionado == null ? -1 : _itensPagina.IndexOf(_selecionado);
+        indice = e.Key == "ArrowDown" ? Math.Min(indice + 1, _itensPagina.Count - 1) : Math.Max(indice - 1, 0);
+        _selecionado = _itensPagina[indice];
+    }
+
+    private void Confirmar()
+    {
+        if (_selecionado != null) MudDialog.Close(DialogResult.Ok(_selecionado));
+    }
+
+    private void Cancelar() => MudDialog.Cancel();
+}

@@ -48,6 +48,14 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                                  m.marca              AS NomeMarca,
                                  p.unidade_medida_id  AS UnidadeMedidaId,
                                  u.unidade_medida     AS SiglaUnidade,
+                                 (SELECT f2.razaosocial
+                                  FROM compras                 c2
+                                  INNER JOIN compras_itens     ci2 ON ci2.compra_id = c2.id
+                                  INNER JOIN produto_variacoes pv2 ON pv2.id = ci2.produto_variacao_id
+                                  INNER JOIN fornecedores      f2  ON f2.id  = c2.fornecedor_id
+                                  WHERE pv2.produto_id = p.id
+                                    AND c2.status_compra = 'LANCADO'
+                                  ORDER BY c2.data_emissao DESC, c2.id DESC LIMIT 1) AS NomeFornecedor,
                                  COUNT(DISTINCT pv.id)          AS TotalVariacoes,
                                  COALESCE(SUM(e.quantidade), 0) AS TotalEstoque,
                                  p.ativo,
