@@ -7,6 +7,7 @@ public interface INfeRepository
     Task<PaginacaoDto<NfeListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<NfeDto?> ObterPorIdAsync(int id);
     Task<IEnumerable<VendaParaNfeDto>> ObterVendasDisponiveisAsync();
+    Task<PaginacaoDto<VendaParaNfeDto>> ObterVendasDisponiveisAsync(FiltroConsultaDto filtro);
     Task<List<VendaItemParaNfeDto>> ObterItensVendaParaNfeAsync(int vendaId);
     Task<int> ProximoNumeroAsync(int emitenteId, short serie);
     Task<int> InserirAsync(NfeDto dto, List<NfeProdutoDto> itens);

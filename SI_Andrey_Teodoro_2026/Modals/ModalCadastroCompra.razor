@@ -34,37 +34,37 @@
                 </MudAlert>
             }
             <MudGrid Spacing="2">
-                <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="FornecedorListDto"
-                                     Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
-                                     ValueChanged="@((FornecedorListDto? f) => OnFornecedorAlterado(f))"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(f => f?.RazaoSocial ?? "")"
-                                     Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Required="true" RequiredError="Selecione um fornecedor"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="FornecedorListDto"
+                                         Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
+                                         ValueChanged="@((FornecedorListDto? f) => OnFornecedorAlterado(f))"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(f => f?.RazaoSocial ?? "")"
+                                         Label="Fornecedor" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Required="true" RequiredError="Selecione um fornecedor"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
+                        <MudTooltip Text="Pesquisar fornecedor">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarFornecedor" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Novo fornecedor">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                       OnClick="AbrirModalFornecedor" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
-                    </MudTooltip>
-                </MudItem>
-                <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="TransportadoraListDto"
-                                     Value="@(_transportadoras.FirstOrDefault(t => t.Id == _dto.TransportadoraId))"
-                                     ValueChanged="@((TransportadoraListDto? t) => _dto.TransportadoraId = t?.Id)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _transportadoras.AsEnumerable() : _transportadoras.Where(t => t.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(t => t?.RazaoSocial ?? "")"
-                                     Label="Transportadora" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Required="true" RequiredError="Selecione uma transportadora"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Nova transportadora">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                       OnClick="AbrirModalTransportadora" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                    </MudTooltip>
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="TransportadoraListDto"
+                                         Value="@(_transportadoras.FirstOrDefault(t => t.Id == _dto.TransportadoraId))"
+                                         ValueChanged="@((TransportadoraListDto? t) => _dto.TransportadoraId = t?.Id)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _transportadoras.AsEnumerable() : _transportadoras.Where(t => t.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(t => t?.RazaoSocial ?? "")"
+                                         Label="Transportadora" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Required="true" RequiredError="Selecione uma transportadora"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
+                        <MudTooltip Text="Pesquisar transportadora">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarTransportadora" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
@@ -786,20 +786,38 @@
         _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto + _dto.ValorFrete + _dto.ValorSeguro + _dto.ValorOutrosAcrescimos;
     }
 
-    private async Task AbrirModalFornecedor()
+    private async Task<FornecedorListDto?> NovoFornecedor()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
+        return _fornecedores.FirstOrDefault(f => f.Id == id);
     }
 
-    private async Task AbrirModalTransportadora()
+    private async Task<TransportadoraListDto?> NovaTransportadora()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
+        return _transportadoras.FirstOrDefault(t => t.Id == id);
+    }
+
+    private async Task PesquisarFornecedor()
+    {
+        var fornecedor = await DialogService.PesquisarFornecedorAsync(FornecedorService, _dto.FornecedorId, NovoFornecedor);
+        if (fornecedor == null) return;
+        OnFornecedorAlterado(_fornecedores.ObterOuAdicionar(fornecedor, f => f.Id));
+    }
+
+    private async Task PesquisarTransportadora()
+    {
+        var transportadora = await DialogService.PesquisarTransportadoraAsync(TransportadoraService, _dto.TransportadoraId, NovaTransportadora);
+        if (transportadora == null) return;
+        _dto.TransportadoraId = _transportadoras.ObterOuAdicionar(transportadora, t => t.Id).Id;
     }
 
     private void OnFornecedorAlterado(FornecedorListDto? fornecedor)

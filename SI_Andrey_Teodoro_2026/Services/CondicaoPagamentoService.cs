@@ -43,6 +43,8 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
         };
     }
 
+    public Task<bool> EmUsoAsync(int id) => _repo.EmUsoAsync(id);
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CondicaoPagamentoDto dto)
     {
         try
@@ -77,6 +79,16 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
                             $"({ordenadas[i].DiasVencimento} dias) deve ter um prazo maior que a parcela {ordenadas[i - 1].NumeroParcela} " +
                             $"({ordenadas[i - 1].DiasVencimento} dias).", 0);
                 }
+            }
+
+            if (dto.IdOriginal > 0 && await _repo.EmUsoAsync(dto.IdOriginal))
+            {
+                var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (atual == null) return (false, "Condição de pagamento não encontrada.", 0);
+                var diasAtuais = (await _repo.ObterParcelasAsync(dto.IdOriginal)).OrderBy(p => p.NumeroParcela).Select(p => p.DiasVencimento);
+                var diasNovos = dto.Parcelas.OrderBy(p => p.NumeroParcela).Select(p => p.DiasVencimento);
+                if (atual.NumeroParcelas != dto.NumeroParcelas || !diasAtuais.SequenceEqual(diasNovos))
+                    return (false, "Condição já utilizada: para mudar as parcelas, inative e cadastre outra.", 0);
             }
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;

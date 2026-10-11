@@ -16,62 +16,65 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="10" sm="5">
-                    <MudSelect T="int" Value="_dto.PaisId" ValueChanged="OnPaisAlterado"
-                               Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                               Disabled="@_readOnly"
-                               Class="@(_paisNaoSelecionado ? "mud-input-error" : "")">
-                        <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var pais in _paises)
-                        {
-                            <MudSelectItem T="int" Value="@pais.Id">@pais.NomePais</MudSelectItem>
-                        }
-                    </MudSelect>
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudSelect T="int" Value="_dto.PaisId" ValueChanged="OnPaisAlterado"
+                                   Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                   Disabled="@_readOnly"
+                                   Class="@(_paisNaoSelecionado ? "mud-input-error" : "")">
+                            <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
+                            @foreach (var pais in _paises)
+                            {
+                                <MudSelectItem T="int" Value="@pais.Id">@pais.NomePais</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudTooltip Text="Pesquisar país">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarPais" Disabled="@_readOnly" />
+                        </MudTooltip>
+                    </div>
                     @if (_paisNaoSelecionado)
                     {
                         <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um país</MudText>
                     }
                 </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Novo País">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalPais" Disabled="@_readOnly" />
-                    </MudTooltip>
-                </MudItem>
-                <MudItem xs="10" sm="5">
-                    <MudSelect T="int" @bind-Value="_dto.EstadoId"
-                               Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
-                               Variant="Variant.Outlined" Margin="Margin.Dense"
-                               Disabled="@(_dto.PaisId == 0 || _readOnly)" FullWidth="true"
-                               Class="@(_estadoNaoSelecionado ? "mud-input-error" : "")">
-                        <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                        @foreach (var estado in _estados)
-                        {
-                            <MudSelectItem T="int" Value="@estado.Id">@estado.NomeEstado (@estado.Uf)</MudSelectItem>
-                        }
-                    </MudSelect>
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudSelect T="int" @bind-Value="_dto.EstadoId"
+                                   Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense"
+                                   Disabled="@(!PaisOk || _readOnly)" HelperText="@(PaisOk ? null : "Selecione o país primeiro.")" FullWidth="true"
+                                   Class="@(_estadoNaoSelecionado ? "mud-input-error" : "")">
+                            <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
+                            @foreach (var estado in _estados)
+                            {
+                                <MudSelectItem T="int" Value="@estado.Id">@estado.NomeEstado (@estado.Uf)</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudTooltip Text="Pesquisar estado">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarEstado" Disabled="@(!PaisOk || _readOnly)" />
+                        </MudTooltip>
+                    </div>
                     @if (_estadoNaoSelecionado)
                     {
                         <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um estado</MudText>
                     }
                 </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Novo Estado">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium"
-                                       Disabled="@(_dto.PaisId == 0 || _readOnly)" OnClick="AbrirModalEstado" />
-                    </MudTooltip>
-                </MudItem>
                 <MudItem xs="8" sm="9">
                     <MudTextField Value="@_dto.NomeCidade" ValueChanged="@((string v) => _dto.NomeCidade = v)"
                                   Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null)" Disabled="@_readOnly" />
+                                  Validation="@((string v) => ValidarCidade(v))"
+                                  Disabled="@(_readOnly || !EstadoOk)" HelperText="@(EstadoOk ? null : "Selecione o estado primeiro.")" />
                 </MudItem>
                 <MudItem xs="4" sm="3">
                     <MudTextField Value="@_dddTexto" ValueChanged="@((string v) => OnDddAlterado(v))"
                                   Label="DDD" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return !short.TryParse(d, out short n) || n < 1 || n > 999 ? "DDD: 1 a 999" : null; })" Disabled="@_readOnly" />
+                                  Validation="@((string v) => { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return !short.TryParse(d, out short n) || n < 1 || n > 999 ? "DDD: 1 a 999" : null; })"
+                                  Disabled="@(_readOnly || !CidadeOk)" HelperText="@(CidadeOk ? null : "Informe a cidade primeiro.")" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -151,23 +154,43 @@
     }
 
     private async Task OnPaisAlterado(int paisId) { _dto.PaisId = paisId; _dto.EstadoId = 0; _paisNaoSelecionado = false; _estados = (await EstadoService.ObterPorPaisAsync(paisId)).ToList(); }
+    private async Task PesquisarPais()
+    {
+        var pais = await DialogService.PesquisarPaisAsync(PaisService, _dto.PaisId, NovoPais);
+        if (pais == null) return;
+        await OnPaisAlterado(_paises.ObterOuAdicionar(pais, p => p.Id).Id);
+    }
+
+    private async Task PesquisarEstado()
+    {
+        var estado = await DialogService.PesquisarEstadoAsync(EstadoService, _dto.EstadoId, NovoEstado);
+        if (estado == null) return;
+        if (estado.PaisId != _dto.PaisId)
+            await OnPaisAlterado(_paises.ObterOuAdicionar(new PaisListDto { Id = estado.PaisId, NomePais = estado.NomePais }, p => p.Id).Id);
+        _dto.EstadoId = _estados.ObterOuAdicionar(estado, e => e.Id).Id;
+    }
+
     private void OnDddAlterado(string? v) { if (string.IsNullOrEmpty(v)) { _dddTexto = ""; _dto.Ddd = 0; return; } var d = new string(v.Where(char.IsDigit).ToArray()); _dddTexto = d; _dto.Ddd = short.TryParse(d, out short n) ? n : (short)0; }
 
-    private async Task AbrirModalPais()
+    private async Task<PaisListDto?> NovoPais()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
         var result = await dialog.Result;
-        if (result is { Canceled: false }) { _paises = (await PaisService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _dto.PaisId = id; _paisNaoSelecionado = false; _estados = (await EstadoService.ObterPorPaisAsync(id)).ToList(); } }
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _paises = (await PaisService.ObterTodosAtivosAsync()).ToList();
+        return _paises.FirstOrDefault(p => p.Id == id);
     }
 
-    private async Task AbrirModalEstado()
+    private async Task<EstadoListDto?> NovoEstado()
     {
         var param = new DialogParameters<ModalCadastroEstado> { { x => x.PaisIdInicial, _dto.PaisId } };
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroEstado>("Novo Estado", param, opts);
         var result = await dialog.Result;
-        if (result is { Canceled: false }) { _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList(); if (result.Data is int id) { _dto.EstadoId = id; _estadoNaoSelecionado = false; } }
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList();
+        return _estados.FirstOrDefault(e => e.Id == id) ?? (await EstadoService.ObterTodosAtivosAsync()).FirstOrDefault(e => e.Id == id);
     }
 
     private async Task Salvar()
@@ -182,6 +205,11 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
+    private bool PaisOk => _dto.PaisId > 0;
+    private bool EstadoOk => PaisOk && _dto.EstadoId > 0;
+    private bool CidadeOk => EstadoOk && ValidarCidade(_dto.NomeCidade) == null;
+    private static string? ValidarCidade(string? v) =>
+        string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v, @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null;
     private object DadosEditaveis() => new { _dto, _dddTexto };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }

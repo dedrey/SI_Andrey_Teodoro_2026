@@ -51,6 +51,14 @@ public class VeiculoService : BaseService<VeiculoDto, VeiculoListDto>, IVeiculoS
             if (dto.Uf.Length != 2)
                 return (false, "UF deve ter 2 letras.", 0);
 
+            if (dto.IdOriginal > 0)
+            {
+                var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (atual == null) return (false, "Veículo não encontrado.", 0);
+                if (!string.Equals(atual.Placa, dto.Placa, StringComparison.OrdinalIgnoreCase))
+                    return (false, "A placa não pode ser alterada após o cadastro.", 0);
+            }
+
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
             if (await _repo.ExistePlacaAsync(dto.Placa, ignorar))

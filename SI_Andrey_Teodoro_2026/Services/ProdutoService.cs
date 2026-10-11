@@ -18,6 +18,8 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
     public Task<IEnumerable<ProdutoListDto>> ObterTodosAtivosAsync()
         => _repo.ObterTodosAtivosAsync();
 
+    public Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId) => _repo.ObterVariacoesComMovimentoAsync(produtoId);
+
     public async Task<ProdutoDto?> ObterPorIdAsync(int id)
     {
         var p = await _repo.ObterPorIdAsync(id);
@@ -54,6 +56,7 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             dto.Descricao = dto.Descricao?.Trim().ToUpperInvariant();
             dto.CodigoBarras = string.IsNullOrWhiteSpace(dto.CodigoBarras) ? null : dto.CodigoBarras.Trim();
 
+            if (dto.Produto.Length < 2) return (false, "Informe o nome do produto (mínimo 2 caracteres).", 0);
             if (dto.CategoriaId == 0) return (false, "Selecione uma categoria.", 0);
             if (dto.MarcaId == 0) return (false, "Selecione uma marca.", 0);
             if (dto.UnidadeMedidaId == 0) return (false, "Selecione uma unidade de medida.", 0);
@@ -64,6 +67,24 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
 
             if (!string.IsNullOrWhiteSpace(dto.CodigoBarras) && await _repo.ExisteCodigoBarrasAsync(dto.CodigoBarras, ignorarProduto))
                 return (false, $"Código de barras '{dto.CodigoBarras}' já está em uso em outro produto.", 0);
+
+            if (dto.IdOriginal > 0)
+            {
+                var comMovimento = await _repo.ObterVariacoesComMovimentoAsync(dto.IdOriginal);
+                if (comMovimento.Count > 0)
+                {
+                    var atuais = (await _repo.ObterVariacoesPorProdutoAsync(dto.IdOriginal)).ToDictionary(v => v.IdOriginal);
+                    foreach (var id in comMovimento)
+                    {
+                        var nova = dto.Variacoes.FirstOrDefault(v => v.IdOriginal == id);
+                        if (nova == null || !atuais.TryGetValue(id, out var atual)) continue;
+                        if (nova.Removida)
+                            return (false, $"{atual.Cor}/{atual.Tamanho}: variação com movimentação não pode ser removida.", 0);
+                        if (nova.CorId != atual.CorId || nova.TamanhoId != atual.TamanhoId)
+                            return (false, $"{atual.Cor}/{atual.Tamanho}: variação com movimentação só pode ter preço e situação alterados.", 0);
+                    }
+                }
+            }
 
             var variacoesValidas = dto.Variacoes.Where(v => !v.Removida).ToList();
             if (variacoesValidas.Count == 0)

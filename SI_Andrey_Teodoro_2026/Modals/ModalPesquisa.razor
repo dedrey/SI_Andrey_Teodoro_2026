@@ -5,6 +5,11 @@
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Class="mr-2" />
             <MudText Typo="Typo.h6">@Titulo</MudText>
+            @if (Novo != null)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="ml-auto"
+                           StartIcon="@Icons.Material.Filled.Add" OnClick="NovoClicado" Disabled="_abrindoNovo">Novo</MudButton>
+            }
         </div>
     </TitleContent>
     <DialogContent>
@@ -16,12 +21,25 @@
                 <MudTable @ref="_tabela" T="TItem" ServerData="CarregarDados" Dense="true" Hover="true" RowsPerPage="10"
                           LoadingProgressColor="Color.Primary" OnRowClick="LinhaClicada" RowStyleFunc="EstiloLinha">
                     <HeaderContent>
+                        @if (MultiSelecao)
+                        {
+                            <MudTh Style="width:48px;"></MudTh>
+                        }
                         @foreach (var coluna in Colunas)
                         {
                             <MudTh Style="@($"font-weight:600;{(coluna.AlinharDireita ? "text-align:right;" : "")}")">@coluna.Titulo</MudTh>
                         }
                     </HeaderContent>
                     <RowTemplate>
+                        @if (MultiSelecao)
+                        {
+                            <MudTd Style="width:48px;padding:0 4px;">
+                                <span @onclick:stopPropagation="true">
+                                    <MudCheckBox T="bool" Value="@Marcado(context)" ValueChanged="@((bool _) => Alternar(context))"
+                                                 Color="Color.Primary" Dense="true" />
+                                </span>
+                            </MudTd>
+                        }
                         @foreach (var coluna in Colunas)
                         {
                             <MudTd Style="@($"cursor:pointer;user-select:none;{(coluna.AlinharDireita ? "text-align:right;" : "")}")">@coluna.Texto(context)</MudTd>
@@ -29,15 +47,25 @@
                     </RowTemplate>
                     <NoRecordsContent><div class="d-flex flex-column align-center pa-6" style="color:#bbb;"><MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;" /><MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText></div></NoRecordsContent>
                     <LoadingContent><MudText Typo="Typo.body2" Style="color:#999;">Carregando...</MudText></LoadingContent>
-                    <PagerContent><MudTablePager HideRowsPerPage="true" InfoFormat="{first_item}-{last_item} de {all_items}" /></PagerContent>
+                    <PagerContent>
+                        <div class="d-flex align-center">
+                            @if (MultiSelecao)
+                            {
+                                <MudText Typo="Typo.body2" Class="ml-4" Style="white-space:nowrap;font-weight:600;color:var(--mud-palette-primary);">@_marcados.Count selecionado(s)</MudText>
+                            }
+                            <MudTablePager HideRowsPerPage="true" InfoFormat="{first_item}-{last_item} de {all_items}" Style="flex:1;" />
+                        </div>
+                    </PagerContent>
                 </MudTable>
             </MudPaper>
         </div>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancelar" Style="height:40px;">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirmar" Disabled="@(_selecionado == null)"
-                   StartIcon="@Icons.Material.Filled.Check" Style="height:40px;font-weight:700;">Selecionar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirmar" Disabled="@(!PodeConfirmar)"
+                   StartIcon="@Icons.Material.Filled.Check" Style="height:40px;font-weight:700;">
+            @(MultiSelecao ? $"Selecionar ({_marcados.Count})" : "Selecionar")
+        </MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -48,15 +76,32 @@
     [Parameter] public Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> Buscar { get; set; } = null!;
     [Parameter] public List<ColunaPesquisa<TItem>> Colunas { get; set; } = new();
     [Parameter] public string? StatusFiltro { get; set; }
+    [Parameter] public Func<Task<TItem?>>? Novo { get; set; }
+    [Parameter] public Func<TItem, int>? ObterId { get; set; }
+    [Parameter] public IEnumerable<int>? SelecionadosIniciais { get; set; }
+    [Parameter] public bool MultiSelecao { get; set; }
 
     private MudTable<TItem>? _tabela;
     private string? _busca;
     private TItem? _selecionado;
+    private int? _idSelecionado;
+    private readonly Dictionary<int, TItem?> _marcados = new();
     private List<TItem> _itensPagina = new();
+    private bool _abrindoNovo;
+
+    private bool PodeConfirmar => MultiSelecao || _selecionado != null || _idSelecionado.HasValue;
+
+    protected override void OnInitialized()
+    {
+        if (ObterId == null) return;
+        var iniciais = SelecionadosIniciais?.Distinct().ToList() ?? new();
+        if (MultiSelecao) foreach (var id in iniciais) _marcados[id] = null;
+        else if (iniciais.Count > 0) _idSelecionado = iniciais[0];
+    }
 
     private async Task<TableData<TItem>> CarregarDados(TableState state, CancellationToken ct)
     {
-        _selecionado = null;
+        if (ObterId == null) _selecionado = null;
         try
         {
             var filtro = new FiltroConsultaDto
@@ -68,6 +113,7 @@
             };
             var resultado = await Buscar(filtro);
             _itensPagina = resultado.Itens;
+            AtualizarSelecaoDaPagina();
             return new TableData<TItem> { Items = resultado.Itens, TotalItems = resultado.TotalItens };
         }
         catch (Exception ex)
@@ -75,6 +121,17 @@
             Snackbar.Add($"Erro ao pesquisar: {ex.Message}", Severity.Error);
             _itensPagina = new();
             return new TableData<TItem> { Items = new List<TItem>(), TotalItems = 0 };
+        }
+    }
+
+    private void AtualizarSelecaoDaPagina()
+    {
+        if (ObterId == null) return;
+        foreach (var item in _itensPagina)
+        {
+            var id = ObterId(item);
+            if (MultiSelecao) { if (_marcados.ContainsKey(id)) _marcados[id] = item; }
+            else if (_idSelecionado == id) _selecionado = item;
         }
     }
 
@@ -87,25 +144,81 @@
 
     private void LinhaClicada(TableRowClickEventArgs<TItem> args)
     {
-        _selecionado = args.Item;
+        if (args.Item == null) return;
+        if (MultiSelecao) { Alternar(args.Item); return; }
+        Selecionar(args.Item);
         if (args.MouseEventArgs?.Detail >= 2) Confirmar();
     }
 
+    private void Selecionar(TItem item)
+    {
+        _selecionado = item;
+        _idSelecionado = ObterId?.Invoke(item);
+    }
+
+    private bool Marcado(TItem item) => ObterId != null && _marcados.ContainsKey(ObterId(item));
+
+    private void Alternar(TItem item)
+    {
+        if (ObterId == null) return;
+        var id = ObterId(item);
+        if (!_marcados.Remove(id)) _marcados[id] = item;
+    }
+
+    private bool Destacado(TItem item) =>
+        MultiSelecao ? Marcado(item)
+        : ObterId != null && _idSelecionado.HasValue ? ObterId(item) == _idSelecionado
+        : ReferenceEquals(item, _selecionado);
+
     private string EstiloLinha(TItem item, int indice) =>
-        ReferenceEquals(item, _selecionado) ? "background-color:var(--mud-palette-primary-hover);" : "";
+        Destacado(item) ? "background-color:var(--mud-palette-primary-hover);" : "";
 
     private void TeclaPressionada(KeyboardEventArgs e)
     {
+        if (MultiSelecao) return;
         if (e.Key == "Enter") { Confirmar(); return; }
         if (_itensPagina.Count == 0 || (e.Key != "ArrowDown" && e.Key != "ArrowUp")) return;
-        var indice = _selecionado == null ? -1 : _itensPagina.IndexOf(_selecionado);
+        var indice = _itensPagina.FindIndex(Destacado);
         indice = e.Key == "ArrowDown" ? Math.Min(indice + 1, _itensPagina.Count - 1) : Math.Max(indice - 1, 0);
-        _selecionado = _itensPagina[indice];
+        Selecionar(_itensPagina[indice]);
     }
 
     private void Confirmar()
     {
+        if (MultiSelecao)
+        {
+            var itens = _marcados.Values.Where(i => i != null).Select(i => i!).ToList();
+            var idsSemItem = _marcados.Where(m => m.Value == null).Select(m => m.Key).ToList();
+            MudDialog.Close(DialogResult.Ok(new SelecaoPesquisa<TItem>(itens, idsSemItem)));
+            return;
+        }
         if (_selecionado != null) MudDialog.Close(DialogResult.Ok(_selecionado));
+        else if (_idSelecionado.HasValue) MudDialog.Cancel();
+    }
+
+    private async Task NovoClicado()
+    {
+        if (Novo == null || _abrindoNovo) return;
+        _abrindoNovo = true;
+        var opcoes = MudDialog.Options;
+        TItem? item = null;
+        try
+        {
+            await MudDialog.SetOptionsAsync(opcoes with { CloseOnEscapeKey = false });
+            item = await Novo();
+        }
+        catch (Exception ex) { Snackbar.Add($"Erro ao cadastrar: {ex.Message}", Severity.Error); }
+        if (item != null && !MultiSelecao) { MudDialog.Close(DialogResult.Ok(item)); return; }
+        _abrindoNovo = false;
+        try { await MudDialog.SetOptionsAsync(opcoes); }
+        catch (Exception ex) { Snackbar.Add($"Erro ao restaurar a pesquisa: {ex.Message}", Severity.Error); }
+        if (item != null && ObterId != null)
+        {
+            _marcados[ObterId(item)] = item;
+            if (_tabela != null) await _tabela.ReloadServerData();
+        }
+        MudDialog.StateHasChanged();
+        StateHasChanged();
     }
 
     private void Cancelar() => MudDialog.Cancel();

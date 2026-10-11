@@ -25,37 +25,50 @@
         }
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
+                <MudItem xs="12" sm="8">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="FornecedorListDto"
+                                         Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
+                                         ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(f => f?.RazaoSocial ?? "")"
+                                         Label="Fornecedor"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
+                                         Disabled="@(_somenteLeitura || DaCompra || _semFornecedor)" />
+                        <MudTooltip Text="Pesquisar fornecedor">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarFornecedor" Disabled="@(_somenteLeitura || DaCompra || _semFornecedor)" />
+                        </MudTooltip>
+                    </div>
+                </MudItem>
+                <MudItem xs="12" sm="4" Class="d-flex align-center">
+                    @if (!DaCompra)
+                    {
+                        <MudCheckBox T="bool" Value="_semFornecedor" ValueChanged="OnSemFornecedorAlterado"
+                                     Color="Color.Primary" Label="Sem fornecedor (despesa fixa)" Disabled="@_somenteLeitura" />
+                    }
+                </MudItem>
                 <MudItem xs="12">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = v)" Label="Descrição"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="150" FullWidth="true"
-                                  ReadOnly="@_somenteLeitura" Disabled="@DaCompra"
+                                  ReadOnly="@_somenteLeitura" Disabled="@(DaCompra || !FornecedorOk)" HelperText="@AjudaDescricao"
                                   Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
                 </MudItem>
-                <MudItem xs="10" sm="8">
-                    <MudAutocomplete T="FornecedorListDto"
-                                     Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
-                                     ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(f => f?.RazaoSocial ?? "")"
-                                     Label="Fornecedor (opcional)"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
-                                     Disabled="@(_somenteLeitura || DaCompra)"
-                                     Placeholder="Deixe vazio para despesas fixas (luz, água, aluguel...)" />
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
+                                  Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
+                                  Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura"
+                                  Disabled="@(DaCompra || !DescricaoOk)" HelperText="@AjudaValor" />
                 </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Novo fornecedor">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                       Size="Size.Medium" OnClick="AbrirModalFornecedor" Disabled="@(_somenteLeitura || DaCompra)" />
-                    </MudTooltip>
-                </MudItem>
-
                 <MudItem xs="12" sm="6">
                     <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
-                                   DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" />
+                                   DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura"
+                                   Disabled="@(!DaCompra && !ValorOk)" HelperText="@AjudaVencimento" />
                 </MudItem>
                 @if (_dto.Status == "PAGA" && _dto.DataPagamento.HasValue)
                 {
@@ -64,12 +77,6 @@
                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
                     </MudItem>
                 }
-                <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="ValorDescrição" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura" Disabled="@DaCompra" />
-                </MudItem>
 
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@FormatarStatus(_dto.Status)" Label="Status"
@@ -109,6 +116,19 @@
 
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
     private bool DaCompra => _dto.CompraId.HasValue;
+    private bool _semFornecedor;
+    private bool FornecedorOk => DaCompra || _semFornecedor || _dto.FornecedorId.HasValue;
+    private bool DescricaoOk => FornecedorOk && !string.IsNullOrWhiteSpace(_dto.Descricao);
+    private bool ValorOk => DescricaoOk && _dto.ValorOriginal > 0;
+    private string? AjudaDescricao => DaCompra || _somenteLeitura || FornecedorOk ? null : "Selecione o fornecedor ou marque \"Sem fornecedor\" primeiro.";
+    private string? AjudaValor => DaCompra || _somenteLeitura || DescricaoOk ? null : AjudaDescricao ?? "Informe a descrição primeiro.";
+    private string? AjudaVencimento => DaCompra || _somenteLeitura || ValorOk ? null : AjudaValor ?? "Informe o valor primeiro.";
+
+    private void OnSemFornecedorAlterado(bool valor)
+    {
+        _semFornecedor = valor;
+        if (valor) _dto.FornecedorId = null;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,6 +154,7 @@
             _dataVencimento = DtoEdicao.DataVencimento;
             _mesExibido = DtoEdicao.DataVencimento;
             _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
+            _semFornecedor = !DtoEdicao.CompraId.HasValue && !DtoEdicao.FornecedorId.HasValue;
         }
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
@@ -154,17 +175,21 @@
         _ => "Aberta"
     };
 
-    private async Task AbrirModalFornecedor()
+    private async Task PesquisarFornecedor()
+    {
+        var fornecedor = await DialogService.PesquisarFornecedorAsync(FornecedorService, _dto.FornecedorId, NovoFornecedor);
+        if (fornecedor == null) return;
+        _dto.FornecedorId = _fornecedores.ObterOuAdicionar(fornecedor, f => f.Id).Id;
+    }
+
+    private async Task<FornecedorListDto?> NovoFornecedor()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         var result = await dialog.Result;
-        if (result is { Canceled: false })
-        {
-            _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
-            if (result.Data is int novoId)
-                _dto.FornecedorId = novoId;
-        }
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
+        return _fornecedores.FirstOrDefault(f => f.Id == id);
     }
 
     private async Task Salvar()

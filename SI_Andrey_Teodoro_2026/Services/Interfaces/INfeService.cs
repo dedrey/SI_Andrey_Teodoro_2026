@@ -7,6 +7,7 @@ public interface INfeService
     Task<PaginacaoDto<NfeListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<NfeDto?> ObterPorIdAsync(int id);
     Task<IEnumerable<VendaParaNfeDto>> ObterVendasDisponiveisAsync();
+    Task<PaginacaoDto<VendaParaNfeDto>> ObterVendasDisponiveisAsync(FiltroConsultaDto filtro);
     Task<(bool sucesso, string mensagem, int id)> GerarAsync(int vendaId, int emitenteId, int? transportadoraId);
     Task<(bool sucesso, string mensagem)> CancelarAsync(int id);
 }

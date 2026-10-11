@@ -45,6 +45,13 @@ public class EstadoService : BaseService<EstadoDto, EstadoListDto>, IEstadoServi
             dto.Uf = dto.Uf.Trim().ToUpperInvariant();
             dto.NomeEstado = dto.NomeEstado.Trim().ToUpperInvariant();
 
+            if (dto.PaisId <= 0)
+                return (false, "Selecione o país.", 0);
+            if (string.IsNullOrWhiteSpace(dto.NomeEstado))
+                return (false, "Informe o estado.", 0);
+            if (dto.Uf.Length != 2)
+                return (false, "UF deve ter 2 letras.", 0);
+
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
             if (await _repo.ExisteUfNoPaisAsync(dto.Uf, dto.PaisId, ignorar))

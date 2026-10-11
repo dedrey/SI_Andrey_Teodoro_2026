@@ -80,6 +80,18 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             if (dto.TipoPessoa == "PF")
                 dto.Celular = null;
 
+            if (dto.IdOriginal > 0)
+            {
+                var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (atual == null) return (false, "Cliente não encontrado.", 0);
+                if (atual.TipoPessoa != dto.TipoPessoa || atual.Estrangeiro != dto.Estrangeiro
+                    || LimparDigitos(atual.CpfCnpj ?? "") != LimparDigitos(dto.CpfCnpj ?? "")
+                    || (atual.DocumentoEstrangeiro ?? "").Trim().ToUpperInvariant() != (dto.DocumentoEstrangeiro ?? ""))
+                    return (false, "Tipo de pessoa, estrangeiro e documento não podem ser alterados após o cadastro.", 0);
+            }
+            else if (dto.Estrangeiro ? string.IsNullOrWhiteSpace(dto.DocumentoEstrangeiro) : string.IsNullOrWhiteSpace(dto.CpfCnpj))
+                return (false, dto.Estrangeiro ? "Informe o documento estrangeiro." : $"Informe o {(dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")}.", 0);
+
             if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
             {
                 var docLimpo = LimparDigitos(dto.CpfCnpj);

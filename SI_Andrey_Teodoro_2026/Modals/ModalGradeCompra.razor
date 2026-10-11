@@ -171,7 +171,7 @@
                 new("Categoria", p => p.NomeCategoria),
                 new("Marca", p => p.NomeMarca),
                 new("Fornecedor", p => p.NomeFornecedor)
-            }, "ativos");
+            }, "ativos", obterId: p => p.Id, selecionado: _produto?.Id);
         if (produto == null) return;
         await OnProdutoAlterado(Produtos.FirstOrDefault(p => p.Id == produto.Id) ?? produto);
     }

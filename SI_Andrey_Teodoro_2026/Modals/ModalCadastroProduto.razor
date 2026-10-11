@@ -28,46 +28,58 @@
                     <MudTextField Value="@_dto.Produto" ValueChanged="@((string v) => _dto.Produto = v)"
                                   Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null)" />
+                                  Validation="@((string v) => ValidarNome(v))" />
                 </MudItem>
             </MudGrid>
 
             <MudGrid Spacing="2" Class="mt-2">
-                <MudItem xs="10" sm="4" md="4">
-                    <MudAutocomplete T="CategoriaListDto"
-                                     Value="@(_categorias.FirstOrDefault(c => c.Id == _dto.CategoriaId))"
-                                     ValueChanged="@((CategoriaListDto? c) => _dto.CategoriaId = c?.Id ?? 0)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _categorias.AsEnumerable() : _categorias.Where(c => c.NomeCategoria.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(c => c?.NomeCategoria ?? "")"
-                                     Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..." />
+                <MudItem xs="12" sm="5" md="5">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="CategoriaListDto"
+                                         Value="@(_categorias.FirstOrDefault(c => c.Id == _dto.CategoriaId))"
+                                         ValueChanged="@((CategoriaListDto? c) => _dto.CategoriaId = c?.Id ?? 0)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _categorias.AsEnumerable() : _categorias.Where(c => c.NomeCategoria.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(c => c?.NomeCategoria ?? "")"
+                                         Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
+                                         Disabled="@(!NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome do produto primeiro.")" />
+                        <MudTooltip Text="Pesquisar categoria">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarCategoria" Disabled="@(!NomeOk)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCategoria" />
+                <MudItem xs="12" sm="5" md="4">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="MarcaListDto"
+                                         Value="@(_marcas.FirstOrDefault(m => m.Id == _dto.MarcaId))"
+                                         ValueChanged="@((MarcaListDto? m) => _dto.MarcaId = m?.Id ?? 0)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _marcas.AsEnumerable() : _marcas.Where(m => m.NomeMarca.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(m => m?.NomeMarca ?? "")"
+                                         Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
+                                         Disabled="@(!CategoriaOk)" HelperText="@(CategoriaOk ? null : "Selecione a categoria primeiro.")" />
+                        <MudTooltip Text="Pesquisar marca">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarMarca" Disabled="@(!CategoriaOk)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
-                <MudItem xs="10" sm="4" md="3">
-                    <MudAutocomplete T="MarcaListDto"
-                                     Value="@(_marcas.FirstOrDefault(m => m.Id == _dto.MarcaId))"
-                                     ValueChanged="@((MarcaListDto? m) => _dto.MarcaId = m?.Id ?? 0)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _marcas.AsEnumerable() : _marcas.Where(m => m.NomeMarca.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(m => m?.NomeMarca ?? "")"
-                                     Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..." />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalMarca" />
-                </MudItem>
-                <MudItem xs="10" sm="4" md="2">
-                    <MudAutocomplete T="UnidadeMedidaListDto"
-                                     Value="@(_unidades.FirstOrDefault(u => u.Id == _dto.UnidadeMedidaId))"
-                                     ValueChanged="@((UnidadeMedidaListDto? u) => _dto.UnidadeMedidaId = u?.Id ?? 0)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _unidades.AsEnumerable() : _unidades.Where(u => u.Sigla.Contains(s, StringComparison.OrdinalIgnoreCase) || u.Descricao.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(u => u == null ? "" : $"{u.Sigla} — {u.Descricao}")"
-                                     Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..." />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalUnidade" />
+                <MudItem xs="12" sm="5" md="3">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="UnidadeMedidaListDto"
+                                         Value="@(_unidades.FirstOrDefault(u => u.Id == _dto.UnidadeMedidaId))"
+                                         ValueChanged="@((UnidadeMedidaListDto? u) => _dto.UnidadeMedidaId = u?.Id ?? 0)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _unidades.AsEnumerable() : _unidades.Where(u => u.Sigla.Contains(s, StringComparison.OrdinalIgnoreCase) || u.Descricao.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(u => u == null ? "" : $"{u.Sigla} — {u.Descricao}")"
+                                         Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
+                                         Disabled="@(!MarcaOk)" HelperText="@(MarcaOk ? null : "Selecione a marca primeiro.")" />
+                        <MudTooltip Text="Pesquisar unidade de medida">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarUnidade" Disabled="@(!MarcaOk)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
             </MudGrid>
 
@@ -75,7 +87,8 @@
                 <MudItem xs="12">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
                                   Label="Descrição" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2" />
+                                  Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2"
+                                  Disabled="@(!CabecalhoOk)" HelperText="@(CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
                 </MudItem>
             </MudGrid>
 
@@ -84,8 +97,8 @@
                 <MudItem xs="12" sm="6" md="3">
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
                                   Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="50" FullWidth="true" Immediate="true"
-                                  HelperText="Um só código pra este produto (todas as variações)" />
+                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(!CabecalhoOk)"
+                                  HelperText="@(CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
                 </MudItem>
             </MudGrid>
 
@@ -95,10 +108,14 @@
                     Variações (Cor / Tamanho / Preço de Venda)
                 </MudText>
                 <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarVariacao">
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarVariacao" Disabled="@(!CabecalhoOk)">
                     Nova Variação
                 </MudButton>
             </div>
+            @if (!CabecalhoOk)
+            {
+                <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:-4px 0 12px;">Preencha nome, categoria, marca e unidade para adicionar variações.</MudText>
+            }
 
             @if (_dto.Variacoes.Count(v => !v.Removida) > 1)
             {
@@ -118,24 +135,36 @@
             <MudExpansionPanels Elevation="0" Class="mb-3" Style="border:1px solid #e0e0e0;border-radius:8px;">
                 <MudExpansionPanel Text="Gerar várias combinações de cor × tamanho de uma vez" Icon="@Icons.Material.Filled.GridView">
                     <div class="d-flex flex-wrap align-end gap-3">
-                        <MudSelect T="int" @bind-SelectedValues="_coresLote" MultiSelection="true" Label="Cores"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
-                                   MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} cor(es) selecionada(s)")">
-                            @foreach (var c in _cores)
-                            {
-                                <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
-                            }
-                        </MudSelect>
-                        <MudSelect T="int" @bind-SelectedValues="_tamanhosLote" MultiSelection="true" Label="Tamanhos"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
-                                   MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} tamanho(s) selecionado(s)")">
-                            @foreach (var t in _tamanhos)
-                            {
-                                <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
-                            }
-                        </MudSelect>
+                        <div class="d-flex align-center gap-1">
+                            <MudSelect T="int" @bind-SelectedValues="_coresLote" MultiSelection="true" Label="Cores"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                       MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} cor(es) selecionada(s)")">
+                                @foreach (var c in _cores)
+                                {
+                                    <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudTooltip Text="Pesquisar cor">
+                                <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                               OnClick="PesquisarCorLote" />
+                            </MudTooltip>
+                        </div>
+                        <div class="d-flex align-center gap-1">
+                            <MudSelect T="int" @bind-SelectedValues="_tamanhosLote" MultiSelection="true" Label="Tamanhos"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                       MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} tamanho(s) selecionado(s)")">
+                                @foreach (var t in _tamanhos)
+                                {
+                                    <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
+                                }
+                            </MudSelect>
+                            <MudTooltip Text="Pesquisar tamanho">
+                                <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                               OnClick="PesquisarTamanhoLote" />
+                            </MudTooltip>
+                        </div>
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView"
-                                   OnClick="GerarCombinacoes" Style="height:40px;">
+                                   OnClick="GerarCombinacoes" Style="height:40px;" Disabled="@(!CabecalhoOk)">
                             Gerar combinações
                         </MudButton>
                     </div>
@@ -153,9 +182,7 @@
                           Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
                     <HeaderContent>
                         <MudTh Style="font-weight:600;">Cor</MudTh>
-                        <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Tamanho</MudTh>
-                        <MudTh Style="font-weight:600;width:36px;"></MudTh>
                         <MudTh Style="font-weight:600;">Venda (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Custo</MudTh>
                         <MudTh Style="font-weight:600;">Última Compra</MudTh>
@@ -168,32 +195,38 @@
                             bool abaixoCusto = context.PrecoCusto > 0 && context.Preco < context.PrecoCusto;
                         }
                         <MudTd>
-                            <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                                <MudSelectItem T="int" Value="0" Disabled="true">— Cor —</MudSelectItem>
-                                @foreach (var c in _cores)
-                                {
-                                    <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
-                                }
-                            </MudSelect>
-                        </MudTd>
-                        <MudTd Style="padding:4px;">
-                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                           Size="Size.Small" OnClick="AbrirModalCor" />
+                            <div class="d-flex align-center gap-1">
+                                <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
+                                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                           Disabled="@ComMovimento(context)" HelperText="@AjudaMovimento(context)">
+                                    <MudSelectItem T="int" Value="0" Disabled="true">— Cor —</MudSelectItem>
+                                    @foreach (var c in _cores)
+                                    {
+                                        <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudTooltip Text="Pesquisar cor">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                                   OnClick="@(() => PesquisarCorVariacao(context))" Disabled="@ComMovimento(context)" />
+                                </MudTooltip>
+                            </div>
                         </MudTd>
                         <MudTd>
-                            <MudSelect T="int" Value="context.TamanhoId" ValueChanged="@((int id) => { context.TamanhoId = id; context.Tamanho = _tamanhos.FirstOrDefault(t => t.Id == id)?.Nome ?? ""; })"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
-                                <MudSelectItem T="int" Value="0" Disabled="true">— Tam —</MudSelectItem>
-                                @foreach (var t in _tamanhos)
-                                {
-                                    <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
-                                }
-                            </MudSelect>
-                        </MudTd>
-                        <MudTd Style="padding:4px;">
-                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                           Size="Size.Small" OnClick="AbrirModalTamanho" />
+                            <div class="d-flex align-center gap-1">
+                                <MudSelect T="int" Value="context.TamanhoId" ValueChanged="@((int id) => { context.TamanhoId = id; context.Tamanho = _tamanhos.FirstOrDefault(t => t.Id == id)?.Nome ?? ""; })"
+                                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                           Disabled="@ComMovimento(context)" HelperText="@AjudaMovimento(context)">
+                                    <MudSelectItem T="int" Value="0" Disabled="true">— Tam —</MudSelectItem>
+                                    @foreach (var t in _tamanhos)
+                                    {
+                                        <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudTooltip Text="Pesquisar tamanho">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                                   OnClick="@(() => PesquisarTamanhoVariacao(context))" Disabled="@ComMovimento(context)" />
+                                </MudTooltip>
+                            </div>
                         </MudTd>
                         <MudTd>
                             <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
@@ -231,11 +264,13 @@
                             }
                             else
                             {
-                                <MudChip T="string" Size="Size.Small"
-                                         Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)"
-                                         Variant="Variant.Outlined">
-                                    @(context.QuantidadeEstoque > 0 ? "Em estoque" : "Sem estoque")
-                                </MudChip>
+                                <MudTooltip Text="@(ComMovimento(context) ? MsgMovimento : "")" Disabled="@(!ComMovimento(context))">
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(context.QuantidadeEstoque > 0 ? Color.Success : Color.Warning)"
+                                             Variant="Variant.Outlined">
+                                        @(context.QuantidadeEstoque > 0 ? "Em estoque" : "Sem estoque")
+                                    </MudChip>
+                                </MudTooltip>
                             }
                         </MudTd>
                     </RowTemplate>
@@ -276,6 +311,17 @@
     private string _replicarVendaTexto = "";
     private IReadOnlyCollection<int> _coresLote = new List<int>();
     private IReadOnlyCollection<int> _tamanhosLote = new List<int>();
+    private HashSet<int> _variacoesComMovimento = new();
+    private const string MsgMovimento = "Variação com movimentação: só preço e situação podem ser alterados.";
+
+    private bool NomeOk => ValidarNome(_dto.Produto) == null;
+    private bool CategoriaOk => NomeOk && _dto.CategoriaId > 0;
+    private bool MarcaOk => CategoriaOk && _dto.MarcaId > 0;
+    private bool CabecalhoOk => MarcaOk && _dto.UnidadeMedidaId > 0;
+    private bool ComMovimento(ProdutoVariacaoDto v) => v.IdOriginal > 0 && _variacoesComMovimento.Contains(v.IdOriginal);
+    private string? AjudaMovimento(ProdutoVariacaoDto v) => ComMovimento(v) ? MsgMovimento : null;
+    private static string? ValidarNome(string? v) =>
+        string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null;
 
 
     protected override async Task OnInitializedAsync()
@@ -293,6 +339,8 @@
             Task.Run(async () => _cores = (await CorService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList())
         );
+        if (_dto.IdOriginal > 0)
+            _variacoesComMovimento = (await ProdutoService.ObterVariacoesComMovimentoAsync(_dto.IdOriginal)).ToHashSet();
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
@@ -389,40 +437,103 @@
         StateHasChanged();
     }
 
-    private async Task AbrirModalCor()
+    private async Task PesquisarCategoria()
+    {
+        var categoria = await DialogService.PesquisarCategoriaAsync(CategoriaService, _dto.CategoriaId, NovaCategoria);
+        if (categoria == null) return;
+        _dto.CategoriaId = _categorias.ObterOuAdicionar(categoria, c => c.Id).Id;
+    }
+
+    private async Task PesquisarMarca()
+    {
+        var marca = await DialogService.PesquisarMarcaAsync(MarcaService, _dto.MarcaId, NovaMarca);
+        if (marca == null) return;
+        _dto.MarcaId = _marcas.ObterOuAdicionar(marca, m => m.Id).Id;
+    }
+
+    private async Task PesquisarUnidade()
+    {
+        var unidade = await DialogService.PesquisarUnidadeMedidaAsync(UnidadeMedidaService, _dto.UnidadeMedidaId, NovaUnidade);
+        if (unidade == null) return;
+        _dto.UnidadeMedidaId = _unidades.ObterOuAdicionar(unidade, u => u.Id).Id;
+    }
+
+    private async Task PesquisarCorLote()
+    {
+        var cores = await DialogService.PesquisarVariasCoresAsync(CorService, _coresLote, _cores, NovaCor);
+        if (cores == null) return;
+        _coresLote = cores.Select(c => _cores.ObterOuAdicionar(c, x => x.Id).Id).Distinct().ToList();
+    }
+
+    private async Task PesquisarTamanhoLote()
+    {
+        var tamanhos = await DialogService.PesquisarVariosTamanhosAsync(TamanhoService, _tamanhosLote, _tamanhos, NovoTamanho);
+        if (tamanhos == null) return;
+        _tamanhosLote = tamanhos.Select(t => _tamanhos.ObterOuAdicionar(t, x => x.Id).Id).Distinct().ToList();
+    }
+
+    private async Task PesquisarCorVariacao(ProdutoVariacaoDto variacao)
+    {
+        var cor = await DialogService.PesquisarCorAsync(CorService, variacao.CorId, NovaCor);
+        if (cor == null) return;
+        var selecionada = _cores.ObterOuAdicionar(cor, c => c.Id);
+        variacao.CorId = selecionada.Id;
+        variacao.Cor = selecionada.Nome;
+    }
+
+    private async Task PesquisarTamanhoVariacao(ProdutoVariacaoDto variacao)
+    {
+        var tamanho = await DialogService.PesquisarTamanhoAsync(TamanhoService, variacao.TamanhoId, NovoTamanho);
+        if (tamanho == null) return;
+        var selecionado = _tamanhos.ObterOuAdicionar(tamanho, t => t.Id);
+        variacao.TamanhoId = selecionado.Id;
+        variacao.Tamanho = selecionado.Nome;
+    }
+
+    private async Task<CorListDto?> NovaCor()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCor>("Nova Cor", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _cores = (await CorService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _cores = (await CorService.ObterTodosAtivosAsync()).ToList();
+        return _cores.FirstOrDefault(x => x.Id == id);
     }
-    private async Task AbrirModalTamanho()
+    private async Task<TamanhoListDto?> NovoTamanho()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTamanho>("Novo Tamanho", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _tamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToList();
+        return _tamanhos.FirstOrDefault(x => x.Id == id);
     }
-    private async Task AbrirModalCategoria()
+    private async Task<CategoriaListDto?> NovaCategoria()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCategoria>("Nova Categoria", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList();
+        return _categorias.FirstOrDefault(x => x.Id == id);
     }
-    private async Task AbrirModalMarca()
+    private async Task<MarcaListDto?> NovaMarca()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroMarca>("Nova Marca", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList();
+        return _marcas.FirstOrDefault(x => x.Id == id);
     }
-    private async Task AbrirModalUnidade()
+    private async Task<UnidadeMedidaListDto?> NovaUnidade()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroUnidadeMedida>("Nova Unidade", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _unidades = (await UnidadeMedidaService.ObterTodosAtivosAsync()).ToList();
+        return _unidades.FirstOrDefault(x => x.Id == id);
     }
     private async Task Salvar()
     {

@@ -183,6 +183,48 @@ public class NfeRepository : BaseRepository, INfeRepository
               ORDER BY v.criado_em DESC");
     }
 
+    public async Task<PaginacaoDto<VendaParaNfeDto>> ObterVendasDisponiveisAsync(FiltroConsultaDto filtro)
+    {
+        using var conn = _factory.CreateConnection();
+        var where = new List<string> { "v.status_venda = 'FINALIZADA'", "v.nfe_id IS NULL" };
+        if (!string.IsNullOrWhiteSpace(filtro.Busca))
+            where.Add(@"(c.nome_razaosocial     LIKE @Busca
+                      OR cp.condicao_pagamento LIKE @Busca
+                      OR CAST(v.id AS CHAR) = @BuscaExata)");
+        var whereClause = "WHERE " + string.Join(" AND ", where);
+
+        var sqlCount = $@"SELECT COUNT(*) FROM vendas v
+                          LEFT JOIN clientes c ON c.id = v.cliente_id
+                          LEFT JOIN condicoes_pagamentos cp ON cp.id = v.condicao_pagamento_id
+                          {whereClause}";
+
+        var sqlData = $@"SELECT v.id, v.cliente_id AS ClienteId,
+                                 COALESCE(c.nome_razaosocial, 'Sem cliente') AS NomeCliente,
+                                 cp.condicao_pagamento AS NomeCondicao,
+                                 v.valor_subtotal AS ValorSubtotal,
+                                 v.valor_desconto AS ValorDesconto,
+                                 v.valor_total AS ValorTotal,
+                                 v.criado_em AS CriadoEm
+                          FROM vendas v
+                          LEFT JOIN clientes c ON c.id = v.cliente_id
+                          LEFT JOIN condicoes_pagamentos cp ON cp.id = v.condicao_pagamento_id
+                          {whereClause}
+                          ORDER BY v.criado_em DESC LIMIT @Limit OFFSET @Offset";
+
+        var param = new
+        {
+            Busca = $"%{filtro.Busca}%",
+            BuscaExata = filtro.Busca,
+            Limit = filtro.TamanhoPagina,
+            Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
+        };
+
+        var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
+        var itens = await conn.QueryAsync<VendaParaNfeDto>(sqlData, param);
+        return new PaginacaoDto<VendaParaNfeDto>
+        { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+    }
+
     public async Task<List<VendaItemParaNfeDto>> ObterItensVendaParaNfeAsync(int vendaId)
     {
         using var conn = _factory.CreateConnection();

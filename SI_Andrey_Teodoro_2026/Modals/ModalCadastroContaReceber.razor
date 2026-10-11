@@ -123,23 +123,23 @@
                                   ReadOnly="@_somenteLeitura"
                                   Placeholder="Ex: Venda à vista, Acerto de dívida..." />
                 </MudItem>
-                <MudItem xs="12" sm="8">
-                    <MudAutocomplete T="ClienteListDto"
-                                     Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
-                                     ValueChanged="@((ClienteListDto? c) => _dto.ClienteId = c?.Id ?? 0)"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
-                                     Label="Cliente"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Required="true" RequiredError="Selecione um cliente"
-                                     ResetValueOnEmptyText="true" CoerceText="false"
-                                     Disabled="@(_somenteLeitura || _dto.VendaId.HasValue)" />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Novo cliente">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary"
-                                       Size="Size.Medium" OnClick="AbrirModalCliente" Disabled="@_somenteLeitura" />
-                    </MudTooltip>
+                <MudItem xs="12" sm="9">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="ClienteListDto"
+                                         Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
+                                         ValueChanged="@((ClienteListDto? c) => _dto.ClienteId = c?.Id ?? 0)"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
+                                         Label="Cliente"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Required="true" RequiredError="Selecione um cliente"
+                                         ResetValueOnEmptyText="true" CoerceText="false"
+                                         Disabled="@(_somenteLeitura || _dto.VendaId.HasValue)" />
+                        <MudTooltip Text="Pesquisar cliente">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarCliente" Disabled="@(_somenteLeitura || _dto.VendaId.HasValue)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
@@ -256,17 +256,21 @@
         _ => "Aberta"
     };
 
-    private async Task AbrirModalCliente()
+    private async Task PesquisarCliente()
+    {
+        var cliente = await DialogService.PesquisarClienteAsync(ClienteService, _dto.ClienteId, NovoCliente);
+        if (cliente == null) return;
+        _dto.ClienteId = _clientes.ObterOuAdicionar(cliente, c => c.Id).Id;
+    }
+
+    private async Task<ClienteListDto?> NovoCliente()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         var result = await dialog.Result;
-        if (result is { Canceled: false })
-        {
-            _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
-            if (result.Data is int novoId)
-                _dto.ClienteId = novoId;
-        }
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
+        return _clientes.FirstOrDefault(c => c.Id == id);
     }
 
     private async Task AbrirAnexarComprovante(int baixaId)

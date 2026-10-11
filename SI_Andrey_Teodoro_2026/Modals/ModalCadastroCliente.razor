@@ -17,37 +17,29 @@
             <MudGrid Spacing="2">
                 <MudItem xs="6" sm="3">
                     <MudSelect T="string" Value="@_dto.TipoPessoa" ValueChanged="OnTipoPessoaAlterado"
-                               Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@_readOnly">
+                               Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                               Disabled="@(_readOnly || Edicao)" HelperText="@AjudaTravado">
                         <MudSelectItem T="string" Value="@("PF")">Pessoa Física</MudSelectItem>
                         <MudSelectItem T="string" Value="@("PJ")">Pessoa Jurídica</MudSelectItem>
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="6" sm="3">
-                    <MudSelect T="string" @bind-Value="_dto.Sexo" Label="Sexo"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@_readOnly">
-                        <MudSelectItem T="string" Value="@("MASCULINO")">Masculino</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("FEMININO")">Feminino</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("OUTRO")">Outro</MudSelectItem>
-                        <MudSelectItem T="string" Value="@("NAO_INFORMAR")">Não informar</MudSelectItem>
-                    </MudSelect>
-                </MudItem>
-                <MudItem xs="12" sm="6" Class="d-flex align-center">
+                <MudItem xs="6" sm="3" Class="d-flex flex-column justify-center">
                     <MudCheckBox T="bool" Value="@_dto.Estrangeiro" ValueChanged="OnEstrangeiroAlterado"
-                                 Color="Color.Primary" Label="Estrangeiro" Disabled="@_readOnly" />
+                                 Color="Color.Primary" Label="Estrangeiro" Disabled="@(_readOnly || Edicao)" />
+                    @if (AjudaTravado != null)
+                    {
+                        <MudText Typo="Typo.caption" Style="color:#888;margin-left:12px;">@AjudaTravado</MudText>
+                    }
                 </MudItem>
-                <MudItem xs="12" sm="8">
-                    <MudTextField Value="@_dto.NomeRazaoSocial" ValueChanged="@((string v) => _dto.NomeRazaoSocial = v)"
-                                  Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Cliente")"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
-                </MudItem>
-                <MudItem xs="12" sm="4">
+                <MudItem xs="12" sm="6">
                     @if (_dto.Estrangeiro)
                     {
                         <MudTextField Value="@(_dto.DocumentoEstrangeiro ?? "")"
                                       ValueChanged="@((string v) => _dto.DocumentoEstrangeiro = v.Trim())"
-                                      Label="Documento Estrangeiro" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      MaxLength="30" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                      Label="Documento Estrangeiro*" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      MaxLength="30" FullWidth="true" Immediate="true"
+                                      Validation="@((string v) => string.IsNullOrWhiteSpace(v) ? "Obrigatório" : null)"
+                                      Disabled="@(_readOnly || Edicao)" HelperText="@AjudaTravado" />
                     }
                     else
                     {
@@ -55,8 +47,25 @@
                                       Label="@(_dto.TipoPessoa == "PF" ? "CPF*" : "CNPJ*")"
                                       Variant="Variant.Outlined" Margin="Margin.Dense"
                                       MaxLength="@(_dto.TipoPessoa == "PF" ? 14 : 18)" FullWidth="true" Immediate="true"
-                                      Validation="@((string v) => ValidarDocumento(v))" Disabled="@_readOnly" />
+                                      Validation="@((string v) => ValidarDocumento(v))"
+                                      Disabled="@(_readOnly || Edicao)" HelperText="@AjudaTravado" />
                     }
+                </MudItem>
+                <MudItem xs="12" sm="8">
+                    <MudTextField Value="@_dto.NomeRazaoSocial" ValueChanged="@((string v) => _dto.NomeRazaoSocial = v)"
+                                  Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Cliente")"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
+                                  Disabled="@(_readOnly || !DocOk)" HelperText="@AjudaNome" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudSelect T="string" @bind-Value="_dto.Sexo" Label="Sexo"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante">
+                        <MudSelectItem T="string" Value="@("MASCULINO")">Masculino</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("FEMININO")">Feminino</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("OUTRO")">Outro</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("NAO_INFORMAR")">Não informar</MudSelectItem>
+                    </MudSelect>
                 </MudItem>
 
                 @if (_dto.TipoPessoa == "PJ")
@@ -64,32 +73,35 @@
                     <MudItem xs="12" sm="6">
                         <MudTextField Value="@_dto.ApelidoNomeFantasia" ValueChanged="@((string v) => _dto.ApelidoNomeFantasia = v)"
                                       Label="Nome Fantasia" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      MaxLength="100" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                      MaxLength="100" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
                         <MudTextField Value="@_dto.InscricaoEstadual" ValueChanged="@((string v) => _dto.InscricaoEstadual = v)" Label="Inscrição Estadual/Municipal"
-                                      Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                     </MudItem>
                 }
 
-                <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="CidadeListDto" Label="Cidade"
-                                     Value="_cidadeSelecionada"
-                                     ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
-                                     SearchFunc="PesquisarCidade"
-                                     ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} ({c.Uf})")"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Required="true" RequiredError="Obrigatório"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCidade" Disabled="@_readOnly" />
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="CidadeListDto" Label="Cidade"
+                                         Value="_cidadeSelecionada"
+                                         ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
+                                         SearchFunc="PesquisarCidade"
+                                         ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} ({c.Uf})")"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Required="true" RequiredError="Obrigatório"
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                        <MudTooltip Text="Pesquisar cidade">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarCidadeModal" Disabled="@RestanteBloqueado" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"
                                   Label="@(_dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarTel(v))" Disabled="@_readOnly" />
+                                  Validation="@((string v) => ValidarTel(v))" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
                 @if (_dto.TipoPessoa == "PJ")
                 {
@@ -97,7 +109,7 @@
                         <MudTextField Value="@(_dto.Celular ?? "")" ValueChanged="@((string v) => _dto.Celular = MascaraTel(v))"
                                       Label="Celular" Variant="Variant.Outlined" Margin="Margin.Dense"
                                       Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                      Validation="@((string v) => ValidarTel(v))" Disabled="@_readOnly" />
+                                      Validation="@((string v) => ValidarTel(v))" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                     </MudItem>
                 }
                 <MudItem xs="12" sm="6">
@@ -105,7 +117,7 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarEmail(v))"
-                                  InputType="InputType.Email" Disabled="@_readOnly" />
+                                  InputType="InputType.Email" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
 
                 <MudItem xs="12"><MudDivider /><MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Endereço</MudText></MudItem>
@@ -113,28 +125,28 @@
                 <MudItem xs="12" sm="5">
                     <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => _dto.Endereco = v)"
                                   Label="Rua" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="100" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                  MaxLength="100" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="2">
                     <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => _dto.Numero = v)"
                                   Label="Número" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
                     <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => _dto.Bairro = v)"
                                   Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="60" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                  MaxLength="60" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Complemento" ValueChanged="@((string v) => _dto.Complemento = v)"
                                   Label="Complemento" Required="true" RequiredError="Obrigatório"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@_readOnly" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => _dto.Cep = MascaraCep(v))"
                                   Label="@(_dto.Estrangeiro ? "CEP (não se aplica)" : "CEP")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="@(!_dto.Estrangeiro)" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@(_readOnly || _dto.Estrangeiro)" />
+                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@(RestanteBloqueado || _dto.Estrangeiro)" HelperText="@AjudaRestante" />
                 </MudItem>
 
                 <MudItem xs="12"><MudDivider /><MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Financeiro</MudText></MudItem>
@@ -142,7 +154,7 @@
                 <MudItem xs="12" sm="4">
                     <MudNumericField @bind-Value="_dto.LimiteCredito" Label="Limite de Crédito"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Format="N2" Culture="@_culturaBr" Min="0" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@_readOnly" />
+                                     Format="N2" Culture="@_culturaBr" Min="0" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
                 </MudItem>
 
 
@@ -245,12 +257,24 @@
         return Task.FromResult(r);
     }
 
-    private async Task AbrirModalCidade()
+    private async Task PesquisarCidadeModal()
+    {
+        var cidade = await DialogService.PesquisarCidadeAsync(CidadeService, _dto.CidadeId, NovaCidade);
+        if (cidade == null) return;
+        if (!_dto.Estrangeiro && !cidade.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)) { Snackbar.Add("Cliente não estrangeiro: selecione uma cidade do Brasil.", Severity.Warning); return; }
+        _cidadeSelecionada = _cidades.ObterOuAdicionar(cidade, c => c.Id);
+        _dto.CidadeId = _cidadeSelecionada.Id;
+    }
+
+    private async Task<CidadeListDto?> NovaCidade()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         var result = await dialog.Result;
-        if (result is { Canceled: false }) { _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList(); if (result.Data is int id) { _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == id); _dto.CidadeId = id; } }
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        var todas = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
+        _cidades = todas;
+        return todas.FirstOrDefault(c => c.Id == id);
     }
 
     private async Task Salvar()
@@ -263,10 +287,17 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
+    private bool Edicao => _dto.IdOriginal > 0;
+    private string? AjudaTravado => Edicao && !_readOnly ? "Não pode ser alterado após o cadastro." : null;
+    private bool DocOk => Edicao || (_dto.Estrangeiro ? !string.IsNullOrWhiteSpace(_dto.DocumentoEstrangeiro) : DocumentoHelper.DocumentoValido(_dto.CpfCnpj, _dto.TipoPessoa));
+    private bool NomeOk => DocOk && !string.IsNullOrWhiteSpace(_dto.NomeRazaoSocial);
+    private bool RestanteBloqueado => _readOnly || !NomeOk;
+    private string? AjudaNome => DocOk ? null : _dto.Estrangeiro ? "Informe o documento estrangeiro primeiro." : $"Informe um {(_dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")} válido primeiro.";
+    private string? AjudaRestante => NomeOk ? null : AjudaNome ?? $"Informe {(_dto.TipoPessoa == "PJ" ? "a razão social" : "o nome")} primeiro.";
     private object DadosEditaveis() => new { _dto, _docTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 
-    private string? ValidarDocumento(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); if (_dto.TipoPessoa == "PF" && d.Length != 11) return "CPF deve ter 11 dígitos"; if (_dto.TipoPessoa == "PJ" && d.Length != 14) return "CNPJ deve ter 14 dígitos"; return null; }
+    private string? ValidarDocumento(string? v) => DocumentoHelper.ValidarDocumento(v, _dto.TipoPessoa);
     private string? ValidarTel(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var d = new string(v.Where(char.IsDigit).ToArray()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }
     private static string FormatarCpf(string d) { if (d.Length >= 11) d = d[..11]; return d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : d; }
     private static string FormatarCnpj(string d) { if (d.Length >= 14) d = d[..14]; return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d; }

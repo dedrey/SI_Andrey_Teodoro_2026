@@ -97,10 +97,16 @@
                 </div>
 
                 <div class="d-flex flex-wrap align-end gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
-                    <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
-                                     SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                     Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
+                                         SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                         Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                        <MudTooltip Text="Pesquisar produto">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarProdutoLote" />
+                        </MudTooltip>
+                    </div>
                     <MudSelect T="int" @bind-SelectedValues="_variacoesLote" MultiSelection="true" Label="Variações (cor/tamanho)"
                                Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:260px;"
                                Disabled="@(_variacoesDisponiveisLote.Count == 0)"
@@ -131,12 +137,18 @@
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd>
-                                <MudAutocomplete T="ProdutoListDto"
-                                                 Value="_produtosSelecionados.GetValueOrDefault(context)"
-                                                 ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
-                                                 SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                                 Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                <div class="d-flex align-center gap-1">
+                                    <MudAutocomplete T="ProdutoListDto"
+                                                     Value="_produtosSelecionados.GetValueOrDefault(context)"
+                                                     ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
+                                                     SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                    <MudTooltip Text="Pesquisar produto">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                                       OnClick="@(() => PesquisarProdutoItem(context))" />
+                                    </MudTooltip>
+                                </div>
                             </MudTd>
                             <MudTd>
                                 <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
@@ -283,6 +295,20 @@
             _variacoesDisponiveisLote = new();
         }
         StateHasChanged();
+    }
+
+    private async Task PesquisarProdutoLote()
+    {
+        var produto = await DialogService.PesquisarProdutoAsync(ProdutoService, _produtoSelecionadoLote?.Id);
+        if (produto == null) return;
+        await OnProdutoLoteAlterado(_todosProdutos.ObterOuAdicionar(produto, p => p.Id));
+    }
+
+    private async Task PesquisarProdutoItem(MovimentacaoEstoqueItemDto item)
+    {
+        var produto = await DialogService.PesquisarProdutoAsync(ProdutoService, _produtosSelecionados.GetValueOrDefault(item)?.Id);
+        if (produto == null) return;
+        await OnProdutoAlterado(item, _todosProdutos.ObterOuAdicionar(produto, p => p.Id));
     }
 
     private void AdicionarVariacoesLote()

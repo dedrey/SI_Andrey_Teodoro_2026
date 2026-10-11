@@ -26,6 +26,9 @@ public class NfeService : INfeService
     public Task<IEnumerable<VendaParaNfeDto>> ObterVendasDisponiveisAsync()
         => _repo.ObterVendasDisponiveisAsync();
 
+    public Task<PaginacaoDto<VendaParaNfeDto>> ObterVendasDisponiveisAsync(FiltroConsultaDto filtro)
+        => _repo.ObterVendasDisponiveisAsync(filtro);
+
     public async Task<(bool sucesso, string mensagem, int id)> GerarAsync(int vendaId, int emitenteId, int? transportadoraId)
     {
         try

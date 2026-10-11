@@ -197,4 +197,12 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                 WHERE condicao_pagamento = @nome AND metodo_pagamento_id = @metodoPagamentoId";
         return await conn.ExecuteScalarAsync<int>(sql, new { nome, metodoPagamentoId, idOriginalIgnorar }) > 0;
     }
+
+    public async Task<bool> EmUsoAsync(int id)
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.ExecuteScalarAsync<bool>(
+            @"SELECT EXISTS(SELECT 1 FROM compras WHERE condicao_pagamento_id = @id)
+                  OR EXISTS(SELECT 1 FROM vendas  WHERE condicao_pagamento_id = @id)", new { id });
+    }
 }

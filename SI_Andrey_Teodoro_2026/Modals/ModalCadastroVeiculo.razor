@@ -16,33 +16,41 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="TransportadoraListDto" Label="Transportadora"
-                                     Value="_transportadoraSelecionada"
-                                     ValueChanged="@((TransportadoraListDto? t) => { _transportadoraSelecionada = t; _dto.TransportadoraId = t?.Id ?? 0; })"
-                                     SearchFunc="PesquisarTransportadora"
-                                     ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudTooltip Text="Nova Transportadora">
-                        <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalTransportadora" Disabled="@_readOnly" />
-                    </MudTooltip>
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="TransportadoraListDto" Label="Transportadora"
+                                         Value="_transportadoraSelecionada"
+                                         ValueChanged="@((TransportadoraListDto? t) => { _transportadoraSelecionada = t; _dto.TransportadoraId = t?.Id ?? 0; })"
+                                         SearchFunc="PesquisarTransportadora"
+                                         ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
+                        <MudTooltip Text="Pesquisar transportadora">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarTransportadoraModal" Disabled="@_readOnly" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
                 <MudItem xs="6" sm="3">
                     <MudTextField Value="@_placaTexto" ValueChanged="@((string? v) => OnPlacaAlterada(v))"
                                   Label="Placa" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="7" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarPlaca(v))" Disabled="@_readOnly" />
+                                  Validation="@((string v) => ValidarPlaca(v))"
+                                  Disabled="@(_readOnly || Edicao || !TransportadoraOk)" HelperText="@AjudaPlaca" />
                 </MudItem>
                 <MudItem xs="6" sm="3">
-                    <MudAutocomplete T="string" Label="UF"
-                                     Value="@_dto.Uf" ValueChanged="@((string? v) => _dto.Uf = v ?? "")"
-                                     SearchFunc="PesquisarUf"
-                                     ToStringFunc="@(u => u ?? "")"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="string" Label="UF"
+                                         Value="@_dto.Uf" ValueChanged="@((string? v) => _dto.Uf = v ?? "")"
+                                         SearchFunc="PesquisarUf"
+                                         ToStringFunc="@(u => u ?? "")"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(_readOnly || !PlacaOk)" HelperText="@AjudaUf" />
+                        <MudTooltip Text="Pesquisar estado">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarUfModal" Disabled="@(_readOnly || !PlacaOk)" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -120,12 +128,30 @@
     private Task<IEnumerable<TransportadoraListDto>> PesquisarTransportadora(string? busca, CancellationToken ct) { var r = string.IsNullOrWhiteSpace(busca) ? _transportadoras.Take(50) : _transportadoras.Where(t => t.RazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase) || (t.NomeFantasia ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase)); return Task.FromResult(r); }
     private Task<IEnumerable<string>> PesquisarUf(string? busca, CancellationToken ct) { var r = string.IsNullOrWhiteSpace(busca) ? _ufs.Take(50) : _ufs.Where(u => u.Contains(busca, StringComparison.OrdinalIgnoreCase)); return Task.FromResult(r); }
 
-    private async Task AbrirModalTransportadora()
+    private async Task PesquisarTransportadoraModal()
+    {
+        var transportadora = await DialogService.PesquisarTransportadoraAsync(TransportadoraService, _dto.TransportadoraId, NovaTransportadora);
+        if (transportadora == null) return;
+        _transportadoraSelecionada = _transportadoras.ObterOuAdicionar(transportadora, t => t.Id);
+        _dto.TransportadoraId = _transportadoraSelecionada.Id;
+    }
+
+    private async Task PesquisarUfModal()
+    {
+        var estado = await DialogService.PesquisarEstadoAsync(EstadoService);
+        if (estado == null) return;
+        if (!_ufs.Contains(estado.Uf)) { _ufs.Add(estado.Uf); _ufs.Sort(); }
+        _dto.Uf = estado.Uf;
+    }
+
+    private async Task<TransportadoraListDto?> NovaTransportadora()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroTransportadora>("Nova Transportadora", opts);
         var result = await dialog.Result;
-        if (result is { Canceled: false }) { _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList(); if (result.Data is int id) { _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == id); _dto.TransportadoraId = id; } }
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _transportadoras = (await TransportadoraService.ObterTodosAtivosAsync()).ToList();
+        return _transportadoras.FirstOrDefault(t => t.Id == id);
     }
 
     private async Task Salvar()
@@ -139,6 +165,11 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
+    private bool Edicao => _dto.IdOriginal > 0;
+    private bool TransportadoraOk => _dto.TransportadoraId > 0;
+    private bool PlacaOk => TransportadoraOk && (Edicao || ValidarPlaca(_placaTexto) == null);
+    private string? AjudaPlaca => Edicao ? (_readOnly ? null : "Não pode ser alterado após o cadastro.") : TransportadoraOk ? null : "Selecione a transportadora primeiro.";
+    private string? AjudaUf => PlacaOk ? null : TransportadoraOk ? "Informe uma placa válida primeiro." : "Selecione a transportadora primeiro.";
     private object DadosEditaveis() => new { _dto, _placaTexto, Transportadora = _transportadoraSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }

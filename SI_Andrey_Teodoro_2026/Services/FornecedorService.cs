@@ -74,6 +74,15 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
                 dto.NomeFantasia = null;
 
             var docLimpo = LimparDigitos(dto.CpfCnpj);
+
+            if (dto.IdOriginal > 0)
+            {
+                var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (atual == null) return (false, "Fornecedor não encontrado.", 0);
+                if (atual.TipoPessoa != dto.TipoPessoa || LimparDigitos(atual.CpfCnpj ?? "") != docLimpo)
+                    return (false, "Tipo de pessoa e CPF/CNPJ não podem ser alterados após o cadastro.", 0);
+            }
+
             var erroDoc = dto.TipoPessoa == "PF" ? ValidarCpf(docLimpo) : ValidarCnpj(docLimpo);
             if (erroDoc != null) return (false, erroDoc, 0);
             dto.CpfCnpj = docLimpo;

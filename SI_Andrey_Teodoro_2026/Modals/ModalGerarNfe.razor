@@ -1,6 +1,7 @@
 ﻿@inject INfeService NfeService
 @inject IEmitenteService EmitenteService
 @inject ITransportadoraService TransportadoraService
+@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <MudDialog>
@@ -19,33 +20,51 @@
         {
             <MudGrid Spacing="2">
                 <MudItem xs="12">
-                    <MudAutocomplete T="VendaParaNfeDto"
-                                     Value="_vendaSelecionada"
-                                     ValueChanged="@((VendaParaNfeDto? v) => _vendaSelecionada = v)"
-                                     SearchFunc="PesquisarVenda"
-                                     ToStringFunc="@(v => v == null ? "" : $"Venda #{v.Id} — {v.NomeCliente} — R$ {v.ValorTotal:N2}")"
-                                     Label="Venda Finalizada" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                     FullWidth="true" Clearable="true"
-                                     ResetValueOnEmptyText="true" CoerceText="false"
-                                     HelperText="Apenas vendas finalizadas que ainda não possuem NF" />
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="VendaParaNfeDto"
+                                         Value="_vendaSelecionada"
+                                         ValueChanged="@((VendaParaNfeDto? v) => _vendaSelecionada = v)"
+                                         SearchFunc="PesquisarVenda"
+                                         ToStringFunc="@(v => v == null ? "" : $"Venda #{v.Id} — {v.NomeCliente} — R$ {v.ValorTotal:N2}")"
+                                         Label="Venda Finalizada" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         FullWidth="true" Clearable="true"
+                                         ResetValueOnEmptyText="true" CoerceText="false"
+                                         HelperText="Apenas vendas finalizadas que ainda não possuem NF" />
+                        <MudTooltip Text="Pesquisar venda">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarVendaModal" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudAutocomplete T="EmitenteListDto"
-                                     Value="_emitenteSelecionado"
-                                     ValueChanged="@((EmitenteListDto? e) => _emitenteSelecionado = e)"
-                                     SearchFunc="PesquisarEmitente"
-                                     ToStringFunc="@(e => e?.NomeRazaoSocial ?? "")"
-                                     Label="Emitente" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                     FullWidth="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="EmitenteListDto"
+                                         Value="_emitenteSelecionado"
+                                         ValueChanged="@((EmitenteListDto? e) => _emitenteSelecionado = e)"
+                                         SearchFunc="PesquisarEmitente"
+                                         ToStringFunc="@(e => e?.NomeRazaoSocial ?? "")"
+                                         Label="Emitente" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         FullWidth="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                        <MudTooltip Text="Pesquisar emitente">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarEmitenteModal" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudAutocomplete T="TransportadoraListDto"
-                                     Value="_transportadoraSelecionada"
-                                     ValueChanged="@((TransportadoraListDto? t) => _transportadoraSelecionada = t)"
-                                     SearchFunc="PesquisarTransportadora"
-                                     ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
-                                     Label="Transportadora (opcional)" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                     FullWidth="true" Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="TransportadoraListDto"
+                                         Value="_transportadoraSelecionada"
+                                         ValueChanged="@((TransportadoraListDto? t) => _transportadoraSelecionada = t)"
+                                         SearchFunc="PesquisarTransportadora"
+                                         ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
+                                         Label="Transportadora (opcional)" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         FullWidth="true" Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                        <MudTooltip Text="Pesquisar transportadora">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarTransportadoraModal" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
 
                 @if (_vendasDisponiveis.Count == 0)
@@ -138,6 +157,27 @@
             : _transportadoras.Where(t => t.RazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase)
                                         || (t.NomeFantasia ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
+    }
+
+    private async Task PesquisarVendaModal()
+    {
+        var venda = await DialogService.PesquisarVendaParaNfeAsync(NfeService, _vendaSelecionada?.Id);
+        if (venda == null) return;
+        _vendaSelecionada = _vendasDisponiveis.ObterOuAdicionar(venda, v => v.Id);
+    }
+
+    private async Task PesquisarEmitenteModal()
+    {
+        var emitente = await DialogService.PesquisarEmitenteAsync(EmitenteService, _emitenteSelecionado?.Id);
+        if (emitente == null) return;
+        _emitenteSelecionado = _emitentes.ObterOuAdicionar(emitente, e => e.Id);
+    }
+
+    private async Task PesquisarTransportadoraModal()
+    {
+        var transportadora = await DialogService.PesquisarTransportadoraAsync(TransportadoraService, _transportadoraSelecionada?.Id);
+        if (transportadora == null) return;
+        _transportadoraSelecionada = _transportadoras.ObterOuAdicionar(transportadora, t => t.Id);
     }
 
     private async Task Gerar()

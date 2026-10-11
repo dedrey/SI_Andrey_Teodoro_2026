@@ -144,6 +144,19 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               WHERE p.id = @id", new { id });
     }
 
+    public async Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId)
+    {
+        using var conn = _factory.CreateConnection();
+        var ids = await conn.QueryAsync<int>(
+            @"SELECT pv.id FROM produto_variacoes pv
+              WHERE pv.produto_id = @produtoId
+                AND (EXISTS(SELECT 1 FROM compras_itens ci WHERE ci.produto_variacao_id = pv.id)
+                  OR EXISTS(SELECT 1 FROM vendas_itens vi WHERE vi.produto_variacao_id = pv.id)
+                  OR EXISTS(SELECT 1 FROM movimentacoes_estoque_itens mi WHERE mi.produto_variacao_id = pv.id))",
+            new { produtoId });
+        return ids.ToList();
+    }
+
     public async Task<List<ProdutoVariacaoDto>> ObterVariacoesPorProdutoAsync(int produtoId)
     {
         using var conn = _factory.CreateConnection();

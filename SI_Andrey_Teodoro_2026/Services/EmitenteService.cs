@@ -65,6 +65,15 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
 
             var cnpjLimpo = LimparDigitos(dto.Cnpj);
+
+            if (dto.IdOriginal > 0)
+            {
+                var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (atual == null) return (false, "Emitente não encontrado.", 0);
+                if (LimparDigitos(atual.Cnpj ?? "") != cnpjLimpo)
+                    return (false, "O CNPJ não pode ser alterado após o cadastro.", 0);
+            }
+
             var erroCnpj = ValidarCnpj(cnpjLimpo);
             if (erroCnpj != null) return (false, erroCnpj, 0);
             dto.Cnpj = cnpjLimpo;

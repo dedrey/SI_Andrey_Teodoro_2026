@@ -50,21 +50,60 @@ public static class DialogServiceExtensions
         string titulo,
         Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar,
         List<ColunaPesquisa<TItem>> colunas,
-        string? statusFiltro = null) where TItem : class
+        string? statusFiltro = null,
+        Func<Task<TItem?>>? novo = null,
+        Func<TItem, int>? obterId = null,
+        int? selecionado = null) where TItem : class
+    {
+        var result = await AbrirPesquisaAsync(dialogService, titulo, buscar, colunas, statusFiltro, novo, obterId,
+            selecionado is > 0 ? new[] { selecionado.Value } : null, false);
+        return result is { Canceled: false } ? result.Data as TItem : null;
+    }
+
+    public static async Task<List<TItem>?> PesquisarVariosAsync<TItem>(
+        this IDialogService dialogService,
+        string titulo,
+        Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar,
+        List<ColunaPesquisa<TItem>> colunas,
+        Func<TItem, int> obterId,
+        IEnumerable<int>? selecionados,
+        IEnumerable<TItem> itensDoCampo,
+        string? statusFiltro = null,
+        Func<Task<TItem?>>? novo = null) where TItem : class
+    {
+        var result = await AbrirPesquisaAsync(dialogService, titulo, buscar, colunas, statusFiltro, novo, obterId, selecionados, true);
+        if (result is not { Canceled: false } || result.Data is not SelecaoPesquisa<TItem> selecao) return null;
+        var mantidos = itensDoCampo.Where(i => selecao.IdsSemItem.Contains(obterId(i)));
+        return selecao.Itens.Concat(mantidos).ToList();
+    }
+
+    private static async Task<DialogResult?> AbrirPesquisaAsync<TItem>(
+        IDialogService dialogService,
+        string titulo,
+        Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar,
+        List<ColunaPesquisa<TItem>> colunas,
+        string? statusFiltro,
+        Func<Task<TItem?>>? novo,
+        Func<TItem, int>? obterId,
+        IEnumerable<int>? selecionados,
+        bool multiSelecao) where TItem : class
     {
         var param = new DialogParameters<ModalPesquisa<TItem>>
         {
-            { x => x.Titulo,       titulo },
-            { x => x.Buscar,       buscar },
-            { x => x.Colunas,      colunas },
-            { x => x.StatusFiltro, statusFiltro }
+            { x => x.Titulo,               titulo },
+            { x => x.Buscar,               buscar },
+            { x => x.Colunas,              colunas },
+            { x => x.StatusFiltro,         statusFiltro },
+            { x => x.Novo,                 novo },
+            { x => x.ObterId,              obterId },
+            { x => x.SelecionadosIniciais, selecionados },
+            { x => x.MultiSelecao,         multiSelecao }
         };
 
         var dialog = await dialogService.ShowAsync<ModalPesquisa<TItem>>(
             titulo, param,
             new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true });
 
-        var result = await dialog.Result;
-        return result is { Canceled: false } ? result.Data as TItem : null;
+        return await dialog.Result;
     }
 }

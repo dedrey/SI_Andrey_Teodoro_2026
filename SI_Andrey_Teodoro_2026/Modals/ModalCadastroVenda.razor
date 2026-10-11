@@ -15,31 +15,37 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="ClienteListDto"
-                                     Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
-                                     ValueChanged="@((ClienteListDto? c) => { _dto.ClienteId = c?.Id; RecalcularTotais(); })"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
-                                     Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Required="true" RequiredError="Selecione um cliente"
-                                     ResetValueOnEmptyText="true" CoerceText="false" />
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="ClienteListDto"
+                                         Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
+                                         ValueChanged="@((ClienteListDto? c) => { _dto.ClienteId = c?.Id; RecalcularTotais(); })"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
+                                         Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Required="true" RequiredError="Selecione um cliente"
+                                         ResetValueOnEmptyText="true" CoerceText="false" />
+                        <MudTooltip Text="Pesquisar cliente">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarCliente" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCliente" />
-                </MudItem>
-                <MudItem xs="10" sm="5">
-                    <MudAutocomplete T="CondicaoPagamentoListDto"
-                                     Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
-                                     ValueChanged="@((CondicaoPagamentoListDto? c) => { _dto.CondicaoPagamentoId = c?.Id; _dto.DescontoPercentualAplicado = c?.DescontoPercentual ?? 0; RecalcularTotais(); })"
-                                     SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                     ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
-                                     Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Required="true" RequiredError="Selecione uma condição"
-                                     ResetValueOnEmptyText="true" CoerceText="false" />
-                </MudItem>
-                <MudItem xs="2" sm="1" Class="d-flex align-end pb-1">
-                    <MudIconButton Icon="@Icons.Material.Filled.AddCircle" Color="Color.Primary" Size="Size.Medium" OnClick="AbrirModalCondicao" />
+                <MudItem xs="12" sm="6">
+                    <div class="d-flex align-center gap-1">
+                        <MudAutocomplete T="CondicaoPagamentoListDto"
+                                         Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
+                                         ValueChanged="@((CondicaoPagamentoListDto? c) => { _dto.CondicaoPagamentoId = c?.Id; _dto.DescontoPercentualAplicado = c?.DescontoPercentual ?? 0; RecalcularTotais(); })"
+                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                         ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
+                                         Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Required="true" RequiredError="Selecione uma condição"
+                                         ResetValueOnEmptyText="true" CoerceText="false" />
+                        <MudTooltip Text="Pesquisar condição de pagamento">
+                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="PesquisarCondicao" />
+                        </MudTooltip>
+                    </div>
                 </MudItem>
             </MudGrid>
 
@@ -68,12 +74,18 @@
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd>
-                            <MudAutocomplete T="ProdutoListDto"
-                                             Value="_produtosSelecionados.GetValueOrDefault(context)"
-                                             ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
-                                             SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                            <div class="d-flex align-center gap-1">
+                                <MudAutocomplete T="ProdutoListDto"
+                                                 Value="_produtosSelecionados.GetValueOrDefault(context)"
+                                                 ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
+                                                 SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
+                                                 Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                <MudTooltip Text="Pesquisar produto">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                                   OnClick="@(() => PesquisarProdutoItem(context))" />
+                                </MudTooltip>
+                            </div>
                         </MudTd>
                         <MudTd>
                             <MudAutocomplete T="ProdutoVariacaoDto"
@@ -348,20 +360,49 @@
         _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto;
     }
 
-    private async Task AbrirModalCliente()
+    private async Task PesquisarCliente()
+    {
+        var cliente = await DialogService.PesquisarClienteAsync(ClienteService, _dto.ClienteId, NovoCliente);
+        if (cliente == null) return;
+        _dto.ClienteId = _clientes.ObterOuAdicionar(cliente, c => c.Id).Id;
+        RecalcularTotais();
+    }
+
+    private async Task PesquisarCondicao()
+    {
+        var condicao = await DialogService.PesquisarCondicaoPagamentoAsync(CondicaoPagamentoService, _dto.CondicaoPagamentoId, NovaCondicao);
+        if (condicao == null) return;
+        var c = _condicoes.ObterOuAdicionar(condicao, x => x.Id);
+        _dto.CondicaoPagamentoId = c.Id;
+        _dto.DescontoPercentualAplicado = c.DescontoPercentual;
+        RecalcularTotais();
+    }
+
+    private async Task PesquisarProdutoItem(VendaItemDto item)
+    {
+        var produto = await DialogService.PesquisarProdutoAsync(ProdutoService, _produtosSelecionados.GetValueOrDefault(item)?.Id);
+        if (produto == null) return;
+        await OnProdutoAlterado(item, _produtos.ObterOuAdicionar(produto, p => p.Id));
+    }
+
+    private async Task<ClienteListDto?> NovoCliente()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _clientes = (await ClienteService.ObterTodosAtivosAsync()).ToList();
+        return _clientes.FirstOrDefault(c => c.Id == id);
     }
 
-    private async Task AbrirModalCondicao()
+    private async Task<CondicaoPagamentoListDto?> NovaCondicao()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCondicaoPagamento>("Nova Condição de Pagamento", opts);
-        if ((await dialog.Result) is { Canceled: false })
-            _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
+        return _condicoes.FirstOrDefault(c => c.Id == id);
     }
     private decimal CustoDoItem(VendaItemDto item) => _custoPorItem.TryGetValue(item, out var custo) ? custo : 0;
 

@@ -44,6 +44,13 @@ public class CidadeService : BaseService<CidadeDto, CidadeListDto>, ICidadeServi
         {
             dto.NomeCidade = dto.NomeCidade.Trim().ToUpperInvariant();
 
+            if (dto.EstadoId <= 0)
+                return (false, "Selecione o estado.", 0);
+            if (string.IsNullOrWhiteSpace(dto.NomeCidade))
+                return (false, "Informe a cidade.", 0);
+            if (dto.Ddd < 1 || dto.Ddd > 999)
+                return (false, "DDD deve estar entre 1 e 999.", 0);
+
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
             if (await _repo.ExisteNomeNoEstadoAsync(dto.NomeCidade, dto.EstadoId, ignorar))
