@@ -64,6 +64,19 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
     {
         try
         {
+            if (dto.IdOriginal != 0)
+            {
+                var vendaAtual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+                if (vendaAtual == null)
+                    return (false, "Venda não encontrada.", 0);
+                if (vendaAtual.StatusVenda != "ABERTA")
+                    return (false, $"Venda {vendaAtual.StatusVenda} não pode ser alterada.", 0);
+                var itensGravados = await _repo.ObterItensPorVendaAsync(dto.IdOriginal);
+                if (itensGravados.Count > 0
+                    && (vendaAtual.ClienteId != dto.ClienteId || vendaAtual.CondicaoPagamentoId != dto.CondicaoPagamentoId))
+                    return (false, "Cliente e condição de pagamento não podem ser alterados em venda com itens gravados.", 0);
+            }
+
             var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
             if (itensValidos.Count == 0)
                 return (false, "Adicione pelo menos um item à venda.", 0);
@@ -123,10 +136,6 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                     await _repo.InserirItemAsync(item, novoId);
                 return (true, "Venda criada com sucesso!", novoId);
             }
-            var vendaAtual = await _repo.ObterPorIdAsync(dto.IdOriginal);
-            if (vendaAtual?.StatusVenda != "ABERTA")
-                return (false, "Apenas vendas em aberto podem ser editadas.", 0);
-
             await _repo.AtualizarAsync(dto);
             await _repo.RemoverItensAsync(dto.IdOriginal);
             foreach (var item in itensValidos)

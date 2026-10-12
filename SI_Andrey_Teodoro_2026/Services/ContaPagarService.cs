@@ -104,7 +104,10 @@ public class ContaPagarService : IContaPagarService
     {
         try
         {
-            if (await ValidarAlteracaoAsync(id) is string erro) return (false, erro);
+            var conta = await _repo.ObterPorIdAsync(id);
+            if (conta == null) return (false, "Conta a pagar não encontrada.");
+            if (conta.Status != "ABERTA") return (false, MensagemNaoAlteravel(conta.Status));
+            if (conta.CompraId.HasValue) return (false, "Cancele a compra para cancelar suas parcelas.");
             await _repo.AtualizarStatusAsync(id, "CANCELADA");
             return (true, "Conta cancelada.");
         }

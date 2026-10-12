@@ -70,7 +70,10 @@
                 <MudGrid Spacing="2">
                     <MudItem xs="12" sm="4" md="3">
                         <MudSelect T="string" @bind-Value="_dto.TipoMovimentacao" Label="Tipo *"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                   Required="true" RequiredError="Selecione o tipo"
+                                   HelperText="@(TipoBloqueado ? "Remova os itens para alterar o tipo." : null)"
+                                   Disabled="@TipoBloqueado">
                             <MudSelectItem T="string" Value="@("SAIDA")">
                                 <div class="d-flex align-center gap-2"><MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Error" Size="Size.Small" />Saída</div>
                             </MudSelectItem>
@@ -81,7 +84,8 @@
                     </MudItem>
                     <MudItem xs="12" sm="8" md="9">
                         <MudTextField @bind-Value="_dto.Observacao" Label="Observação (opcional)"
-                                      Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="200" FullWidth="true" />
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="200" FullWidth="true"
+                                      Disabled="@(!TipoEscolhido)" />
                     </MudItem>
                 </MudGrid>
 
@@ -91,7 +95,8 @@
                         <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-1" />Itens da Movimentação
                     </MudText>
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem">
+                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem"
+                               Disabled="@(!TipoEscolhido)">
                         Adicionar Item Manualmente
                     </MudButton>
                 </div>
@@ -101,15 +106,16 @@
                         <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
                                          SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
                                          Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
-                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
+                                         Disabled="@(!TipoEscolhido)" />
                         <MudTooltip Text="Pesquisar produto">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarProdutoLote" />
+                                           OnClick="PesquisarProdutoLote" Disabled="@(!TipoEscolhido)" />
                         </MudTooltip>
                     </div>
                     <MudSelect T="int" @bind-SelectedValues="_variacoesLote" MultiSelection="true" Label="Variações (cor/tamanho)"
                                Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:260px;"
-                               Disabled="@(_variacoesDisponiveisLote.Count == 0)"
+                               Disabled="@(!TipoEscolhido || _variacoesDisponiveisLote.Count == 0)"
                                MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} variação(ões) selecionada(s)")">
                         @foreach (var v in _variacoesDisponiveisLote)
                         {
@@ -117,12 +123,19 @@
                         }
                     </MudSelect>
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PlaylistAdd"
-                               OnClick="AdicionarVariacoesLote" Style="height:40px;" Disabled="@(_variacoesDisponiveisLote.Count == 0)">
+                               OnClick="AdicionarVariacoesLote" Style="height:40px;" Disabled="@(!TipoEscolhido || _variacoesDisponiveisLote.Count == 0)">
                         Adicionar Selecionadas
                     </MudButton>
                 </div>
 
-                @if (_dto.Itens.Any(i => !i.Removido))
+                @if (!TipoEscolhido)
+                {
+                    <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                        <MudText Typo="Typo.body2">Selecione o tipo para liberar os itens da movimentação.</MudText>
+                    </div>
+                }
+                else if (TipoBloqueado)
                 {
                     <MudTable Items="@_dto.Itens.Where(i => !i.Removido)" Dense="true" Hover="false" Elevation="0"
                               Style="border:1px solid #f0f0f0;border-radius:8px;">
@@ -146,7 +159,7 @@
                                                      Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
                                     <MudTooltip Text="Pesquisar produto">
                                         <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                                       OnClick="@(() => PesquisarProdutoItem(context))" />
+                                                       OnClick="@(() => PesquisarProdutoItem(context))" Disabled="@(!TipoEscolhido)" />
                                     </MudTooltip>
                                 </div>
                             </MudTd>
@@ -236,7 +249,9 @@
 
     private MudForm? _form;
     private bool _formValido, _salvando;
-    private MovimentacaoEstoqueDto _dto = new() { TipoMovimentacao = "SAIDA" };
+    private MovimentacaoEstoqueDto _dto = new() { TipoMovimentacao = string.Empty };
+    private bool TipoEscolhido => _dto.TipoMovimentacao is "SAIDA" or "AJUSTE";
+    private bool TipoBloqueado => _dto.Itens.Any(i => !i.Removido);
     private List<ProdutoListDto> _todosProdutos = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<MovimentacaoEstoqueItemDto, List<ProdutoVariacaoDto>> _variacoesPorItem = new();
@@ -272,6 +287,7 @@
 
     private void AdicionarItem()
     {
+        if (!TipoEscolhido) return;
         var item = new MovimentacaoEstoqueItemDto();
         _dto.Itens.Add(item);
         _produtosSelecionados[item] = null;
@@ -313,6 +329,7 @@
 
     private void AdicionarVariacoesLote()
     {
+        if (!TipoEscolhido) return;
         if (_produtoSelecionadoLote == null || _variacoesLote.Count == 0)
         {
             Snackbar.Add("Selecione o produto e ao menos uma variação.", Severity.Warning);
@@ -426,6 +443,7 @@
 
     private async Task Salvar()
     {
+        if (!TipoEscolhido) { Snackbar.Add("Selecione o tipo da movimentação.", Severity.Warning); return; }
         if (!_dto.Itens.Any(i => !i.Removido)) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
         _salvando = true;
         var (sucesso, mensagem, _) = await MovimentacaoService.SalvarAsync(_dto);

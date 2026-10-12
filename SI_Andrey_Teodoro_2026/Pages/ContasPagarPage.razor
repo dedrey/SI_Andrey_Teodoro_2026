@@ -118,9 +118,12 @@
                     <MudTooltip Text="Finalizar pagamento">
                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirFinalizarPagamento(context))" />
                     </MudTooltip>
-                    <MudTooltip Text="Cancelar">
-                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />
-                    </MudTooltip>
+                    @if (!context.CompraId.HasValue)
+                    {
+                        <MudTooltip Text="Cancelar">
+                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />
+                        </MudTooltip>
+                    }
                 }
                 else
                 {

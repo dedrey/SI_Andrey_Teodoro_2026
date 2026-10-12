@@ -81,6 +81,13 @@
                                        OnClick="@(async () => await AbrirCancelamento(venda.Id))"/>
                     </MudTooltip>
                 }
+                else
+                {
+                    <MudTooltip Text="Visualizar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small"
+                                       OnClick="@(async () => await AbrirVisualizacao(venda.Id))"/>
+                    </MudTooltip>
+                }
             </MudTd>
         </RowTemplate>
         <ChildRowContent>

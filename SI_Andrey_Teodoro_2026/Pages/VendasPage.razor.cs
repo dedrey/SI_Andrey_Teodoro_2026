@@ -83,6 +83,15 @@ public partial class VendasPage : BasePage<VendaListDto, VendaDto>
         if ((await dialog.Result) is { Canceled: false }) { _itensCache.Remove(id); await CarregarDados(); }
     }
 
+    private async Task AbrirVisualizacao(int id)
+    {
+        var dto = await VendaService.ObterPorIdAsync(id);
+        if (dto == null) { Snackbar.Add("Venda não encontrada.", Severity.Warning); return; }
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var param = new DialogParameters<ModalCadastroVenda> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
+        await DialogService.ShowAsync<ModalCadastroVenda>("Visualizar Venda", param, opts);
+    }
+
     private async Task ToggleItens(int vendaId)
     {
         if (_expandidos.Contains(vendaId)) { _expandidos.Remove(vendaId); return; }

@@ -9,25 +9,31 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">Nova Venda</MudText>
+            <MudText Typo="Typo.h6">@(Leitura ? "Visualizar Venda" : _dto.IdOriginal > 0 ? "Alterar Venda" : "Nova Venda")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
+            @if (Leitura && _dto.StatusVenda != "ABERTA")
+            {
+                <MudAlert Severity="@(_dto.StatusVenda == "CANCELADA" ? Severity.Error : Severity.Success)" Class="mb-3" Dense="true">
+                    Venda @_dto.StatusVenda: somente leitura.
+                </MudAlert>
+            }
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="ClienteListDto"
                                          Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
-                                         ValueChanged="@((ClienteListDto? c) => { _dto.ClienteId = c?.Id; RecalcularTotais(); })"
+                                         ValueChanged="@((ClienteListDto? c) => OnClienteAlterado(c?.Id))"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(c => c?.NomeRazaoSocial ?? "")"
                                          Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          Required="true" RequiredError="Selecione um cliente"
-                                         ResetValueOnEmptyText="true" CoerceText="false" />
+                                         ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(Leitura || CabecalhoBloqueado)" />
                         <MudTooltip Text="Pesquisar cliente">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarCliente" />
+                                           OnClick="PesquisarCliente" Disabled="@(Leitura || CabecalhoBloqueado)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -40,27 +46,48 @@
                                          ToStringFunc="@(c => c?.CondicaoPagamento ?? "")"
                                          Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          Required="true" RequiredError="Selecione uma condição"
-                                         ResetValueOnEmptyText="true" CoerceText="false" />
+                                         ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(Leitura || !_dto.ClienteId.HasValue || CabecalhoBloqueado)" />
                         <MudTooltip Text="Pesquisar condição de pagamento">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarCondicao" />
+                                           OnClick="PesquisarCondicao" Disabled="@(Leitura || !_dto.ClienteId.HasValue || CabecalhoBloqueado)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
             </MudGrid>
+            @if (CabecalhoBloqueado && !Leitura)
+            {
+                <MudText Typo="Typo.caption" Style="color:#888;">
+                    @(_dto.IdOriginal > 0 ? "Venda já gravada com itens: cliente e condição de pagamento não podem ser alterados." : "Remova os itens para alterar os dados da venda.")
+                </MudText>
+            }
+            @if (!CabecalhoValido && !Leitura)
+            {
+                <MudText Typo="Typo.caption" Style="color:#888;">Preencha cliente e condição de pagamento para adicionar itens.</MudText>
+            }
 
             <MudDivider Class="my-4" />
             <div class="d-flex align-center justify-space-between mb-3">
                 <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
                     <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Size="Size.Small" Class="mr-1" />Itens da Venda
                 </MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem">
-                    Adicionar Item
-                </MudButton>
+                @if (!Leitura)
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarItem"
+                               Disabled="@(!CabecalhoValido)">
+                        Adicionar Item
+                    </MudButton>
+                }
             </div>
 
-            @if (_dto.Itens.Count > 0)
+            @if (_dto.Itens.Count == 0 && !CabecalhoValido)
+            {
+                <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2" />
+                    <MudText Typo="Typo.body2">Selecione o cliente e a condição de pagamento para liberar os itens da venda.</MudText>
+                </div>
+            }
+            else if (_dto.Itens.Count > 0)
             {
                 <MudTable Items="@_dto.Itens" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
                     <HeaderContent>
@@ -70,7 +97,10 @@
                         <MudTh Style="font-weight:600;text-align:center;">Quantidade</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Valor Unit. (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Total</MudTh>
-                        <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                        @if (!Leitura)
+                        {
+                            <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
+                        }
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd>
@@ -80,10 +110,10 @@
                                                  ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
                                                  SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
                                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" />
+                                                 Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@Leitura" />
                                 <MudTooltip Text="Pesquisar produto">
                                     <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                                   OnClick="@(() => PesquisarProdutoItem(context))" />
+                                                   OnClick="@(() => PesquisarProdutoItem(context))" Disabled="@(Leitura || !CabecalhoValido)" />
                                 </MudTooltip>
                             </div>
                         </MudTd>
@@ -94,7 +124,7 @@
                                              SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
                                              ToStringFunc="@(v => v == null ? "" : $"{v.Cor} / {v.Tamanho} ({v.QuantidadeEstoque} un.)")"
                                              Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
+                                             Disabled="@(Leitura || !_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
                                              ResetValueOnEmptyText="true" CoerceText="false" />
                         </MudTd>
                         <MudTd Style="text-align:center;">
@@ -110,12 +140,12 @@
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" />
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" Disabled="@Leitura" />
                         </MudTd>
                         <MudTd>
                             <MudTextField Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          Adornment="Adornment.Start" AdornmentText="R$"
+                                          Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Leitura"
                                           Error="@AbaixoDoCusto(context)"
                                           ErrorText="@(AbaixoDoCusto(context) ? $"⚠ Abaixo do custo (R$ {CustoDoItem(context):N2})" : "")" />
                             @if (AbaixoDoCusto(context) && GetAlertaFastFashion(context) == "aviso")
@@ -126,15 +156,18 @@
                             }
                         </MudTd>
                         <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorTotal.ToString("N2")</MudTd>
-                        <MudTd Style="text-align:center;">
-                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
-                        </MudTd>
+                        @if (!Leitura)
+                        {
+                            <MudTd Style="text-align:center;">
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
+                            </MudTd>
+                        }
                     </RowTemplate>
                     <FooterContent>
                         <MudTd ColSpan="4" Style="text-align:right;font-weight:600;padding:8px 12px;">Subtotal:</MudTd>
                         <MudTd></MudTd>
                         <MudTd Style="text-align:right;font-weight:600;">R$ @_dto.ValorSubtotal.ToString("N2")</MudTd>
-                        <MudTd></MudTd>
+                        @if (!Leitura) { <MudTd></MudTd> }
                     </FooterContent>
                 </MudTable>
 
@@ -148,7 +181,7 @@
                             <MudText Typo="Typo.body2">Desconto (%)</MudText>
                             <MudNumericField T="decimal" Value="_dto.DescontoPercentualAplicado" ValueChanged="OnDescontoPercentualAlterado"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                             Min="0" Max="100" Format="N2" Style="width:110px;" />
+                                             Min="0" Max="100" Format="N2" Style="width:110px;" Disabled="@Leitura" />
                         </div>
                         @if (_dto.ValorDesconto != 0)
                         {
@@ -202,11 +235,14 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                   Disabled="_salvando" Style="height:40px;font-weight:700;min-width:160px;">
-            @(_salvando ? "Salvando..." : "FINALIZAR VENDA")
-        </MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">@(Leitura ? "Fechar" : "Cancelar")</MudButton>
+        @if (!Leitura)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                       Disabled="_salvando" Style="height:40px;font-weight:700;min-width:160px;">
+                @(_salvando ? "Salvando..." : "FINALIZAR VENDA")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -214,6 +250,10 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     private string? _snapshot;
     [Parameter] public VendaDto? DtoEdicao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; }
+    private bool Leitura => SomenteLeitura || _dto.StatusVenda != "ABERTA";
+    private bool CabecalhoBloqueado => _dto.Itens.Any(i => !i.Removido) || _dto.IdOriginal > 0;
+    private bool CabecalhoValido => _dto.ClienteId.HasValue && _dto.CondicaoPagamentoId.HasValue;
 
     protected override async Task OnInitializedAsync()
     {
@@ -271,8 +311,20 @@
     private static int GetEstoqueVar(List<ProdutoVariacaoDto> vars, int id)
         => vars.FirstOrDefault(v => v.IdOriginal == id)?.QuantidadeEstoque ?? 0;
 
+    private void OnClienteAlterado(int? clienteId)
+    {
+        _dto.ClienteId = clienteId;
+        if (!clienteId.HasValue)
+        {
+            _dto.CondicaoPagamentoId = null;
+            _dto.DescontoPercentualAplicado = 0;
+        }
+        RecalcularTotais();
+    }
+
     private void AdicionarItem()
     {
+        if (Leitura || !CabecalhoValido) return;
         var item = new VendaItemDto();
         _dto.Itens.Add(item);
         _produtosSelecionados[item] = null;
@@ -364,8 +416,7 @@
     {
         var cliente = await DialogService.PesquisarClienteAsync(ClienteService, _dto.ClienteId, NovoCliente);
         if (cliente == null) return;
-        _dto.ClienteId = _clientes.ObterOuAdicionar(cliente, c => c.Id).Id;
-        RecalcularTotais();
+        OnClienteAlterado(_clientes.ObterOuAdicionar(cliente, c => c.Id).Id);
     }
 
     private async Task PesquisarCondicao()
@@ -422,6 +473,8 @@
 
     private async Task Salvar()
     {
+        if (Leitura) return;
+        if (!CabecalhoValido) { Snackbar.Add("Selecione o cliente e a condição de pagamento.", Severity.Warning); return; }
         if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
         foreach (var item in _dto.Itens)
         {
@@ -443,5 +496,5 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
-    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, _dto);
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, Leitura, _snapshot, _dto);
 }
