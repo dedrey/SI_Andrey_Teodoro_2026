@@ -11,7 +11,8 @@ public interface IMovimentacaoEstoqueRepository
     Task<List<MovimentacaoEstoqueItemListDto>> ObterItensPorMovimentacaoAsync(int movimentacaoId);
     Task<int> ObterEstoqueAtualAsync(int variacaoId, IDbTransaction? tx = null);
 
-    Task<int> InserirAsync(string tipoMovimentacao, string? observacao, int? compraId, IDbTransaction tx);
+    Task<int> InserirAsync(string tipoMovimentacao, string? observacao, int? compraId, IDbTransaction tx,
+        int? vendaId = null);
     Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx);
     Task<bool> AtualizarEstoqueAsync(int variacaoId, int delta, IDbTransaction tx);
 }

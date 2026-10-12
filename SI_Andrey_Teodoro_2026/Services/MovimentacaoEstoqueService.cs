@@ -35,6 +35,7 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
             TipoMovimentacao = m.TipoMovimentacao,
             Observacao = m.Observacao,
             CompraId = m.CompraId,
+            VendaId = m.VendaId,
             CriadoEm = m.CriadoEm,
             Itens = itens.Select(i => new MovimentacaoEstoqueItemDto
             {
@@ -58,7 +59,7 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
         try
         {
             if (dto.TipoMovimentacao == "ENTRADA")
-                return (false, "Entradas de estoque são geradas automaticamente pelo lançamento de Compras.", 0);
+                return (false, "Entradas de estoque são geradas automaticamente pelo lançamento de Compras ou pelo cancelamento de Vendas.", 0);
             if (dto.TipoMovimentacao is not ("SAIDA" or "AJUSTE"))
                 return (false, "Tipo de movimentação inválido.", 0);
 

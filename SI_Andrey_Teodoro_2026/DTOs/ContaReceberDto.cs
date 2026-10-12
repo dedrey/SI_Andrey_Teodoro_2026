@@ -12,6 +12,7 @@ public class ContaReceberDto
     public string? NomeCliente { get; set; }
 
     public int? VendaId { get; set; }
+    public string? MotivoCancelamentoVenda { get; set; }
 
     [Required(ErrorMessage = "Descrição é obrigatória")]
     [MinLength(3)]
@@ -25,7 +26,7 @@ public class ContaReceberDto
     public decimal ValorOriginal { get; set; }
 
     public decimal ValorSaldo { get; set; }
-    public decimal ValorRecebido => ValorOriginal - ValorSaldo;
+    public decimal ValorRecebido => Baixas.Sum(b => b.ValorRecebido);
 
     public string Status { get; set; } = "ABERTA";
 
@@ -56,11 +57,12 @@ public class ContaReceberVendaGrupoListDto
     public DateTime DataVencimento { get; set; }
     public decimal ValorOriginal { get; set; }
     public decimal ValorSaldo { get; set; }
-    public decimal ValorRecebido => ValorOriginal - ValorSaldo;
+    public decimal ValorRecebido { get; set; }
     public DateTime? DataUltimoRecebimento { get; set; }
     public int TotalParcelas { get; set; }
     public int ParcelasPagas { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string? MotivoCancelamentoVenda { get; set; }
 }
 
 public class ContaReceberListDto

@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
@@ -213,27 +214,17 @@ public class VendaRepository : BaseRepository, IVendaRepository
             new { vendaId, subtotal, desconto, total });
     }
 
-    public async Task AtualizarStatusAsync(int vendaId, string status,
+    public async Task AtualizarStatusAsync(int vendaId, string status, IDbTransaction tx,
         int? movimentacaoId = null, string? motivoCancelamento = null)
     {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
+        await tx.Connection!.ExecuteAsync(
             @"UPDATE vendas
-              SET status_venda          = @status,
-                  movimentacao_id       = COALESCE(@movimentacaoId, movimentacao_id),
-                  motivo_cancelamento   = COALESCE(@motivoCancelamento, motivo_cancelamento),
-                  atualizado_em         = NOW()
+              SET status_venda        = @status,
+                  movimentacao_id     = COALESCE(@movimentacaoId, movimentacao_id),
+                  motivo_cancelamento = COALESCE(@motivoCancelamento, motivo_cancelamento),
+                  atualizado_em       = NOW()
               WHERE id = @vendaId",
-            new { vendaId, status, movimentacaoId, motivoCancelamento });
-    }
-
-    public async Task AtualizarEstoqueAsync(int variacaoId, int delta)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            @"UPDATE estoque SET quantidade = quantidade + @delta, atualizado_em = NOW()
-              WHERE produto_variacao_id = @variacaoId",
-            new { delta, variacaoId });
+            new { vendaId, status, movimentacaoId, motivoCancelamento }, tx);
     }
 
     public async Task<int> ObterEstoqueAtualAsync(int variacaoId)
@@ -259,68 +250,30 @@ public class VendaRepository : BaseRepository, IVendaRepository
         return row == null ? null : (row.PrecoCusto, row.DataUltimaCompra);
     }
 
-    public async Task<int> InserirMovimentacaoSaidaAsync(int vendaId)
-    {
-        using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq)
-              FROM (SELECT 1 AS seq
-                    UNION ALL
-                    SELECT id + 1 FROM movimentacoes_estoque) t
-              WHERE seq NOT IN (SELECT id FROM movimentacoes_estoque)
-                AND seq NOT IN (
-                    SELECT movimentacao_id FROM vendas
-                    WHERE movimentacao_id IS NOT NULL
-                )");
-
-        await conn.ExecuteAsync(
-            @"INSERT INTO movimentacoes_estoque (id, tipo_movimentacao, observacao)
-              VALUES (@proximoId, 'SAIDA', @obs)",
-            new { proximoId, obs = $"SAÍDA AUTOMÁTICA — VENDA #{vendaId}" });
-
-        return proximoId;
-    }
-
-    public async Task InserirMovimentacaoItemAsync(int movimentacaoId, int variacaoId,
-        int quantidade, decimal valorUnitario)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            @"INSERT INTO movimentacoes_estoque_itens
-                (movimentacao_id, produto_variacao_id, quantidade, valor_unitario)
-              VALUES (@movimentacaoId, @variacaoId, @quantidade, @valorUnitario)",
-            new { movimentacaoId, variacaoId, quantidade, valorUnitario });
-    }
-
     public async Task<int> InserirContaReceberAsync(int clienteId, int vendaId,
-        string descricao, DateTime vencimento, decimal valor, bool jaRecebida = false)
+        string descricao, DateTime vencimento, decimal valor, IDbTransaction tx, bool jaRecebida = false)
     {
-        using var conn = _factory.CreateConnection();
-        var proximoId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM contas_receber) t
-              WHERE seq NOT IN (SELECT id FROM contas_receber)");
-
+        var conn = tx.Connection!;
         var status = jaRecebida ? "RECEBIDA" : "ABERTA";
         var saldo = jaRecebida ? 0m : valor;
 
-        await conn.ExecuteAsync(
-            @"INSERT INTO contas_receber (id, cliente_id, venda_id, descricao,
+        var contaId = await conn.ExecuteScalarAsync<int>(
+            @"INSERT INTO contas_receber (cliente_id, venda_id, descricao,
                                           data_vencimento, valor_original, valor_saldo, status)
-              VALUES (@proximoId, @clienteId, @vendaId, @descricao,
-                      @vencimento, @valor, @saldo, @status)",
-            new { proximoId, clienteId, vendaId, descricao, vencimento, valor, saldo, status });
+              VALUES (@clienteId, @vendaId, @descricao,
+                      @vencimento, @valor, @saldo, @status);
+              SELECT LAST_INSERT_ID();",
+            new { clienteId, vendaId, descricao, vencimento, valor, saldo, status }, tx);
         if (jaRecebida)
         {
-            var proximoBaixaId = await conn.ExecuteScalarAsync<int>(
-                @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM contas_receber_baixas) t
-                  WHERE seq NOT IN (SELECT id FROM contas_receber_baixas)");
-            await conn.ExecuteAsync(
+            await conn.ExecuteScalarAsync<int>(
                 @"INSERT INTO contas_receber_baixas
-                    (id, conta_receber_id, data_recebimento, valor_recebido, observacao)
-                  VALUES (@proximoBaixaId, @proximoId, @vencimento, @valor, 'PAGAMENTO INSTANTÂNEO NO ATO DA VENDA')",
-                new { proximoBaixaId, proximoId, vencimento, valor });
+                    (conta_receber_id, data_recebimento, valor_recebido, observacao)
+                  VALUES (@contaId, @vencimento, @valor, 'PAGAMENTO INSTANTÂNEO NO ATO DA VENDA');
+                  SELECT LAST_INSERT_ID();",
+                new { contaId, vencimento, valor }, tx);
         }
 
-        return proximoId;
+        return contaId;
     }
 }

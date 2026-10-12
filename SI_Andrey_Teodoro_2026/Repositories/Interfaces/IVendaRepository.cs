@@ -1,4 +1,5 @@
-﻿using SI_Andrey_Teodoro_2026.DTOs;
+﻿using System.Data;
+using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
 namespace SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 public interface IVendaRepository
@@ -11,12 +12,10 @@ public interface IVendaRepository
     Task InserirItemAsync(VendaItemDto item, int vendaId);
     Task RemoverItensAsync(int vendaId);
     Task AtualizarTotaisAsync(int vendaId, decimal subtotal, decimal desconto, decimal total);
-    Task AtualizarStatusAsync(int vendaId, string status, int? movimentacaoId = null, string? motivoCancelamento = null);
-    Task AtualizarEstoqueAsync(int variacaoId, int delta);
+    Task AtualizarStatusAsync(int vendaId, string status, IDbTransaction tx,
+        int? movimentacaoId = null, string? motivoCancelamento = null);
     Task<int> ObterEstoqueAtualAsync(int variacaoId);
     Task<(decimal PrecoCusto, DateTime? DataUltimaCompra)?> ObterCustoVariacaoAsync(int variacaoId);
-    Task<int> InserirMovimentacaoSaidaAsync(int vendaId);
-    Task InserirMovimentacaoItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario);
     Task<int> InserirContaReceberAsync(int clienteId, int vendaId, string descricao, DateTime vencimento,
-        decimal valor, bool jaRecebida = false);
+        decimal valor, IDbTransaction tx, bool jaRecebida = false);
 }

@@ -26,6 +26,7 @@ public class ContaReceberService : IContaReceberService
             ClienteId = c.ClienteId,
             NomeCliente = c.NomeCliente,
             VendaId = c.VendaId,
+            MotivoCancelamentoVenda = c.MotivoCancelamentoVenda,
             Descricao = c.Descricao,
             DataVencimento = c.DataVencimento,
             ValorOriginal = c.ValorOriginal,
@@ -58,12 +59,13 @@ public class ContaReceberService : IContaReceberService
                 return (true, "Conta a receber cadastrada com sucesso!", novoId);
             }
             var contaAtual = await _repo.ObterPorIdAsync(dto.IdOriginal);
-            if (contaAtual != null)
-            {
-                var jaRecebido = contaAtual.ValorOriginal - contaAtual.ValorSaldo;
-                if (jaRecebido > 0 && dto.ValorOriginal < jaRecebido)
-                    return (false, $"Valor não pode ser menor que o já recebido (R$ {jaRecebido:N2}).", 0);
-            }
+            if (contaAtual == null)
+                return (false, "Conta a receber não encontrada.", 0);
+            if (contaAtual.Status != "ABERTA")
+                return (false, MensagemNaoAlteravel(contaAtual.Status), 0);
+            var jaRecebido = contaAtual.ValorOriginal - contaAtual.ValorSaldo;
+            if (jaRecebido > 0 && dto.ValorOriginal < jaRecebido)
+                return (false, $"Valor não pode ser menor que o já recebido (R$ {jaRecebido:N2}).", 0);
 
             await _repo.AtualizarAsync(dto);
             return (true, "Conta a receber atualizada com sucesso!", dto.Id);
@@ -108,6 +110,9 @@ public class ContaReceberService : IContaReceberService
     {
         try
         {
+            var conta = await _repo.ObterPorIdAsync(id);
+            if (conta == null) return (false, "Conta a receber não encontrada.");
+            if (conta.Status != "ABERTA") return (false, MensagemNaoAlteravel(conta.Status));
             await _repo.AtualizarStatusAsync(id, "CANCELADA");
             return (true, "Conta cancelada.");
         }
@@ -126,4 +131,7 @@ public class ContaReceberService : IContaReceberService
 
     public Task<List<ContaReceberResumoVendaDto>> ObterContasDaVendaAsync(int vendaId)
         => _repo.ObterContasDaVendaAsync(vendaId);
+
+    private static string MensagemNaoAlteravel(string status) =>
+        status == "RECEBIDA" ? "Conta já recebida não pode ser alterada." : "Conta cancelada não pode ser alterada.";
 }

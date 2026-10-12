@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
@@ -114,6 +115,7 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                          MIN(cr.data_vencimento))                         AS DataVencimento,
                 SUM(cr.valor_original)                                    AS ValorOriginal,
                 SUM(cr.valor_saldo)                                       AS ValorSaldo,
+                COALESCE(SUM(ub.TotalRecebido), 0)                        AS ValorRecebido,
                 MAX(ub.UltimoRecebimento)                                 AS DataUltimoRecebimento,
                 COUNT(*)                                                  AS TotalParcelas,
                 SUM(CASE WHEN cr.status = 'RECEBIDA' THEN 1 ELSE 0 END)   AS ParcelasPagas,
@@ -121,11 +123,14 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                     WHEN SUM(CASE WHEN cr.status <> 'CANCELADA' THEN 1 ELSE 0 END) = 0 THEN 'CANCELADA'
                     WHEN SUM(CASE WHEN cr.status = 'ABERTA' THEN 1 ELSE 0 END) = 0 THEN 'RECEBIDA'
                     ELSE 'ABERTA'
-                END                                                       AS Status
+                END                                                       AS Status,
+                MAX(ve.motivo_cancelamento)                               AS MotivoCancelamentoVenda
             FROM contas_receber cr
             LEFT JOIN clientes c ON c.id = cr.cliente_id
+            LEFT JOIN vendas  ve ON ve.id = cr.venda_id
             LEFT JOIN (
-                SELECT conta_receber_id, MAX(data_recebimento) AS UltimoRecebimento
+                SELECT conta_receber_id, MAX(data_recebimento) AS UltimoRecebimento,
+                       SUM(valor_recebido) AS TotalRecebido
                 FROM contas_receber_baixas GROUP BY conta_receber_id
             ) ub ON ub.conta_receber_id = cr.id
             {whereClause}
@@ -161,6 +166,7 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                      cr.cliente_id        AS ClienteId,
                      c.nome_razaosocial   AS NomeCliente,
                      cr.venda_id          AS VendaId,
+                     ve.motivo_cancelamento AS MotivoCancelamentoVenda,
                      cr.descricao,
                      cr.data_vencimento   AS DataVencimento,
                      cr.valor_original    AS ValorOriginal,
@@ -172,6 +178,7 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                      ua.nome              AS NomeAtualizadoPor
               FROM contas_receber cr
               LEFT JOIN clientes  c  ON c.id  = cr.cliente_id
+              LEFT JOIN vendas    ve ON ve.id = cr.venda_id
               LEFT JOIN usuarios  ua ON ua.id = cr.atualizado_por
               WHERE cr.id = @id", new { id });
     }
@@ -313,13 +320,17 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                      cr.descricao,
                      cr.data_vencimento AS DataVencimento,
                      cr.valor_original  AS ValorOriginal,
-                     (cr.valor_original - cr.valor_saldo) AS ValorRecebido,
+                     (SELECT COALESCE(SUM(crb.valor_recebido), 0)
+                      FROM contas_receber_baixas crb
+                      WHERE crb.conta_receber_id = cr.id) AS ValorRecebido,
                      cr.valor_saldo     AS ValorSaldo,
                      cr.status,
                      (SELECT MAX(crb.data_recebimento)
                       FROM contas_receber_baixas crb
-                      WHERE crb.conta_receber_id = cr.id) AS DataUltimoRecebimento
+                      WHERE crb.conta_receber_id = cr.id) AS DataUltimoRecebimento,
+                     ve.motivo_cancelamento AS MotivoCancelamentoVenda
               FROM contas_receber cr
+              LEFT JOIN vendas ve ON ve.id = cr.venda_id
               WHERE cr.venda_id = @vendaId
               ORDER BY cr.data_vencimento, cr.id", new { vendaId })).ToList();
 
@@ -344,5 +355,40 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
             conta.Baixas = baixasPorConta.TryGetValue(conta.Id, out var lista) ? lista : new();
 
         return contas;
+    }
+
+    public async Task<decimal> ObterTotalRecebidoDaVendaAsync(int vendaId)
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.ExecuteScalarAsync<decimal>(
+            @"SELECT COALESCE(SUM(crb.valor_recebido), 0)
+              FROM contas_receber_baixas crb
+              INNER JOIN contas_receber cr ON cr.id = crb.conta_receber_id
+              WHERE cr.venda_id = @vendaId", new { vendaId });
+    }
+
+    public async Task<List<ContaReceberRecebidoVendaDto>> ObterRecebidoPorContaDaVendaAsync(int vendaId, IDbTransaction tx)
+    {
+        var result = await tx.Connection!.QueryAsync<ContaReceberRecebidoVendaDto>(
+            @"SELECT cr.id,
+                     cr.cliente_id AS ClienteId,
+                     (SELECT COALESCE(SUM(crb.valor_recebido), 0)
+                      FROM contas_receber_baixas crb
+                      WHERE crb.conta_receber_id = cr.id) AS ValorRecebido
+              FROM contas_receber cr
+              WHERE cr.venda_id = @vendaId
+              ORDER BY cr.data_vencimento, cr.id", new { vendaId }, tx);
+        return result.ToList();
+    }
+
+    public async Task CancelarPorVendaAsync(int vendaId, IDbTransaction tx)
+    {
+        await tx.Connection!.ExecuteAsync(
+            @"UPDATE contas_receber
+              SET status        = 'CANCELADA',
+                  valor_saldo   = 0,
+                  atualizado_em = NOW()
+              WHERE venda_id = @vendaId",
+            new { vendaId }, tx);
     }
 }

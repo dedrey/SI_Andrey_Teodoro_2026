@@ -46,7 +46,7 @@
         <HeaderContent>
             <MudTh Style="font-weight:600;">ID</MudTh>
             <MudTh Style="font-weight:600;">Descrição</MudTh>
-            <MudTh Style="font-weight:600;">Fornecedor</MudTh>
+            <MudTh Style="font-weight:600;">Favorecido</MudTh>
             <MudTh Style="font-weight:600;">Origem</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Vencimento</MudTh>
             <MudTh Style="font-weight:600;text-align:center;">Pagamento</MudTh>
@@ -60,13 +60,21 @@
             }
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
             <MudTd><strong>@context.Descricao</strong></MudTd>
-            <MudTd>@(context.NomeFornecedor ?? "—")</MudTd>
+            <MudTd>@(context.NomeFornecedor ?? (context.NomeCliente != null ? $"CLIENTE: {context.NomeCliente}" : "—"))</MudTd>
             <MudTd>
                 @if (context.CompraId.HasValue)
                 {
                     <MudTooltip Text="Gerada automaticamente por uma compra">
                         <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Inventory2">
                             @(string.IsNullOrWhiteSpace(context.NumeroNfCompra) ? $"Compra #{context.CompraId}" : $"NF {context.NumeroNfCompra}")
+                        </MudChip>
+                    </MudTooltip>
+                }
+                else if (context.VendaId.HasValue)
+                {
+                    <MudTooltip Text="Estorno gerado pelo cancelamento de uma venda">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.ShoppingCart">
+                            Venda #@context.VendaId
                         </MudChip>
                     </MudTooltip>
                 }
@@ -118,7 +126,7 @@
                     <MudTooltip Text="Finalizar pagamento">
                         <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirFinalizarPagamento(context))" />
                     </MudTooltip>
-                    @if (!context.CompraId.HasValue)
+                    @if (!context.CompraId.HasValue && !context.VendaId.HasValue)
                     {
                         <MudTooltip Text="Cancelar">
                             <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />

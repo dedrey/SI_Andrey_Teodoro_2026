@@ -70,19 +70,21 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
 
             if (dto.IdOriginal > 0)
             {
-                var comMovimento = await _repo.ObterVariacoesComMovimentoAsync(dto.IdOriginal);
-                if (comMovimento.Count > 0)
+                var atuais = (await _repo.ObterVariacoesPorProdutoAsync(dto.IdOriginal)).ToDictionary(v => v.IdOriginal);
+                foreach (var nova in dto.Variacoes.Where(v => v.IdOriginal > 0 && !v.Removida))
                 {
-                    var atuais = (await _repo.ObterVariacoesPorProdutoAsync(dto.IdOriginal)).ToDictionary(v => v.IdOriginal);
-                    foreach (var id in comMovimento)
-                    {
-                        var nova = dto.Variacoes.FirstOrDefault(v => v.IdOriginal == id);
-                        if (nova == null || !atuais.TryGetValue(id, out var atual)) continue;
-                        if (nova.Removida)
-                            return (false, $"{atual.Cor}/{atual.Tamanho}: variação com movimentação não pode ser removida.", 0);
-                        if (nova.CorId != atual.CorId || nova.TamanhoId != atual.TamanhoId)
-                            return (false, $"{atual.Cor}/{atual.Tamanho}: variação com movimentação só pode ter preço e situação alterados.", 0);
-                    }
+                    if (atuais.TryGetValue(nova.IdOriginal, out var atual)
+                        && (nova.CorId != atual.CorId || nova.TamanhoId != atual.TamanhoId))
+                        return (false, "Cor e tamanho de variação já cadastrada não podem ser alterados.", 0);
+                }
+
+                var comMovimento = await _repo.ObterVariacoesComMovimentoAsync(dto.IdOriginal);
+                foreach (var id in comMovimento)
+                {
+                    var nova = dto.Variacoes.FirstOrDefault(v => v.IdOriginal == id);
+                    if (nova == null || !atuais.TryGetValue(id, out var atual)) continue;
+                    if (nova.Removida)
+                        return (false, $"{atual.Cor}/{atual.Tamanho}: variação com movimentação não pode ser removida.", 0);
                 }
             }
 

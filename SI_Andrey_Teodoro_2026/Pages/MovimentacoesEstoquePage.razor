@@ -47,7 +47,7 @@
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Info">@mov.TotalItens @(mov.TotalItens==1?"item":"itens")</MudChip></MudTd>
             <MudTd Style="text-align:center;font-weight:600;">@mov.TotalQuantidade un.</MudTd>
             <MudTd Style="text-align:right;font-weight:600;">@if(mov.ValorTotal>0){<span>R$ @mov.ValorTotal.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd>
-            <MudTd>@if(mov.CompraId.HasValue){<span>Compra #@mov.CompraId</span>}else{<span style="color:#ccc;">—</span>}</MudTd>
+            <MudTd>@if(mov.CompraId.HasValue){<span>Compra #@mov.CompraId</span>}else if(mov.VendaId.HasValue){<span>Venda #@mov.VendaId</span>}else{<span style="color:#ccc;">Manual</span>}</MudTd>
             <MudTd Style="color:#888;font-size:0.85rem;">@if(!string.IsNullOrWhiteSpace(mov.Observacao)){@(mov.Observacao.Length>50?mov.Observacao[..50]+"…":mov.Observacao)}else{<span style="color:#ccc;">—</span>}</MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Visualizar">

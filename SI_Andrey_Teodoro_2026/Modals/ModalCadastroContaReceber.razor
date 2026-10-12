@@ -17,7 +17,14 @@
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Info" Size="Size.Small" />
                     <MudText Typo="Typo.body2" Style="color:#1565c0;">
-                        Gerada automaticamente pela Venda #@_dto.VendaId
+                        @if (_dto.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(_dto.MotivoCancelamentoVenda))
+                        {
+                            @($"Cancelada junto com a Venda #{_dto.VendaId}. Motivo: {_dto.MotivoCancelamentoVenda}")
+                        }
+                        else
+                        {
+                            @($"Gerada automaticamente pela Venda #{_dto.VendaId}")
+                        }
                     </MudText>
                 </div>
             </div>
@@ -102,7 +109,7 @@
                                                Href="@baixa.ComprovanteArquivo" Target="_blank" />
                             </MudTooltip>
                         }
-                        else
+                        else if (_dto.Status != "CANCELADA")
                         {
                             <MudTooltip Text="Anexar comprovante (opcional)">
                                 <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Default" Size="Size.Small"
@@ -173,11 +180,14 @@
                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true"
                                       Style="@(_dto.ValorSaldo > 0 ? "color:#e65100;font-weight:600;" : "")" />
                     </MudItem>
-                    <MudItem xs="12">
-                        <MudText Typo="Typo.caption" Style="color:#aaa;display:block;text-align:center;">
-                            Valor Original (R$ @_dto.ValorOriginal.ToString("N2")) = Já Recebido + Saldo Devido
-                        </MudText>
-                    </MudItem>
+                    @if (_dto.Status != "CANCELADA")
+                    {
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.caption" Style="color:#aaa;display:block;text-align:center;">
+                                Valor Original (R$ @_dto.ValorOriginal.ToString("N2")) = Já Recebido + Saldo Devido
+                            </MudText>
+                        </MudItem>
+                    }
                 }
             </MudGrid>
         </MudForm>
@@ -223,6 +233,7 @@
                 ClienteId = DtoEdicao.ClienteId,
                 NomeCliente = DtoEdicao.NomeCliente,
                 VendaId = DtoEdicao.VendaId,
+                MotivoCancelamentoVenda = DtoEdicao.MotivoCancelamentoVenda,
                 Descricao = DtoEdicao.Descricao,
                 DataVencimento = DtoEdicao.DataVencimento,
                 ValorOriginal = DtoEdicao.ValorOriginal,

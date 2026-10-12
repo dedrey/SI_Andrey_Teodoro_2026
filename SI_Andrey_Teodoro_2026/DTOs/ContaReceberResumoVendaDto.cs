@@ -9,5 +9,13 @@ public class ContaReceberResumoVendaDto
     public decimal ValorSaldo { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime? DataUltimoRecebimento { get; set; }
+    public string? MotivoCancelamentoVenda { get; set; }
     public List<ContaReceberBaixaDto> Baixas { get; set; } = new();
+}
+
+public class ContaReceberRecebidoVendaDto
+{
+    public int Id { get; set; }
+    public int ClienteId { get; set; }
+    public decimal ValorRecebido { get; set; }
 }

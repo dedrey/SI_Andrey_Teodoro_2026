@@ -24,7 +24,7 @@
                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4" md="2">
-                        <MudTextField Value="@(_dto.CompraId.HasValue ? $"Compra #{_dto.CompraId}" : "—")" Label="Origem"
+                        <MudTextField Value="@(_dto.CompraId.HasValue ? $"Compra #{_dto.CompraId}" : _dto.VendaId.HasValue ? $"Venda #{_dto.VendaId}" : "Manual")" Label="Origem"
                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="true" />
                     </MudItem>
                     <MudItem xs="12" md="5">

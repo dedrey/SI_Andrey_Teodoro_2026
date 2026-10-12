@@ -14,6 +14,11 @@ public class ContaPagarDto
     public DateTime? DataEmissaoCompra { get; set; }
     public string? MotivoCancelamentoCompra { get; set; }
 
+    public int? ClienteId { get; set; }
+    public string? NomeCliente { get; set; }
+    public int? VendaId { get; set; }
+    public string? MotivoCancelamentoVenda { get; set; }
+
     [Required(ErrorMessage = "Descrição é obrigatória")]
     [MinLength(3)]
     [MaxLength(150)]
@@ -32,6 +37,7 @@ public class ContaPagarDto
 
     public string Status { get; set; } = "ABERTA";
 
+    public DateTime? CriadoEm { get; set; }
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
 }
@@ -43,6 +49,9 @@ public class ContaPagarListDto
     public int? CompraId { get; set; }
     public string? NumeroNfCompra { get; set; }
     public string? MotivoCancelamentoCompra { get; set; }
+    public int? ClienteId { get; set; }
+    public string? NomeCliente { get; set; }
+    public int? VendaId { get; set; }
     public string Descricao { get; set; } = string.Empty;
     public DateTime DataVencimento { get; set; }
     public DateTime? DataPagamento { get; set; }

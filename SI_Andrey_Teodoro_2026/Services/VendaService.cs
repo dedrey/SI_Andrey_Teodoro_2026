@@ -1,4 +1,6 @@
-﻿using SI_Andrey_Teodoro_2026.DTOs;
+﻿using System.Data;
+using SI_Andrey_Teodoro_2026.Data;
+using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -9,12 +11,22 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
     private readonly IVendaRepository _repo;
     private readonly ICondicaoPagamentoRepository _condicaoRepo;
     private readonly IClienteRepository _clienteRepo;
+    private readonly IContaReceberRepository _contaReceberRepo;
+    private readonly IContaPagarRepository _contaPagarRepo;
+    private readonly IMovimentacaoEstoqueRepository _movRepo;
+    private readonly DbConnectionFactory _factory;
 
-    public VendaService(IVendaRepository repo, ICondicaoPagamentoRepository condicaoRepo, IClienteRepository clienteRepo)
+    public VendaService(IVendaRepository repo, ICondicaoPagamentoRepository condicaoRepo, IClienteRepository clienteRepo,
+        IContaReceberRepository contaReceberRepo, IContaPagarRepository contaPagarRepo,
+        IMovimentacaoEstoqueRepository movRepo, DbConnectionFactory factory)
     {
         _repo = repo;
         _condicaoRepo = condicaoRepo;
         _clienteRepo = clienteRepo;
+        _contaReceberRepo = contaReceberRepo;
+        _contaPagarRepo = contaPagarRepo;
+        _movRepo = movRepo;
+        _factory = factory;
     }
 
     protected override string NomeEntidade => "Venda";
@@ -178,79 +190,135 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 if (estoque < item.Quantidade)
                     return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {estoque} un.");
             }
-            var movId = await _repo.InserirMovimentacaoSaidaAsync(vendaId);
+            var condicao = venda.ClienteId.HasValue && venda.CondicaoPagamentoId.HasValue
+                ? await _condicaoRepo.ObterPorIdAsync(venda.CondicaoPagamentoId.Value)
+                : null;
+            var parcelas = condicao != null && condicao.NumeroParcelas > 0
+                ? await _condicaoRepo.ObterParcelasAsync(venda.CondicaoPagamentoId!.Value)
+                : null;
+
+            using var conn = _factory.CreateConnection();
+            if (conn.State != ConnectionState.Open) conn.Open();
+            using var tx = conn.BeginTransaction();
+
+            var movId = await _movRepo.InserirAsync("SAIDA", $"SAÍDA AUTOMÁTICA — VENDA #{vendaId}", null, tx, vendaId);
             foreach (var item in itens)
             {
-                await _repo.InserirMovimentacaoItemAsync(movId, item.ProdutoVariacaoId, item.Quantidade, item.ValorUnitario);
-                await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, -item.Quantidade);
-            }
-            await _repo.AtualizarStatusAsync(vendaId, "FINALIZADA", movId);
-            if (venda.ClienteId.HasValue && venda.CondicaoPagamentoId.HasValue)
-            {
-                var condicao = await _condicaoRepo.ObterPorIdAsync(venda.CondicaoPagamentoId.Value);
-                if (condicao != null && condicao.NumeroParcelas > 0)
+                if (!await _movRepo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, -item.Quantidade, tx))
                 {
-                    var valorRestante = venda.ValorTotal;
-                    if (condicao.EntradaMinimaPercentual > 0)
-                    {
-                        var valorEntrada = Math.Round(venda.ValorTotal * condicao.EntradaMinimaPercentual / 100, 2);
-                        valorRestante = venda.ValorTotal - valorEntrada;
+                    var disponivel = await _movRepo.ObterEstoqueAtualAsync(item.ProdutoVariacaoId, tx);
+                    return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {disponivel} un.");
+                }
+                await _movRepo.InserirItemAsync(movId, item.ProdutoVariacaoId, item.Quantidade, item.ValorUnitario, tx);
+            }
+            await _repo.AtualizarStatusAsync(vendaId, "FINALIZADA", tx, movimentacaoId: movId);
 
-                        var descricaoEntrada = $"VENDA #{vendaId} — ENTRADA ({condicao.EntradaMinimaPercentual:N0}%)";
-                        await _repo.InserirContaReceberAsync(venda.ClienteId.Value, vendaId, descricaoEntrada,
-                            DateTime.Today, valorEntrada);
-                    }
-                    var valorParcela = Math.Round(valorRestante / condicao.NumeroParcelas, 2);
-                    var diferenca = valorRestante - (valorParcela * condicao.NumeroParcelas);
+            if (condicao != null && parcelas != null)
+            {
+                var valorRestante = venda.ValorTotal;
+                if (condicao.EntradaMinimaPercentual > 0)
+                {
+                    var valorEntrada = Math.Round(venda.ValorTotal * condicao.EntradaMinimaPercentual / 100, 2);
+                    valorRestante = venda.ValorTotal - valorEntrada;
 
-                    var parcelas = await _condicaoRepo.ObterParcelasAsync(venda.CondicaoPagamentoId.Value);
+                    var descricaoEntrada = $"VENDA #{vendaId} — ENTRADA ({condicao.EntradaMinimaPercentual:N0}%)";
+                    await _repo.InserirContaReceberAsync(venda.ClienteId!.Value, vendaId, descricaoEntrada,
+                        DateTime.Today, valorEntrada, tx);
+                }
+                var valorParcela = Math.Round(valorRestante / condicao.NumeroParcelas, 2);
+                var diferenca = valorRestante - (valorParcela * condicao.NumeroParcelas);
 
-                    for (int p = 1; p <= condicao.NumeroParcelas; p++)
-                    {
-                        var parcelaConfig = parcelas.FirstOrDefault(x => x.NumeroParcela == p);
-                        var diasVencimento = parcelaConfig?.DiasVencimento ?? 30;
-                        var vencimento = parcelaConfig != null
-                            ? DateTime.Today.AddDays(parcelaConfig.DiasVencimento)
-                            : DateTime.Today.AddMonths(p);
+                for (int p = 1; p <= condicao.NumeroParcelas; p++)
+                {
+                    var parcelaConfig = parcelas.FirstOrDefault(x => x.NumeroParcela == p);
+                    var diasVencimento = parcelaConfig?.DiasVencimento ?? 30;
+                    var vencimento = parcelaConfig != null
+                        ? DateTime.Today.AddDays(parcelaConfig.DiasVencimento)
+                        : DateTime.Today.AddMonths(p);
 
-                        var valor = p == condicao.NumeroParcelas
-                            ? valorParcela + diferenca
-                            : valorParcela;
+                    var valor = p == condicao.NumeroParcelas
+                        ? valorParcela + diferenca
+                        : valorParcela;
 
-                        var descricao = condicao.NumeroParcelas == 1
-                            ? $"VENDA #{vendaId}" + (condicao.EntradaMinimaPercentual > 0 ? " — SALDO" : "")
-                            : $"VENDA #{vendaId} — PARCELA {p}/{condicao.NumeroParcelas}";
-                        bool pagamentoInstantaneo = condicao.NumeroParcelas == 1
-                                                  && condicao.EntradaMinimaPercentual == 0
-                                                  && diasVencimento == 0;
+                    var descricao = condicao.NumeroParcelas == 1
+                        ? $"VENDA #{vendaId}" + (condicao.EntradaMinimaPercentual > 0 ? " — SALDO" : "")
+                        : $"VENDA #{vendaId} — PARCELA {p}/{condicao.NumeroParcelas}";
+                    bool pagamentoInstantaneo = condicao.NumeroParcelas == 1
+                                              && condicao.EntradaMinimaPercentual == 0
+                                              && diasVencimento == 0;
 
-                        await _repo.InserirContaReceberAsync(venda.ClienteId.Value, vendaId, descricao, vencimento, valor, pagamentoInstantaneo);
-                    }
+                    await _repo.InserirContaReceberAsync(venda.ClienteId!.Value, vendaId, descricao, vencimento, valor, tx, pagamentoInstantaneo);
                 }
             }
 
+            tx.Commit();
             return (true, "Venda finalizada com sucesso! Estoque baixado e contas a receber geradas.");
         }
         catch (Exception ex) { return (false, $"Erro ao finalizar venda: {ex.Message}"); }
+    }
+
+    public async Task<(string statusVenda, string nomeCliente, decimal totalRecebido)?> ObterResumoCancelamentoAsync(int vendaId)
+    {
+        var venda = await _repo.ObterPorIdAsync(vendaId);
+        if (venda == null) return null;
+        var totalRecebido = await _contaReceberRepo.ObterTotalRecebidoDaVendaAsync(vendaId);
+        return (venda.StatusVenda, venda.NomeCliente ?? string.Empty, totalRecebido);
     }
 
     public async Task<(bool sucesso, string mensagem)> CancelarAsync(int vendaId, string motivo)
     {
         try
         {
-            motivo = motivo?.Trim().ToUpperInvariant() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(motivo))
+                return (false, "Informe o motivo do cancelamento.");
+            motivo = motivo.Trim().ToUpperInvariant();
+            if (motivo.Length > 255)
+                return (false, "O motivo do cancelamento deve ter no máximo 255 caracteres.");
 
             var venda = await _repo.ObterPorIdAsync(vendaId);
             if (venda == null) return (false, "Venda não encontrada.");
             if (venda.StatusVenda == "CANCELADA") return (false, "Venda já está cancelada.");
-            if (venda.StatusVenda == "FINALIZADA" && venda.MovimentacaoId.HasValue)
+
+            var itensSaida = venda.StatusVenda == "FINALIZADA" && venda.MovimentacaoId.HasValue
+                ? await _movRepo.ObterItensPorMovimentacaoAsync(venda.MovimentacaoId.Value)
+                : new List<MovimentacaoEstoqueItemListDto>();
+
+            using var conn = _factory.CreateConnection();
+            if (conn.State != ConnectionState.Open) conn.Open();
+            using var tx = conn.BeginTransaction();
+
+            if (itensSaida.Count > 0)
             {
-                var itens = await _repo.ObterItensPorVendaAsync(vendaId);
-                foreach (var item in itens)
-                    await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, +item.Quantidade);
+                var obsEstorno = $"ESTORNO — CANCELAMENTO DA VENDA #{vendaId}: {motivo}";
+                if (obsEstorno.Length > 200) obsEstorno = obsEstorno[..200];
+                var movId = await _movRepo.InserirAsync("ENTRADA", obsEstorno, null, tx, vendaId);
+                foreach (var item in itensSaida)
+                {
+                    await _movRepo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, +item.Quantidade, tx);
+                    await _movRepo.InserirItemAsync(movId, item.ProdutoVariacaoId, item.Quantidade, item.ValorUnitario, tx);
+                }
             }
-            await _repo.AtualizarStatusAsync(vendaId, "CANCELADA", motivoCancelamento: motivo);
-            return (true, "Venda cancelada com sucesso!");
+
+            await _repo.AtualizarStatusAsync(vendaId, "CANCELADA", tx, motivoCancelamento: motivo);
+
+            var contas = await _contaReceberRepo.ObterRecebidoPorContaDaVendaAsync(vendaId, tx);
+            await _contaReceberRepo.CancelarPorVendaAsync(vendaId, tx);
+
+            decimal totalEstornado = 0;
+            for (int i = 0; i < contas.Count; i++)
+            {
+                var conta = contas[i];
+                if (conta.ValorRecebido <= 0) continue;
+                await _contaPagarRepo.InserirEstornoVendaAsync(conta.ClienteId, vendaId,
+                    $"ESTORNO VENDA #{vendaId} — PARCELA {i + 1}/{contas.Count}",
+                    DateTime.Today, conta.ValorRecebido, tx);
+                totalEstornado += conta.ValorRecebido;
+            }
+
+            tx.Commit();
+            return (true, totalEstornado > 0
+                ? $"Venda cancelada com sucesso! Estorno de R$ {totalEstornado:N2} gerado em Contas a Pagar."
+                : "Venda cancelada com sucesso!");
         }
         catch (Exception ex) { return (false, $"Erro ao cancelar venda: {ex.Message}"); }
     }

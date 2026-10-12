@@ -20,6 +20,17 @@
         }
         else
         {
+            @if (_parcelas.All(p => p.Status == "CANCELADA") && !string.IsNullOrWhiteSpace(_parcelas[0].MotivoCancelamentoVenda))
+            {
+                <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+                    <div class="d-flex align-center gap-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Info" Size="Size.Small" />
+                        <MudText Typo="Typo.body2" Style="color:#1565c0;">
+                            @($"Parcelas canceladas junto com a Venda #{VendaId}. Motivo: {_parcelas[0].MotivoCancelamentoVenda}")
+                        </MudText>
+                    </div>
+                </div>
+            }
             <div class="d-flex justify-space-between align-center pa-2 mb-2" style="background:#f8f9fa;border-radius:8px;">
                 <div>
                     <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;">Total da venda</MudText>
@@ -83,9 +94,12 @@
                     <MudTd Style="text-align:right;color:#2e7d32;">@(context.ValorRecebido > 0 ? $"R$ {context.ValorRecebido:N2}" : "—")</MudTd>
                     <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorSaldo.ToString("N2")</MudTd>
                     <MudTd Style="text-align:center;">
-                        <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "RECEBIDA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
-                            @(context.Status switch { "RECEBIDA" => "Recebida", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
-                        </MudChip>
+                        <MudTooltip Text="@(context.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(context.MotivoCancelamentoVenda) ? $"Motivo: {context.MotivoCancelamentoVenda}" : "")"
+                                    Disabled="@(context.Status != "CANCELADA" || string.IsNullOrWhiteSpace(context.MotivoCancelamentoVenda))">
+                            <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "RECEBIDA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
+                                @(context.Status switch { "RECEBIDA" => "Recebida", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
+                            </MudChip>
+                        </MudTooltip>
                     </MudTd>
                     <MudTd Style="text-align:center;">
                         @if (context.Status == "ABERTA")
@@ -102,7 +116,7 @@
                                                Href="@ultimoComprovante.ComprovanteArquivo" Target="_blank" />
                             </MudTooltip>
                         }
-                        else if (context.Baixas.Any())
+                        else if (context.Status != "CANCELADA" && context.Baixas.Any())
                         {
                             <MudTooltip Text="Anexar comprovante (opcional)">
                                 <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Default" Size="Size.Small"

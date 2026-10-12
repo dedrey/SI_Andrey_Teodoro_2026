@@ -20,6 +20,7 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add(@"(cp.descricao   LIKE @Busca
                       OR f.razaosocial  LIKE @Busca
+                      OR cl.nome_razaosocial LIKE @Busca
                       OR co.numero_nf   LIKE @Busca
                       OR CAST(cp.id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
@@ -42,6 +43,7 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
         var sqlCount = $@"SELECT COUNT(*) FROM contas_pagar cp
                           LEFT JOIN fornecedores f  ON f.id  = cp.fornecedor_id
                           LEFT JOIN compras      co ON co.id = cp.compra_id
+                          LEFT JOIN clientes     cl ON cl.id = cp.cliente_id
                           {whereClause}";
 
         var sqlData = $@"SELECT cp.id,
@@ -49,6 +51,9 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                                  cp.compra_id        AS CompraId,
                                  co.numero_nf        AS NumeroNfCompra,
                                  co.motivo_cancelamento AS MotivoCancelamentoCompra,
+                                 cp.cliente_id       AS ClienteId,
+                                 cl.nome_razaosocial AS NomeCliente,
+                                 cp.venda_id         AS VendaId,
                                  cp.descricao,
                                  cp.data_vencimento   AS DataVencimento,
                                  cp.data_pagamento    AS DataPagamento,
@@ -59,6 +64,7 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                           FROM contas_pagar cp
                           LEFT JOIN fornecedores f  ON f.id  = cp.fornecedor_id
                           LEFT JOIN compras      co ON co.id = cp.compra_id
+                          LEFT JOIN clientes     cl ON cl.id = cp.cliente_id
                           {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
@@ -87,6 +93,10 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                      co.numero_nf        AS NumeroNfCompra,
                      co.data_emissao     AS DataEmissaoCompra,
                      co.motivo_cancelamento AS MotivoCancelamentoCompra,
+                     cp.cliente_id       AS ClienteId,
+                     cl.nome_razaosocial AS NomeCliente,
+                     cp.venda_id         AS VendaId,
+                     ve.motivo_cancelamento AS MotivoCancelamentoVenda,
                      cp.descricao,
                      cp.data_vencimento  AS DataVencimento,
                      cp.data_pagamento   AS DataPagamento,
@@ -101,6 +111,8 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
               FROM contas_pagar cp
               LEFT JOIN fornecedores f  ON f.id  = cp.fornecedor_id
               LEFT JOIN compras      co ON co.id = cp.compra_id
+              LEFT JOIN clientes     cl ON cl.id = cp.cliente_id
+              LEFT JOIN vendas       ve ON ve.id = cp.venda_id
               LEFT JOIN usuarios     ua ON ua.id = cp.atualizado_por
               WHERE cp.id = @id", new { id });
     }
@@ -111,16 +123,18 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO contas_pagar
-                (id, fornecedor_id, compra_id, descricao, data_vencimento, data_pagamento,
+                (id, fornecedor_id, compra_id, cliente_id, venda_id, descricao, data_vencimento, data_pagamento,
                  valor_original, valor_saldo, status)
               VALUES
-                (@ProximoId, @FornecedorId, @CompraId, @Descricao, @DataVencimento, NULL,
+                (@ProximoId, @FornecedorId, @CompraId, @ClienteId, @VendaId, @Descricao, @DataVencimento, NULL,
                  @ValorOriginal, @ValorOriginal, 'ABERTA')",
             new
             {
                 ProximoId = proximoId,
                 dto.FornecedorId,
                 dto.CompraId,
+                dto.ClienteId,
+                dto.VendaId,
                 dto.Descricao,
                 dto.DataVencimento,
                 dto.ValorOriginal
@@ -176,6 +190,20 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                  @valorOriginal, @valorOriginal, 'ABERTA');
               SELECT LAST_INSERT_ID();",
             new { fornecedorId, compraId, descricao, dataVencimento, valorOriginal }, tx);
+    }
+
+    public async Task<int> InserirEstornoVendaAsync(int clienteId, int vendaId, string descricao,
+        DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx)
+    {
+        return await tx.Connection!.ExecuteScalarAsync<int>(
+            @"INSERT INTO contas_pagar
+                (cliente_id, venda_id, descricao, data_vencimento, data_pagamento,
+                 valor_original, valor_saldo, status)
+              VALUES
+                (@clienteId, @vendaId, @descricao, @dataVencimento, NULL,
+                 @valorOriginal, @valorOriginal, 'ABERTA');
+              SELECT LAST_INSERT_ID();",
+            new { clienteId, vendaId, descricao, dataVencimento, valorOriginal }, tx);
     }
 
     public async Task CancelarPorCompraAsync(int compraId, IDbTransaction tx)

@@ -10,4 +10,5 @@ public interface IVendaService
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(VendaDto dto);
     Task<(bool sucesso, string mensagem)> FinalizarAsync(int vendaId);
     Task<(bool sucesso, string mensagem)> CancelarAsync(int vendaId, string motivo);
+    Task<(string statusVenda, string nomeCliente, decimal totalRecebido)?> ObterResumoCancelamentoAsync(int vendaId);
 }

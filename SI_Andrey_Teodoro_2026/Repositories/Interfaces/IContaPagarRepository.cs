@@ -13,6 +13,8 @@ public interface IContaPagarRepository
 
     Task<int> InserirAutomaticaAsync(int? fornecedorId, int compraId, string descricao,
         DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx);
+    Task<int> InserirEstornoVendaAsync(int clienteId, int vendaId, string descricao,
+        DateTime dataVencimento, decimal valorOriginal, IDbTransaction tx);
     Task CancelarPorCompraAsync(int compraId, IDbTransaction tx);
 
     Task<bool> ExisteParcelaPagaAsync(int compraId);

@@ -1,4 +1,5 @@
-﻿using SI_Andrey_Teodoro_2026.DTOs;
+﻿using System.Data;
+using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
 namespace SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
@@ -18,4 +19,7 @@ public interface IContaReceberRepository
     Task RemoverBaixaAsync(int baixaId, int contaReceberId);
     Task AtualizarComprovanteBaixaAsync(int baixaId, string comprovanteArquivo);
     Task<List<ContaReceberResumoVendaDto>> ObterContasDaVendaAsync(int vendaId);
+    Task<decimal> ObterTotalRecebidoDaVendaAsync(int vendaId);
+    Task<List<ContaReceberRecebidoVendaDto>> ObterRecebidoPorContaDaVendaAsync(int vendaId, IDbTransaction tx);
+    Task CancelarPorVendaAsync(int vendaId, IDbTransaction tx);
 }

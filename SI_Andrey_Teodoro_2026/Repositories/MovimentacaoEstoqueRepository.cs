@@ -21,7 +21,8 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             where.Add(@"(m.tipo_movimentacao LIKE @Busca
                       OR m.observacao        LIKE @Busca
                       OR CAST(m.id AS CHAR) = @BuscaExata
-                      OR CAST(m.compra_id AS CHAR) = @BuscaExata)");
+                      OR CAST(m.compra_id AS CHAR) = @BuscaExata
+                      OR CAST(m.venda_id AS CHAR) = @BuscaExata)");
         if (filtro.StatusFiltro is "ENTRADA" or "SAIDA" or "AJUSTE")
             where.Add("m.tipo_movimentacao = @StatusFiltro");
         var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
@@ -47,6 +48,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
                       m.tipo_movimentacao  AS TipoMovimentacao,
                       m.observacao,
                       m.compra_id          AS CompraId,
+                      m.venda_id           AS VendaId,
                       COUNT(i.id)          AS TotalItens,
                       COALESCE(SUM(i.quantidade), 0)                   AS TotalQuantidade,
                       COALESCE(SUM(i.quantidade * i.valor_unitario), 0) AS ValorTotal,
@@ -56,7 +58,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
                LEFT JOIN movimentacoes_estoque_itens i ON i.movimentacao_id = m.id
                LEFT JOIN usuarios     u ON u.id = m.criado_por
                {whereClause}
-               GROUP BY m.id, m.tipo_movimentacao, m.observacao, m.compra_id, m.criado_em, u.nome
+               GROUP BY m.id, m.tipo_movimentacao, m.observacao, m.compra_id, m.venda_id, m.criado_em, u.nome
                ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset", param);
         return new PaginacaoDto<MovimentacaoEstoqueListDto>
         { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
@@ -70,6 +72,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
                      m.tipo_movimentacao AS TipoMovimentacao,
                      m.observacao,
                      m.compra_id         AS CompraId,
+                     m.venda_id          AS VendaId,
                      m.criado_em         AS CriadoEm,
                      m.criado_por        AS CriadoPor,
                      u.nome              AS NomeCriadoPor
@@ -108,13 +111,14 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             new { variacaoId });
     }
 
-    public async Task<int> InserirAsync(string tipoMovimentacao, string? observacao, int? compraId, IDbTransaction tx)
+    public async Task<int> InserirAsync(string tipoMovimentacao, string? observacao, int? compraId, IDbTransaction tx,
+        int? vendaId = null)
     {
         return await tx.Connection!.ExecuteScalarAsync<int>(
-            @"INSERT INTO movimentacoes_estoque (tipo_movimentacao, observacao, compra_id)
-              VALUES (@tipoMovimentacao, @observacao, @compraId);
+            @"INSERT INTO movimentacoes_estoque (tipo_movimentacao, observacao, compra_id, venda_id)
+              VALUES (@tipoMovimentacao, @observacao, @compraId, @vendaId);
               SELECT LAST_INSERT_ID();",
-            new { tipoMovimentacao, observacao, compraId }, tx);
+            new { tipoMovimentacao, observacao, compraId, vendaId }, tx);
     }
 
     public async Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx)

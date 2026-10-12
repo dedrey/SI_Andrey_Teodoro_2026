@@ -395,8 +395,8 @@ CREATE TABLE estoque (
 -- ================================================================
 -- 10. MOVIMENTAÇÕES DE ESTOQUE
 -- ================================================================
--- ENTRADA: gerada somente pelo lançamento de Compra (compra_id preenchido).
--- SAIDA:   manual, pela Venda, ou estorno do cancelamento de Compra (compra_id preenchido).
+-- ENTRADA: lançamento de Compra (compra_id) ou estorno do cancelamento de Venda finalizada (venda_id).
+-- SAIDA:   manual, pela finalização de Venda (venda_id) ou estorno do cancelamento de Compra (compra_id).
 -- AJUSTE:  manual (inventário). Não altera custo nem data da última compra.
 -- A tabela compras é criada depois (seção 11.1), por isso a FK de compra_id
 -- é adicionada no final do script.
@@ -405,6 +405,7 @@ CREATE TABLE movimentacoes_estoque (
   tipo_movimentacao ENUM('ENTRADA','SAIDA','AJUSTE') NOT NULL,
   observacao        VARCHAR(200) NULL,
   compra_id         INT          NULL,
+  venda_id          INT          NULL,
   criado_em         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   criado_por        INT NULL,
   CONSTRAINT fk_movest_criado_por  FOREIGN KEY (criado_por)    REFERENCES usuarios(id)     ON DELETE SET NULL
@@ -515,7 +516,7 @@ CREATE TABLE compras_itens (
 ) ENGINE=InnoDB;
 
 -- ================================================================
--- 12. NF-e (estrutura criada, implementação futura)
+-- 12. NF-e (saída de venda e entrada de devolução)
 -- ================================================================
 CREATE TABLE nfes (
   id                INT           AUTO_INCREMENT PRIMARY KEY,
@@ -528,8 +529,13 @@ CREATE TABLE nfes (
   cliente_id        INT           NOT NULL,
   venda_id          INT NULL      UNIQUE,
   transportadora_id INT NULL,
-  tipo_operacao     ENUM('SAIDA') NOT NULL DEFAULT 'SAIDA',
+  tipo_operacao     ENUM('SAIDA','ENTRADA') NOT NULL DEFAULT 'SAIDA',
+  finalidade        ENUM('NORMAL','DEVOLUCAO') NOT NULL DEFAULT 'NORMAL',
+  nfe_referenciada_id INT NULL,
+  cfop              CHAR(4)       NULL,
+  natureza_operacao VARCHAR(60)   NULL,
   status_nfe        ENUM('RASCUNHO','EMITIDA','CANCELADA') NOT NULL DEFAULT 'RASCUNHO',
+  motivo_cancelamento VARCHAR(255) NULL,
   valor_produtos    DECIMAL(14,2) NOT NULL DEFAULT 0,
   valor_desconto    DECIMAL(14,2) NOT NULL DEFAULT 0,
   valor_total       DECIMAL(14,2) NOT NULL DEFAULT 0,
@@ -541,6 +547,7 @@ CREATE TABLE nfes (
   CONSTRAINT fk_nfes_cliente          FOREIGN KEY (cliente_id)        REFERENCES clientes(id)        ON DELETE NO ACTION,
   CONSTRAINT fk_nfes_venda            FOREIGN KEY (venda_id)          REFERENCES vendas(id)          ON DELETE SET NULL,
   CONSTRAINT fk_nfes_transportadora   FOREIGN KEY (transportadora_id) REFERENCES transportadoras(id) ON DELETE SET NULL,
+  CONSTRAINT fk_nfes_referenciada     FOREIGN KEY (nfe_referenciada_id) REFERENCES nfes(id)        ON DELETE NO ACTION,
   CONSTRAINT fk_nfes_criado_por       FOREIGN KEY (criado_por)        REFERENCES usuarios(id)        ON DELETE SET NULL,
   CONSTRAINT fk_nfes_atualizado_por   FOREIGN KEY (atualizado_por)    REFERENCES usuarios(id)        ON DELETE SET NULL,
   CONSTRAINT unique_nfe               UNIQUE (emitente_id, serie, numero)
@@ -571,6 +578,8 @@ CREATE TABLE contas_pagar (
   id              INT           AUTO_INCREMENT PRIMARY KEY,
   fornecedor_id   INT NULL,
   compra_id       INT NULL,
+  cliente_id      INT NULL,
+  venda_id        INT NULL,
   descricao       VARCHAR(150) NOT NULL,
   data_vencimento DATE          NOT NULL,
   data_pagamento  DATE               NULL,
@@ -584,6 +593,8 @@ CREATE TABLE contas_pagar (
   atualizado_por  INT NULL,
   CONSTRAINT fk_cpagar_fornecedor     FOREIGN KEY (fornecedor_id)   REFERENCES fornecedores(id)  ON DELETE SET NULL,
   CONSTRAINT fk_cpagar_compra         FOREIGN KEY (compra_id)       REFERENCES compras(id)       ON DELETE SET NULL,
+  CONSTRAINT fk_cpagar_cliente        FOREIGN KEY (cliente_id)      REFERENCES clientes(id)      ON DELETE SET NULL,
+  CONSTRAINT fk_cpagar_venda          FOREIGN KEY (venda_id)        REFERENCES vendas(id)        ON DELETE SET NULL,
   CONSTRAINT fk_cpagar_criado_por     FOREIGN KEY (criado_por)      REFERENCES usuarios(id)      ON DELETE SET NULL,
   CONSTRAINT fk_cpagar_atualizado_por FOREIGN KEY (atualizado_por)  REFERENCES usuarios(id)      ON DELETE SET NULL
 ) ENGINE=InnoDB;
@@ -627,7 +638,11 @@ CREATE TABLE contas_receber_baixas (
 -- FKs adicionadas após a criação das tabelas referenciadas
 -- ================================================================
 ALTER TABLE movimentacoes_estoque
-  ADD CONSTRAINT fk_movest_compra FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE SET NULL;
+  ADD CONSTRAINT fk_movest_compra FOREIGN KEY (compra_id) REFERENCES compras(id) ON DELETE SET NULL,
+  ADD CONSTRAINT fk_movest_venda  FOREIGN KEY (venda_id)  REFERENCES vendas(id)  ON DELETE SET NULL;
 
 ALTER TABLE fornecedores
   ADD CONSTRAINT fk_fornecedores_condicao FOREIGN KEY (condicao_pagamento_id) REFERENCES condicoes_pagamentos(id) ON DELETE SET NULL;
+
+ALTER TABLE vendas
+  ADD CONSTRAINT fk_vendas_nfe FOREIGN KEY (nfe_id) REFERENCES nfes(id) ON DELETE SET NULL;

@@ -10,8 +10,25 @@
         </div>
     </TitleContent>
     <DialogContent>
+        @if (_carregando)
+        {
+            <div class="d-flex justify-center pa-4"><MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Small" /></div>
+        }
+        else if (_totalRecebido > 0)
+        {
+            <div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                    <MudText Typo="Typo.body2" Style="color:#e65100;">
+                        @($"Esta venda tem R$ {_totalRecebido:N2} já recebidos do cliente {_nomeCliente}. Será gerado estorno em Contas a Pagar.")
+                    </MudText>
+                </div>
+            </div>
+        }
         <MudText Class="mb-4" Style="color:#666;">
-            Informe o motivo do cancelamento. Este registro ficará salvo para auditoria.
+            @(_statusVenda == "FINALIZADA"
+                ? "O estoque será devolvido e as contas a receber da venda serão canceladas. Informe o motivo do cancelamento; ele ficará salvo para auditoria."
+                : "Informe o motivo do cancelamento. Este registro ficará salvo para auditoria.")
         </MudText>
         <MudTextField @bind-Value="_motivo"
                       Label="Motivo do cancelamento"
@@ -29,7 +46,7 @@
         <MudButton Variant="Variant.Filled" Color="Color.Error"
                    StartIcon="@Icons.Material.Filled.Cancel"
                    OnClick="Confirmar"
-                   Disabled="@(_cancelando || string.IsNullOrWhiteSpace(_motivo))"
+                   Disabled="@(_cancelando || _carregando || string.IsNullOrWhiteSpace(_motivo))"
                    Style="font-weight:700;">
             @(_cancelando ? "Cancelando..." : "Confirmar Cancelamento")
         </MudButton>
@@ -43,8 +60,19 @@
 
     private string _motivo = string.Empty;
     private bool _cancelando;
+    private bool _carregando = true;
+    private string _statusVenda = string.Empty;
+    private string _nomeCliente = string.Empty;
+    private decimal _totalRecebido;
 
-    protected override void OnInitialized() => _snapshot = DialogServiceExtensions.Snapshot(_motivo);
+    protected override async Task OnInitializedAsync()
+    {
+        _snapshot = DialogServiceExtensions.Snapshot(_motivo);
+        var resumo = await VendaService.ObterResumoCancelamentoAsync(VendaId);
+        if (resumo.HasValue)
+            (_statusVenda, _nomeCliente, _totalRecebido) = resumo.Value;
+        _carregando = false;
+    }
 
     private async Task Confirmar()
     {

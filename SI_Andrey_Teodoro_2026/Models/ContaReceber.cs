@@ -6,6 +6,7 @@ public class ContaReceber
     public int ClienteId { get; set; }
     public string? NomeCliente { get; set; }
     public int? VendaId { get; set; }
+    public string? MotivoCancelamentoVenda { get; set; }
     public string Descricao { get; set; } = string.Empty;
     public DateTime DataVencimento { get; set; }
     public decimal ValorOriginal { get; set; }

@@ -27,6 +27,10 @@ public class ContaPagarService : IContaPagarService
             NumeroNfCompra = c.NumeroNfCompra,
             DataEmissaoCompra = c.DataEmissaoCompra,
             MotivoCancelamentoCompra = c.MotivoCancelamentoCompra,
+            ClienteId = c.ClienteId,
+            NomeCliente = c.NomeCliente,
+            VendaId = c.VendaId,
+            MotivoCancelamentoVenda = c.MotivoCancelamentoVenda,
             Descricao = c.Descricao,
             DataVencimento = c.DataVencimento,
             DataPagamento = c.DataPagamento,
@@ -34,6 +38,7 @@ public class ContaPagarService : IContaPagarService
             ValorOriginal = c.ValorOriginal,
             ValorSaldo = c.ValorSaldo,
             Status = c.Status,
+            CriadoEm = c.CriadoEm,
             AtualizadoEm = c.AtualizadoEm,
             NomeAtualizadoPor = c.NomeAtualizadoPor
         };
@@ -50,6 +55,19 @@ public class ContaPagarService : IContaPagarService
                     return (false, "Conta a pagar não encontrada.", 0);
                 if (existente.Status != "ABERTA")
                     return (false, MensagemNaoAlteravel(existente.Status), 0);
+                if (existente.VendaId.HasValue)
+                {
+                    if (dto.DataVencimento == default)
+                        return (false, "Informe a data de vencimento.", 0);
+                    if (dto.DataVencimento.Date < existente.CriadoEm.Date)
+                        return (false, $"O vencimento não pode ser anterior à data do cancelamento da venda ({existente.CriadoEm:dd/MM/yyyy}).", 0);
+
+                    dto.FornecedorId = null;
+                    dto.Descricao = existente.Descricao;
+                    dto.ValorOriginal = existente.ValorOriginal;
+                    await _repo.AtualizarAsync(dto);
+                    return (true, "Conta a pagar atualizada com sucesso!", dto.Id);
+                }
                 if (existente.CompraId.HasValue)
                 {
                     if (dto.DataVencimento == default)
@@ -76,6 +94,8 @@ public class ContaPagarService : IContaPagarService
 
             if (dto.IdOriginal == 0)
             {
+                dto.ClienteId = null;
+                dto.VendaId = null;
                 var novoId = await _repo.InserirAsync(dto);
                 return (true, "Conta a pagar cadastrada com sucesso!", novoId);
             }
@@ -106,6 +126,7 @@ public class ContaPagarService : IContaPagarService
         {
             var conta = await _repo.ObterPorIdAsync(id);
             if (conta == null) return (false, "Conta a pagar não encontrada.");
+            if (conta.VendaId.HasValue) return (false, "Estorno de venda não pode ser cancelado.");
             if (conta.Status != "ABERTA") return (false, MensagemNaoAlteravel(conta.Status));
             if (conta.CompraId.HasValue) return (false, "Cancele a compra para cancelar suas parcelas.");
             await _repo.AtualizarStatusAsync(id, "CANCELADA");

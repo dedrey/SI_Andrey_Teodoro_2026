@@ -30,37 +30,58 @@
                 </div>
             </div>
         }
+        @if (DeVenda)
+        {
+            <div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Color="Color.Info" Size="Size.Small" />
+                    <MudText Typo="Typo.body2" Style="color:#1565c0;">
+                        @($"Estorno gerado pelo cancelamento da Venda #{_dto.VendaId}. Motivo: {_dto.MotivoCancelamentoVenda}")
+                    </MudText>
+                </div>
+            </div>
+        }
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="8">
-                    <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="FornecedorListDto"
-                                         Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
-                                         ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
-                                         SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
-                                         ToStringFunc="@(f => f?.RazaoSocial ?? "")"
-                                         Label="Fornecedor"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                         ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
-                                         Disabled="@(_somenteLeitura || DaCompra || _semFornecedor)" />
-                        <MudTooltip Text="Pesquisar fornecedor">
-                            <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarFornecedor" Disabled="@(_somenteLeitura || DaCompra || _semFornecedor)" />
-                        </MudTooltip>
-                    </div>
-                </MudItem>
-                <MudItem xs="12" sm="4" Class="d-flex align-center">
-                    @if (!DaCompra)
-                    {
-                        <MudCheckBox T="bool" Value="_semFornecedor" ValueChanged="OnSemFornecedorAlterado"
-                                     Color="Color.Primary" Label="Sem fornecedor (despesa fixa)" Disabled="@_somenteLeitura" />
-                    }
-                </MudItem>
+                @if (DeVenda)
+                {
+                    <MudItem xs="12">
+                        <MudTextField Value="@($"CLIENTE: {_dto.NomeCliente}")" Label="Favorecido"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="true" />
+                    </MudItem>
+                }
+                else
+                {
+                    <MudItem xs="12" sm="8">
+                        <div class="d-flex align-center gap-1">
+                            <MudAutocomplete T="FornecedorListDto"
+                                             Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
+                                             ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
+                                             SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
+                                             ToStringFunc="@(f => f?.RazaoSocial ?? "")"
+                                             Label="Fornecedor"
+                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                             ResetValueOnEmptyText="true" CoerceText="false" Clearable="true"
+                                             Disabled="@(_somenteLeitura || DaCompra || _semFornecedor)" />
+                            <MudTooltip Text="Pesquisar fornecedor">
+                                <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                               OnClick="PesquisarFornecedor" Disabled="@(_somenteLeitura || DaCompra || _semFornecedor)" />
+                            </MudTooltip>
+                        </div>
+                    </MudItem>
+                    <MudItem xs="12" sm="4" Class="d-flex align-center">
+                        @if (!DaCompra)
+                        {
+                            <MudCheckBox T="bool" Value="_semFornecedor" ValueChanged="OnSemFornecedorAlterado"
+                                         Color="Color.Primary" Label="Sem fornecedor (despesa fixa)" Disabled="@_somenteLeitura" />
+                        }
+                    </MudItem>
+                }
                 <MudItem xs="12">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = v)" Label="Descrição"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="150" FullWidth="true"
-                                  ReadOnly="@_somenteLeitura" Disabled="@(_somenteLeitura || DaCompra || !FornecedorOk)" HelperText="@AjudaDescricao"
+                                  ReadOnly="@_somenteLeitura" Disabled="@(_somenteLeitura || Travada || !FornecedorOk)" HelperText="@AjudaDescricao"
                                   Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
                 </MudItem>
                 <MudItem xs="12" sm="6">
@@ -68,14 +89,14 @@
                                   Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura"
-                                  Disabled="@(_somenteLeitura || DaCompra || !DescricaoOk)" HelperText="@AjudaValor" />
+                                  Disabled="@(_somenteLeitura || Travada || !DescricaoOk)" HelperText="@AjudaValor" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="@(!_somenteLeitura)" RequiredError="Obrigatório" Editable="@(!_somenteLeitura)"
-                                   DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura"
-                                   Disabled="@(_somenteLeitura || (!DaCompra && !ValorOk))" HelperText="@AjudaVencimento" />
+                                   DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" MinDate="@VencimentoMinimo"
+                                   Disabled="@(_somenteLeitura || (!Travada && !ValorOk))" HelperText="@AjudaVencimento" />
                 </MudItem>
                 @if (_dto.Status == "PAGA" && _dto.DataPagamento.HasValue)
                 {
@@ -93,6 +114,10 @@
             @if (DaCompra)
             {
                 <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">Valor e fornecedor vêm da Compra #@_dto.CompraId.</MudText>
+            }
+            else if (DeVenda && !_somenteLeitura)
+            {
+                <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">Valor e favorecido vêm do cancelamento da Venda #@_dto.VendaId. Só o vencimento pode ser alterado.</MudText>
             }
         </MudForm>
     </DialogContent>
@@ -123,14 +148,17 @@
 
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
     private bool DaCompra => _dto.CompraId.HasValue;
+    private bool DeVenda => _dto.VendaId.HasValue;
+    private bool Travada => DaCompra || DeVenda;
+    private DateTime? VencimentoMinimo => DeVenda && !_somenteLeitura ? _dto.CriadoEm?.Date : null;
     private bool CanceladaComCompra => DaCompra && _dto.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(_dto.MotivoCancelamentoCompra);
     private bool _semFornecedor;
-    private bool FornecedorOk => DaCompra || _semFornecedor || _dto.FornecedorId.HasValue;
+    private bool FornecedorOk => Travada || _semFornecedor || _dto.FornecedorId.HasValue;
     private bool DescricaoOk => FornecedorOk && !string.IsNullOrWhiteSpace(_dto.Descricao);
     private bool ValorOk => DescricaoOk && _dto.ValorOriginal > 0;
-    private string? AjudaDescricao => DaCompra || _somenteLeitura || FornecedorOk ? null : "Selecione o fornecedor ou marque \"Sem fornecedor\" primeiro.";
-    private string? AjudaValor => DaCompra || _somenteLeitura || DescricaoOk ? null : AjudaDescricao ?? "Informe a descrição primeiro.";
-    private string? AjudaVencimento => DaCompra || _somenteLeitura || ValorOk ? null : AjudaValor ?? "Informe o valor primeiro.";
+    private string? AjudaDescricao => Travada || _somenteLeitura || FornecedorOk ? null : "Selecione o fornecedor ou marque \"Sem fornecedor\" primeiro.";
+    private string? AjudaValor => Travada || _somenteLeitura || DescricaoOk ? null : AjudaDescricao ?? "Informe a descrição primeiro.";
+    private string? AjudaVencimento => Travada || _somenteLeitura || ValorOk ? null : AjudaValor ?? "Informe o valor primeiro.";
 
     private void OnSemFornecedorAlterado(bool valor)
     {
@@ -153,6 +181,11 @@
                 CompraId = DtoEdicao.CompraId,
                 NumeroNfCompra = DtoEdicao.NumeroNfCompra,
                 MotivoCancelamentoCompra = DtoEdicao.MotivoCancelamentoCompra,
+                ClienteId = DtoEdicao.ClienteId,
+                NomeCliente = DtoEdicao.NomeCliente,
+                VendaId = DtoEdicao.VendaId,
+                MotivoCancelamentoVenda = DtoEdicao.MotivoCancelamentoVenda,
+                CriadoEm = DtoEdicao.CriadoEm,
                 Descricao = DtoEdicao.Descricao,
                 DataVencimento = DtoEdicao.DataVencimento,
                 DataPagamento = DtoEdicao.DataPagamento,
@@ -163,7 +196,7 @@
             _dataVencimento = DtoEdicao.DataVencimento;
             _mesExibido = DtoEdicao.DataVencimento;
             _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
-            _semFornecedor = !DtoEdicao.CompraId.HasValue && !DtoEdicao.FornecedorId.HasValue;
+            _semFornecedor = !DtoEdicao.CompraId.HasValue && !DtoEdicao.VendaId.HasValue && !DtoEdicao.FornecedorId.HasValue;
         }
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
