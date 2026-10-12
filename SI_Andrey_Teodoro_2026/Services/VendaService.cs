@@ -76,86 +76,146 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
     {
         try
         {
-            if (dto.IdOriginal != 0)
-            {
-                var vendaAtual = await _repo.ObterPorIdAsync(dto.IdOriginal);
-                if (vendaAtual == null)
-                    return (false, "Venda não encontrada.", 0);
-                if (vendaAtual.StatusVenda != "ABERTA")
-                    return (false, $"Venda {vendaAtual.StatusVenda} não pode ser alterada.", 0);
-                var itensGravados = await _repo.ObterItensPorVendaAsync(dto.IdOriginal);
-                if (itensGravados.Count > 0
-                    && (vendaAtual.ClienteId != dto.ClienteId || vendaAtual.CondicaoPagamentoId != dto.CondicaoPagamentoId))
-                    return (false, "Cliente e condição de pagamento não podem ser alterados em venda com itens gravados.", 0);
-            }
-
-            var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
-            if (itensValidos.Count == 0)
-                return (false, "Adicione pelo menos um item à venda.", 0);
-
-            foreach (var item in itensValidos)
-            {
-                if (item.ProdutoVariacaoId == 0)
-                    return (false, "Selecione a variação de todos os itens.", 0);
-                if (item.Quantidade <= 0)
-                    return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: quantidade deve ser maior que zero.", 0);
-                if (item.ValorUnitario <= 0)
-                    return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: valor unitário deve ser maior que zero.", 0);
-                if (item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade)
-                    return (false, $"{item.NomeProduto}: desconto não pode ser maior que o valor do item.", 0);
-
-                var custoVariacao = await _repo.ObterCustoVariacaoAsync(item.ProdutoVariacaoId);
-                if (custoVariacao.HasValue)
-                {
-                    var (precoCusto, dataUltimaCompra) = custoVariacao.Value;
-                    if (precoCusto > 0 && item.ValorUnitario < precoCusto)
-                    {
-                        bool fastFashion = dataUltimaCompra.HasValue && (DateTime.Today - dataUltimaCompra.Value).TotalDays > 90;
-                        if (!fastFashion)
-                            return (false,
-                                $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: preço de venda (R$ {item.ValorUnitario:N2}) " +
-                                $"abaixo do custo (R$ {precoCusto:N2}). Produto com menos de 90 dias no estoque.", 0);
-                    }
-                }
-            }
-
-            dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
-            var descItens = itensValidos.Sum(i => i.ValorDesconto);
-
-            if (dto.DescontoPercentualAplicado is < 0 or > 100)
-                return (false, "Desconto deve ser entre 0% e 100%.", 0);
-
-            decimal acrescCond = 0, jurosCond = 0;
-            if (dto.CondicaoPagamentoId.HasValue)
-            {
-                var cond = await _condicaoRepo.ObterPorIdAsync(dto.CondicaoPagamentoId.Value);
-                if (cond != null)
-                {
-                    acrescCond = cond.AcrescimoPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.AcrescimoPercentual / 100, 2) : 0m;
-                    jurosCond = cond.TaxaJurosPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.TaxaJurosPercentual / 100, 2) : 0m;
-                }
-            }
-            var descCond = dto.DescontoPercentualAplicado > 0
-                ? Math.Round(dto.ValorSubtotal * dto.DescontoPercentualAplicado / 100, 2)
-                : 0m;
-            dto.ValorDesconto = descItens + descCond;
-            dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + acrescCond + jurosCond;
-
-            if (dto.IdOriginal == 0)
-            {
-                var novoId = await _repo.InserirAsync(dto);
-                foreach (var item in itensValidos)
-                    await _repo.InserirItemAsync(item, novoId);
-                return (true, "Venda criada com sucesso!", novoId);
-            }
-            await _repo.AtualizarAsync(dto);
-            await _repo.RemoverItensAsync(dto.IdOriginal);
-            foreach (var item in itensValidos)
-                await _repo.InserirItemAsync(item, dto.IdOriginal);
-
-            return (true, "Venda atualizada com sucesso!", dto.Id);
+            var erro = await PrepararAsync(dto);
+            if (erro != null) return (false, erro, 0);
+            var novo = dto.IdOriginal == 0;
+            var id = await GravarAsync(dto);
+            return (true, novo ? "Venda criada com sucesso!" : "Venda atualizada com sucesso!", id);
         }
         catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
+    }
+
+    public async Task<(bool sucesso, string mensagem, int id)> SalvarEFinalizarAsync(VendaDto dto)
+    {
+        int id;
+        try
+        {
+            var erro = await PrepararAsync(dto)
+                       ?? await ValidarLimiteCreditoAsync(dto.ClienteId, dto.ValorTotal);
+            if (erro != null) return (false, erro, 0);
+            id = await GravarAsync(dto);
+        }
+        catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
+
+        var (sucesso, mensagem) = await FinalizarAsync(id);
+        return sucesso
+            ? (true, mensagem, id)
+            : (false, $"Venda #{id} gravada como ABERTA, mas não foi finalizada. {mensagem}", id);
+    }
+
+    private async Task<string?> PrepararAsync(VendaDto dto)
+    {
+        if (dto.IdOriginal != 0)
+        {
+            var vendaAtual = await _repo.ObterPorIdAsync(dto.IdOriginal);
+            if (vendaAtual == null)
+                return "Venda não encontrada.";
+            if (vendaAtual.StatusVenda != "ABERTA")
+                return $"Venda {vendaAtual.StatusVenda} não pode ser alterada.";
+            var itensGravados = await _repo.ObterItensPorVendaAsync(dto.IdOriginal);
+            if (itensGravados.Count > 0
+                && (vendaAtual.ClienteId != dto.ClienteId || vendaAtual.CondicaoPagamentoId != dto.CondicaoPagamentoId))
+                return "Cliente e condição de pagamento não podem ser alterados em venda com itens gravados.";
+        }
+
+        var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
+        if (itensValidos.Count == 0)
+            return "Adicione pelo menos um item à venda.";
+
+        foreach (var item in itensValidos)
+        {
+            if (item.ProdutoVariacaoId == 0)
+                return "Selecione a variação de todos os itens.";
+            if (item.Quantidade <= 0)
+                return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: quantidade deve ser maior que zero.";
+            if (item.ValorUnitario <= 0)
+                return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: valor unitário deve ser maior que zero.";
+            if (item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade)
+                return $"{item.NomeProduto}: desconto não pode ser maior que o valor do item.";
+
+            var custoVariacao = await _repo.ObterCustoVariacaoAsync(item.ProdutoVariacaoId);
+            if (custoVariacao.HasValue)
+            {
+                var (precoCusto, dataUltimaCompra) = custoVariacao.Value;
+                if (precoCusto > 0 && item.ValorUnitario < precoCusto)
+                {
+                    bool fastFashion = dataUltimaCompra.HasValue && (DateTime.Today - dataUltimaCompra.Value).TotalDays > 90;
+                    if (!fastFashion)
+                        return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: preço de venda (R$ {item.ValorUnitario:N2}) " +
+                               $"abaixo do custo (R$ {precoCusto:N2}). Produto com menos de 90 dias no estoque.";
+                }
+            }
+        }
+
+        var erroEstoque = await ValidarEstoqueAsync(itensValidos.Select(i =>
+            (i.ProdutoVariacaoId, i.Quantidade, $"{i.NomeProduto} {i.Cor}/{i.Tamanho}")));
+        if (erroEstoque != null) return erroEstoque;
+
+        dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
+        var descItens = itensValidos.Sum(i => i.ValorDesconto);
+
+        if (dto.DescontoPercentualAplicado is < 0 or > 100)
+            return "Desconto deve ser entre 0% e 100%.";
+
+        decimal acrescCond = 0, jurosCond = 0;
+        if (dto.CondicaoPagamentoId.HasValue)
+        {
+            var cond = await _condicaoRepo.ObterPorIdAsync(dto.CondicaoPagamentoId.Value);
+            if (cond != null)
+            {
+                acrescCond = cond.AcrescimoPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.AcrescimoPercentual / 100, 2) : 0m;
+                jurosCond = cond.TaxaJurosPercentual > 0 ? Math.Round(dto.ValorSubtotal * cond.TaxaJurosPercentual / 100, 2) : 0m;
+            }
+        }
+        var descCond = dto.DescontoPercentualAplicado > 0
+            ? Math.Round(dto.ValorSubtotal * dto.DescontoPercentualAplicado / 100, 2)
+            : 0m;
+        dto.ValorDesconto = descItens + descCond;
+        dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + acrescCond + jurosCond;
+        return null;
+    }
+
+    private async Task<int> GravarAsync(VendaDto dto)
+    {
+        var itensValidos = dto.Itens.Where(i => !i.Removido).ToList();
+        if (dto.IdOriginal == 0)
+        {
+            var novoId = await _repo.InserirAsync(dto);
+            foreach (var item in itensValidos)
+                await _repo.InserirItemAsync(item, novoId);
+            return novoId;
+        }
+        await _repo.AtualizarAsync(dto);
+        await _repo.RemoverItensAsync(dto.IdOriginal);
+        foreach (var item in itensValidos)
+            await _repo.InserirItemAsync(item, dto.IdOriginal);
+        return dto.IdOriginal;
+    }
+
+    private async Task<string?> ValidarEstoqueAsync(IEnumerable<(int VariacaoId, int Quantidade, string Descricao)> itens)
+    {
+        foreach (var grupo in itens.GroupBy(i => i.VariacaoId))
+        {
+            var estoque = await _repo.ObterEstoqueAtualAsync(grupo.Key);
+            var total = grupo.Sum(i => i.Quantidade);
+            if (total > estoque)
+                return $"{grupo.First().Descricao}: quantidade ({total}) maior que o estoque. Disponível: {estoque} un.";
+        }
+        return null;
+    }
+
+    private async Task<string?> ValidarLimiteCreditoAsync(int? clienteId, decimal valorTotal)
+    {
+        if (!clienteId.HasValue) return null;
+        var cliente = await _clienteRepo.ObterPorIdAsync(clienteId.Value);
+        if (cliente == null || cliente.LimiteCredito <= 0) return null;
+        var saldoDevido = await _clienteRepo.ObterSaldoDevidoAsync(clienteId.Value);
+        var totalComEstaVenda = saldoDevido + valorTotal;
+        return totalComEstaVenda > cliente.LimiteCredito
+            ? $"Limite de crédito insuficiente para {cliente.NomeRazaoSocial}. " +
+              $"Limite: R$ {cliente.LimiteCredito:N2} | Já devido: R$ {saldoDevido:N2} | " +
+              $"Esta venda: R$ {valorTotal:N2} | Total ficaria: R$ {totalComEstaVenda:N2}."
+            : null;
     }
 
     public async Task<(bool sucesso, string mensagem)> FinalizarAsync(int vendaId)
@@ -169,27 +229,10 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
             var itens = await _repo.ObterItensPorVendaAsync(vendaId);
             if (itens.Count == 0) return (false, "A venda não possui itens.");
 
-            if (venda.ClienteId.HasValue)
-            {
-                var cliente = await _clienteRepo.ObterPorIdAsync(venda.ClienteId.Value);
-                if (cliente != null && cliente.LimiteCredito > 0)
-                {
-                    var saldoDevido = await _clienteRepo.ObterSaldoDevidoAsync(venda.ClienteId.Value);
-                    var totalComEstaVenda = saldoDevido + venda.ValorTotal;
-                    if (totalComEstaVenda > cliente.LimiteCredito)
-                        return (false,
-                            $"Limite de crédito insuficiente para {cliente.NomeRazaoSocial}. " +
-                            $"Limite: R$ {cliente.LimiteCredito:N2} | Já devido: R$ {saldoDevido:N2} | " +
-                            $"Esta venda: R$ {venda.ValorTotal:N2} | Total ficaria: R$ {totalComEstaVenda:N2}.");
-                }
-            }
-
-            foreach (var item in itens)
-            {
-                var estoque = await _repo.ObterEstoqueAtualAsync(item.ProdutoVariacaoId);
-                if (estoque < item.Quantidade)
-                    return (false, $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: estoque insuficiente. Disponível: {estoque} un.");
-            }
+            var erro = await ValidarLimiteCreditoAsync(venda.ClienteId, venda.ValorTotal)
+                       ?? await ValidarEstoqueAsync(itens.Select(i =>
+                           (i.ProdutoVariacaoId, i.Quantidade, $"{i.NomeProduto} {i.Cor}/{i.Tamanho}")));
+            if (erro != null) return (false, erro);
             var condicao = venda.ClienteId.HasValue && venda.CondicaoPagamentoId.HasValue
                 ? await _condicaoRepo.ObterPorIdAsync(venda.CondicaoPagamentoId.Value)
                 : null;

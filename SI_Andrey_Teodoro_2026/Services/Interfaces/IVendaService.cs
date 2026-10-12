@@ -9,6 +9,7 @@ public interface IVendaService
     Task<List<VendaItemListDto>> ObterItensAsync(int vendaId);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(VendaDto dto);
     Task<(bool sucesso, string mensagem)> FinalizarAsync(int vendaId);
+    Task<(bool sucesso, string mensagem, int id)> SalvarEFinalizarAsync(VendaDto dto);
     Task<(bool sucesso, string mensagem)> CancelarAsync(int vendaId, string motivo);
     Task<(string statusVenda, string nomeCliente, decimal totalRecebido)?> ObterResumoCancelamentoAsync(int vendaId);
 }

@@ -21,7 +21,7 @@
             <MudDatePicker @bind-Date="_dataPagamento" PickerMonth="DateTime.Today" Label="Data de Pagamento"
                            Variant="Variant.Outlined" Margin="Margin.Dense"
                            Required="true" RequiredError="Informe a data de pagamento"
-                           Editable="true" DateFormat="dd/MM/yyyy"
+                           Editable="true" Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
                            HelperText="Pode ser diferente da data de vencimento" />
 
             <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-top:16px;margin-bottom:8px;">

@@ -85,17 +85,19 @@
                                   Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_valorTexto" ValueChanged="@((string v) => OnValorAlterado(v))"
-                                  Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
-                                  Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura"
+                    <MudNumericField T="decimal" Value="_dto.ValorOriginal" ValueChanged="@((decimal v) => _dto.ValorOriginal = Math.Max(v, 0))"
+                                     Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true"
+                                     Required="true" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
+                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true"
+                                     Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura"
                                   Disabled="@(_somenteLeitura || Travada || !DescricaoOk)" HelperText="@AjudaValor" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="@(!_somenteLeitura)" RequiredError="Obrigatório" Editable="@(!_somenteLeitura)"
-                                   DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura" MinDate="@VencimentoMinimo"
+                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                                   ReadOnly="@_somenteLeitura" MinDate="@VencimentoMinimo"
                                    Disabled="@(_somenteLeitura || (!Travada && !ValorOk))" HelperText="@AjudaVencimento" />
                 </MudItem>
                 @if (_dto.Status == "PAGA" && _dto.DataPagamento.HasValue)
@@ -143,7 +145,7 @@
     private ContaPagarDto _dto = new();
     private DateTime? _dataVencimento;
     private DateTime? _mesExibido = DateTime.Today;
-    private string _valorTexto = "";
+    private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
     private List<FornecedorListDto> _fornecedores = new();
 
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
@@ -195,19 +197,9 @@
             };
             _dataVencimento = DtoEdicao.DataVencimento;
             _mesExibido = DtoEdicao.DataVencimento;
-            _valorTexto = DtoEdicao.ValorOriginal.ToString("N2");
             _semFornecedor = !DtoEdicao.CompraId.HasValue && !DtoEdicao.VendaId.HasValue && !DtoEdicao.FornecedorId.HasValue;
         }
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
-    }
-
-    private void OnValorAlterado(string? texto)
-    {
-        if (string.IsNullOrEmpty(texto)) { _valorTexto = ""; _dto.ValorOriginal = 0; return; }
-        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _valorTexto = f;
-        _dto.ValorOriginal = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                              System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
     }
 
     private static string FormatarStatus(string status) => status switch
@@ -249,7 +241,7 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
 
-    private object DadosEditaveis() => new { _dto, _dataVencimento, _valorTexto };
+    private object DadosEditaveis() => new { _dto, _dataVencimento };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _somenteLeitura, _snapshot, DadosEditaveis());
 
 }

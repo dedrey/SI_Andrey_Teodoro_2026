@@ -1,4 +1,4 @@
-@inject ICompraService CompraService
+﻿@inject ICompraService CompraService
 @inject IFornecedorService FornecedorService
 @inject ITransportadoraService TransportadoraService
 @inject IProdutoService ProdutoService
@@ -181,9 +181,10 @@
                         <MudTd>@context.Cor / @context.Tamanho</MudTd>
                         <MudTd Style="text-align:right;">@context.Quantidade</MudTd>
                         <MudTd>
-                            <MudTextField @ref="_camposCusto[context]" Value="@GetValorTexto(context)" ValueChanged="@((string v) => OnValorAlterado(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          Adornment="Adornment.Start" AdornmentText="R$" Disabled="@LinhaBloqueada(context)" />
+                            <MudNumericField T="decimal" @ref="_camposCusto[context]" Value="context.ValorUnitario" ValueChanged="@((decimal v) => OnValorAlterado(context, v))"
+                                             HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
+                                             Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)" />
                         </MudTd>
                         <MudTd>
                             <MudNumericField T="decimal" Value="context.DescontoPercentual" ValueChanged="@((decimal v) => OnDescontoPercentualAlterado(context, v))"
@@ -197,7 +198,7 @@
                             <MudNumericField T="decimal" Value="context.ValorDesconto" ValueChanged="@((decimal v) => OnDescontoValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                             Format="N2" FullWidth="true" Disabled="@LinhaBloqueada(context)"
+                                             Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Validation="@(new Func<decimal, string?>(v => ErroDescontoValor(context, v)))"
                                              Error="@(ErroDescontoValor(context, context.ValorDesconto) != null)" ErrorText="@ErroDescontoValor(context, context.ValorDesconto)" />
                         </MudTd>
@@ -340,21 +341,21 @@
                                     <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = v))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Min="0" Format="N2" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.body2">Seguro</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
                                     <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = v))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Min="0" Format="N2" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
                                     <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = v))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Min="0" Format="N2" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:700;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;">Total da Nota</MudText>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
@@ -421,7 +422,6 @@
         foreach (var item in _dto.Itens)
         {
             _produtosSelecionados[item] = _produtos.FirstOrDefault(p => item.ProdutoId > 0 ? p.Id == item.ProdutoId : p.Produto == item.NomeProduto);
-            _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : "";
         }
         OrdenarItens();
         RecalcularTotais();
@@ -450,11 +450,11 @@
         ? _contasPagar.Count > 0
         : _dto.CondicaoPagamentoId.HasValue && _itensConfirmados && _dto.ValorTotal > 0;
     private List<ProdutoListDto> _produtos = new();
-    private readonly Dictionary<CompraItemDto, MudTextField<string>> _camposCusto = new();
+    private readonly Dictionary<CompraItemDto, MudNumericField<decimal>> _camposCusto = new();
+    private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
     private Dictionary<string, int> _ordemTamanhos = new();
     private CompraItemDto? _focarCusto;
     private readonly Dictionary<CompraItemDto, ProdutoListDto?> _produtosSelecionados = new();
-    private readonly Dictionary<CompraItemDto, string> _valorTextos = new();
     private readonly Dictionary<CompraItemDto, bool> _ultimoDescontoPercentual = new();
     private bool CabecalhoBloqueado => _dto.Itens.Any(i => !i.Removido);
     private bool ImportarXmlVisivel => !SomenteLeitura && !CabecalhoBloqueado;
@@ -689,7 +689,6 @@
                 };
                 _dto.Itens.Add(item);
                 _produtosSelecionados[item] = grade.Produto;
-                _valorTextos[item] = "";
                 novas.Add(item);
                 continue;
             }
@@ -728,19 +727,14 @@
         _dto.Itens.Remove(item);
         _produtosSelecionados.Remove(item);
         _camposCusto.Remove(item);
-        _valorTextos.Remove(item);
         _ultimoDescontoPercentual.Remove(item);
         RecalcularTotais();
         StateHasChanged();
     }
 
-    private string GetValorTexto(CompraItemDto item) { if (!_valorTextos.ContainsKey(item)) _valorTextos[item] = item.ValorUnitario > 0 ? item.ValorUnitario.ToString("N2") : ""; return _valorTextos[item]; }
-    private void OnValorAlterado(CompraItemDto item, string? texto)
+    private void OnValorAlterado(CompraItemDto item, decimal valor)
     {
-        if (string.IsNullOrEmpty(texto)) { _valorTextos[item] = ""; item.ValorUnitario = 0; SincronizarDesconto(item); RecalcularTotais(); return; }
-        var f = new string(texto.Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _valorTextos[item] = f;
-        item.ValorUnitario = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        item.ValorUnitario = Math.Max(valor, 0);
         SincronizarDesconto(item);
         RecalcularTotais();
     }

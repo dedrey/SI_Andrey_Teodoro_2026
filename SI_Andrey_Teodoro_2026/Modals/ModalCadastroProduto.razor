@@ -133,9 +133,10 @@
                 <div class="d-flex align-center gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
                     <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Style="color:#888;" />
                     <MudText Typo="Typo.body2" Style="color:#666;white-space:nowrap;">Replicar valor de venda pra todas as variações:</MudText>
-                    <MudTextField Value="@_replicarVendaTexto" ValueChanged="@((string v) => _replicarVendaTexto = v)"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                  Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:160px;" Disabled="@Bloqueado(2)" />
+                    <MudNumericField T="decimal" Value="_replicarVenda" ValueChanged="@((decimal v) => _replicarVenda = Math.Max(v, 0))"
+                                     HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Min="0" Format="N2" Culture="@_culturaBr"
+                                     Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:160px;" Disabled="@Bloqueado(2)" />
                     <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="ReplicarValorVenda" Disabled="@Bloqueado(2)">
                         Replicar Valor de Venda
@@ -212,9 +213,10 @@
                         <MudTd Style="font-weight:600;">@context.Cor</MudTd>
                         <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
                         <MudTd>
-                            <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Bloqueado(2)"
+                            <MudNumericField T="decimal" Value="context.Preco" ValueChanged="@((decimal v) => context.Preco = Math.Max(v, 0))"
+                                             HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Min="0" Format="N2" Culture="@_culturaBr"
+                                             FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Bloqueado(2)"
                                           Style="@(abaixoCusto && !fastFashion ? "border-color:red;" : "")" />
                             @if (abaixoCusto)
                             {
@@ -310,8 +312,8 @@
     private List<UnidadeMedidaListDto> _unidades = new();
     private List<CorListDto> _cores = new();
     private List<TamanhoListDto> _tamanhos = new();
-    private readonly Dictionary<ProdutoVariacaoDto, string> _precoTextos = new();
-    private string _replicarVendaTexto = "";
+    private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
+    private decimal _replicarVenda;
     private IReadOnlyCollection<int> _coresLote = new List<int>();
     private IReadOnlyCollection<int> _tamanhosLote = new List<int>();
     private HashSet<int> _variacoesComMovimento = new();
@@ -356,11 +358,6 @@
         _readOnly = SomenteLeitura;
         _dto = DtoEdicao ?? new ProdutoDto();
         _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "os dados do produto");
-        if (DtoEdicao != null)
-        {
-            foreach (var v in _dto.Variacoes)
-                _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
-        }
         await Task.WhenAll(
             Task.Run(async () => _categorias = (await CategoriaService.ObterTodosAtivosAsync()).ToList()),
             Task.Run(async () => _marcas = (await MarcaService.ObterTodosAtivosAsync()).ToList()),
@@ -375,29 +372,14 @@
 
     private void RemoverVariacao(ProdutoVariacaoDto v)
     {
-        if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); }
+        if (v.IdOriginal == 0) _dto.Variacoes.Remove(v);
         else v.Removida = true;
-        StateHasChanged();
-    }
-
-    private string GetPrecoTexto(ProdutoVariacaoDto v)
-    {
-        if (!_precoTextos.ContainsKey(v)) _precoTextos[v] = v.Preco > 0 ? v.Preco.ToString("N2") : "";
-        return _precoTextos[v];
-    }
-    private void OnPrecoAlterado(ProdutoVariacaoDto v, string? texto)
-    {
-        var f = new string((texto ?? "").Where(c => char.IsDigit(c) || c == ',' || c == '.').ToArray());
-        _precoTextos[v] = f;
-        v.Preco = decimal.TryParse(f.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                   System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
         StateHasChanged();
     }
 
     private void ReplicarValorVenda()
     {
-        var valor = decimal.TryParse(_replicarVendaTexto.Replace(",", "."), System.Globalization.NumberStyles.Any,
-                                     System.Globalization.CultureInfo.InvariantCulture, out decimal d) ? d : 0;
+        var valor = _replicarVenda;
         if (valor <= 0)
         {
             Snackbar.Add("Informe um valor de venda antes de replicar.", Severity.Warning);
@@ -405,10 +387,7 @@
         }
 
         foreach (var v in _dto.Variacoes.Where(v => !v.Removida))
-        {
             v.Preco = valor;
-            _precoTextos[v] = valor.ToString("N2");
-        }
         Snackbar.Add($"Valor de venda aplicado a todas as {_dto.Variacoes.Count(v => !v.Removida)} variações.", Severity.Success);
         StateHasChanged();
     }
@@ -444,7 +423,6 @@
                     Preco = ultima?.Preco ?? 0
                 };
                 _dto.Variacoes.Add(nova);
-                _precoTextos[nova] = nova.Preco > 0 ? nova.Preco.ToString("N2") : "";
                 criadas++;
             }
         }
@@ -547,6 +525,6 @@
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
-    private object DadosEditaveis() => new { _dto, _replicarVendaTexto, _coresLote, _tamanhosLote };
+    private object DadosEditaveis() => new { _dto, _replicarVenda, _coresLote, _tamanhosLote };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }
