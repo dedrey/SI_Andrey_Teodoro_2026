@@ -40,6 +40,15 @@ public static class DocumentoHelper
     public static string? ValidarDocumento(string? documento, string tipoPessoa) =>
         tipoPessoa == "PF" ? ValidarCpf(documento) : ValidarCnpj(documento);
 
+    public static bool CepValido(string? cep) => SomenteDigitos(cep).Length == 8;
+
+    public static string? ValidarCep(string? cep) => SomenteDigitos(cep).Length switch
+    {
+        0 => "Obrigatório",
+        8 => null,
+        _ => "CEP incompleto."
+    };
+
     private static bool Digito(string d, int[] pesos, int posicao)
     {
         var soma = pesos.Select((p, i) => (d[i] - '0') * p).Sum();

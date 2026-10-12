@@ -11,12 +11,13 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(_dto.IdOriginal != 0 ? "Editar Produto" : "Novo Produto")</MudText>
+            <MudText Typo="Typo.h6">@(Edicao ? "Editar Produto" : "Cadastrar Novo Produto")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
+                <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Inventory2" Titulo="Dados do Produto" AoMudar="StateHasChanged" />
                 @if (_dto.IdOriginal != 0)
                 {
                     <MudItem xs="3" sm="2" md="1">
@@ -28,11 +29,8 @@
                     <MudTextField Value="@_dto.Produto" ValueChanged="@((string v) => _dto.Produto = v)"
                                   Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarNome(v))" />
+                                  Validation="@((string v) => ValidarNome(v))" Disabled="@Bloqueado(1)" />
                 </MudItem>
-            </MudGrid>
-
-            <MudGrid Spacing="2" Class="mt-2">
                 <MudItem xs="12" sm="5" md="5">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="CategoriaListDto"
@@ -42,10 +40,10 @@
                                          ToStringFunc="@(c => c?.NomeCategoria ?? "")"
                                          Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
-                                         Disabled="@(!NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome do produto primeiro.")" />
+                                         Disabled="@(Bloqueado(1) || !NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome do produto primeiro.")" />
                         <MudTooltip Text="Pesquisar categoria">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarCategoria" Disabled="@(!NomeOk)" />
+                                           OnClick="PesquisarCategoria" Disabled="@(Bloqueado(1) || !NomeOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -58,10 +56,10 @@
                                          ToStringFunc="@(m => m?.NomeMarca ?? "")"
                                          Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
-                                         Disabled="@(!CategoriaOk)" HelperText="@(CategoriaOk ? null : "Selecione a categoria primeiro.")" />
+                                         Disabled="@(Bloqueado(1) || !CategoriaOk)" HelperText="@(CategoriaOk ? null : "Selecione a categoria primeiro.")" />
                         <MudTooltip Text="Pesquisar marca">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarMarca" Disabled="@(!CategoriaOk)" />
+                                           OnClick="PesquisarMarca" Disabled="@(Bloqueado(1) || !CategoriaOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -74,48 +72,42 @@
                                          ToStringFunc="@(u => u == null ? "" : $"{u.Sigla} — {u.Descricao}")"
                                          Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
-                                         Disabled="@(!MarcaOk)" HelperText="@(MarcaOk ? null : "Selecione a marca primeiro.")" />
+                                         Disabled="@(Bloqueado(1) || !MarcaOk)" HelperText="@(MarcaOk ? null : "Selecione a marca primeiro.")" />
                         <MudTooltip Text="Pesquisar unidade de medida">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarUnidade" Disabled="@(!MarcaOk)" />
+                                           OnClick="PesquisarUnidade" Disabled="@(Bloqueado(1) || !MarcaOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
-            </MudGrid>
-
-            <MudGrid Spacing="2" Class="mt-2">
-                <MudItem xs="12">
+                <MudItem xs="12" sm="8" md="9">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
                                   Label="Descrição" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2"
-                                  Disabled="@(!CabecalhoOk)" HelperText="@(CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
+                                  Disabled="@(Bloqueado(1) || !CabecalhoOk)" HelperText="@(CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
                 </MudItem>
-            </MudGrid>
-
-            <MudDivider Class="my-4" />
-            <MudGrid Spacing="2" Class="mb-2">
-                <MudItem xs="12" sm="6" md="3">
+                <MudItem xs="12" sm="4" md="3">
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
                                   Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(!CabecalhoOk)"
+                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !CabecalhoOk)"
                                   HelperText="@(CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
                 </MudItem>
-            </MudGrid>
 
-            <MudDivider Class="my-4" />
-            <div class="d-flex align-center justify-space-between mb-3">
-                <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
-                    Variações (Cor / Tamanho / Preço de Venda)
-                </MudText>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarVariacao" Disabled="@(!CabecalhoOk)">
-                    Nova Variação
-                </MudButton>
-            </div>
+                <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Style" Titulo="Variações (Cor / Tamanho / Preço de Venda)" AoMudar="StateHasChanged">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarVariacao" Disabled="@VariacoesBloqueadas">
+                        Nova Variação
+                    </MudButton>
+                </TituloSecao>
+            </MudGrid>
             @if (!CabecalhoOk)
             {
-                <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:-4px 0 12px;">Preencha nome, categoria, marca e unidade para adicionar variações.</MudText>
+                <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Preencha nome, categoria, marca e unidade para adicionar variações.</MudText>
             }
+            else if (Bloqueado(2))
+            {
+                <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Confirme os dados do produto para voltar a editar as variações.</MudText>
+            }
+            <div class="mb-3"></div>
 
             @if (_dto.Variacoes.Count(v => !v.Removida) > 1)
             {
@@ -124,20 +116,20 @@
                     <MudText Typo="Typo.body2" Style="color:#666;white-space:nowrap;">Replicar valor de venda pra todas as variações:</MudText>
                     <MudTextField Value="@_replicarVendaTexto" ValueChanged="@((string v) => _replicarVendaTexto = v)"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                  Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:160px;" />
+                                  Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:160px;" Disabled="@Bloqueado(2)" />
                     <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="ReplicarValorVenda">
+                               StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="ReplicarValorVenda" Disabled="@Bloqueado(2)">
                         Replicar Valor de Venda
                     </MudButton>
                 </div>
             }
 
             <MudExpansionPanels Elevation="0" Class="mb-3" Style="border:1px solid #e0e0e0;border-radius:8px;">
-                <MudExpansionPanel Text="Gerar várias combinações de cor × tamanho de uma vez" Icon="@Icons.Material.Filled.GridView">
+                <MudExpansionPanel Text="Gerar várias combinações de cor × tamanho de uma vez" Icon="@Icons.Material.Filled.GridView" Disabled="@VariacoesBloqueadas">
                     <div class="d-flex flex-wrap align-end gap-3">
                         <div class="d-flex align-center gap-1">
                             <MudSelect T="int" @bind-SelectedValues="_coresLote" MultiSelection="true" Label="Cores"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;" Disabled="@VariacoesBloqueadas"
                                        MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} cor(es) selecionada(s)")">
                                 @foreach (var c in _cores)
                                 {
@@ -146,12 +138,12 @@
                             </MudSelect>
                             <MudTooltip Text="Pesquisar cor">
                                 <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                               OnClick="PesquisarCorLote" />
+                                               OnClick="PesquisarCorLote" Disabled="@VariacoesBloqueadas" />
                             </MudTooltip>
                         </div>
                         <div class="d-flex align-center gap-1">
                             <MudSelect T="int" @bind-SelectedValues="_tamanhosLote" MultiSelection="true" Label="Tamanhos"
-                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
+                                       Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;" Disabled="@VariacoesBloqueadas"
                                        MultiSelectionTextFunc="@((IReadOnlyList<string> l) => $"{l.Count} tamanho(s) selecionado(s)")">
                                 @foreach (var t in _tamanhos)
                                 {
@@ -160,11 +152,11 @@
                             </MudSelect>
                             <MudTooltip Text="Pesquisar tamanho">
                                 <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                               OnClick="PesquisarTamanhoLote" />
+                                               OnClick="PesquisarTamanhoLote" Disabled="@VariacoesBloqueadas" />
                             </MudTooltip>
                         </div>
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView"
-                                   OnClick="GerarCombinacoes" Style="height:40px;" Disabled="@(!CabecalhoOk)">
+                                   OnClick="GerarCombinacoes" Style="height:40px;" Disabled="@VariacoesBloqueadas">
                             Gerar combinações
                         </MudButton>
                     </div>
@@ -198,7 +190,7 @@
                             <div class="d-flex align-center gap-1">
                                 <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
                                            Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                           Disabled="@ComMovimento(context)" HelperText="@AjudaMovimento(context)">
+                                           Disabled="@(ComMovimento(context) || Bloqueado(2))" HelperText="@AjudaMovimento(context)">
                                     <MudSelectItem T="int" Value="0" Disabled="true">— Cor —</MudSelectItem>
                                     @foreach (var c in _cores)
                                     {
@@ -207,7 +199,7 @@
                                 </MudSelect>
                                 <MudTooltip Text="Pesquisar cor">
                                     <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                                   OnClick="@(() => PesquisarCorVariacao(context))" Disabled="@ComMovimento(context)" />
+                                                   OnClick="@(() => PesquisarCorVariacao(context))" Disabled="@(ComMovimento(context) || Bloqueado(2))" />
                                 </MudTooltip>
                             </div>
                         </MudTd>
@@ -215,7 +207,7 @@
                             <div class="d-flex align-center gap-1">
                                 <MudSelect T="int" Value="context.TamanhoId" ValueChanged="@((int id) => { context.TamanhoId = id; context.Tamanho = _tamanhos.FirstOrDefault(t => t.Id == id)?.Nome ?? ""; })"
                                            Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                           Disabled="@ComMovimento(context)" HelperText="@AjudaMovimento(context)">
+                                           Disabled="@(ComMovimento(context) || Bloqueado(2))" HelperText="@AjudaMovimento(context)">
                                     <MudSelectItem T="int" Value="0" Disabled="true">— Tam —</MudSelectItem>
                                     @foreach (var t in _tamanhos)
                                     {
@@ -224,14 +216,14 @@
                                 </MudSelect>
                                 <MudTooltip Text="Pesquisar tamanho">
                                     <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                                   OnClick="@(() => PesquisarTamanhoVariacao(context))" Disabled="@ComMovimento(context)" />
+                                                   OnClick="@(() => PesquisarTamanhoVariacao(context))" Disabled="@(ComMovimento(context) || Bloqueado(2))" />
                                 </MudTooltip>
                             </div>
                         </MudTd>
                         <MudTd>
                             <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
-                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$"
+                                          FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Bloqueado(2)"
                                           Style="@(abaixoCusto && !fastFashion ? "border-color:red;" : "")" />
                             @if (abaixoCusto)
                             {
@@ -260,7 +252,7 @@
                             @if (context.IdOriginal == 0)
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error"
-                                               Size="Size.Small" OnClick="@(() => RemoverVariacao(context))" />
+                                               Size="Size.Small" OnClick="@(() => RemoverVariacao(context))" Disabled="@Bloqueado(2)" />
                             }
                             else
                             {
@@ -288,7 +280,7 @@
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                   Disabled="_salvando" Style="height:40px;font-weight:700;min-width:140px;">
+                   Disabled="@(_salvando || _grupos.Editando.HasValue)" Style="height:40px;font-weight:700;min-width:140px;">
             @(_salvando ? "Salvando..." : "SALVAR")
         </MudButton>
     </DialogActions>
@@ -313,11 +305,23 @@
     private IReadOnlyCollection<int> _tamanhosLote = new List<int>();
     private HashSet<int> _variacoesComMovimento = new();
     private const string MsgMovimento = "Variação com movimentação: só preço e situação podem ser alterados.";
+    private GruposProgressivos _grupos = null!;
 
     private bool NomeOk => ValidarNome(_dto.Produto) == null;
     private bool CategoriaOk => NomeOk && _dto.CategoriaId > 0;
     private bool MarcaOk => CategoriaOk && _dto.MarcaId > 0;
     private bool CabecalhoOk => MarcaOk && _dto.UnidadeMedidaId > 0;
+    private bool Edicao => _dto.IdOriginal > 0;
+    private bool Bloqueado(int g) => _grupos.Bloqueado(g);
+    private bool VariacoesBloqueadas => Bloqueado(2) || !CabecalhoOk;
+    private string? ErroGrupo(int g) => g switch
+    {
+        1 when ValidarNome(_dto.Produto) is string erro => $"Produto: {erro}.",
+        1 when _dto.CategoriaId <= 0 => "Selecione a categoria.",
+        1 when _dto.MarcaId <= 0 => "Selecione a marca.",
+        1 when _dto.UnidadeMedidaId <= 0 => "Selecione a unidade.",
+        _ => null
+    };
     private bool ComMovimento(ProdutoVariacaoDto v) => v.IdOriginal > 0 && _variacoesComMovimento.Contains(v.IdOriginal);
     private string? AjudaMovimento(ProdutoVariacaoDto v) => ComMovimento(v) ? MsgMovimento : null;
     private static string? ValidarNome(string? v) =>
@@ -327,6 +331,7 @@
     protected override async Task OnInitializedAsync()
     {
         _dto = DtoEdicao ?? new ProdutoDto();
+        _grupos = new(() => !Edicao, ErroGrupo, "os dados do produto");
         if (DtoEdicao != null)
         {
             foreach (var v in _dto.Variacoes)
@@ -352,6 +357,7 @@
             nova.Preco = ultima.Preco;
         _dto.Variacoes.Add(nova);
         _precoTextos[nova] = nova.Preco > 0 ? nova.Preco.ToString("N2") : "";
+        _grupos.Alterou(2);
         StateHasChanged();
     }
     private void RemoverVariacao(ProdutoVariacaoDto v)
@@ -430,6 +436,7 @@
             }
         }
 
+        if (criadas > 0) _grupos.Alterou(2);
         var msg = criadas > 0
             ? $"{criadas} variação(ões) criada(s)." + (existentes > 0 ? $" {existentes} já existia(m) e foram pulada(s)." : "")
             : "Todas as combinações selecionadas já existiam.";

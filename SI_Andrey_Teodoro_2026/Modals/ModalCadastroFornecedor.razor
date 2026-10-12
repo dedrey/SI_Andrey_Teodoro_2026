@@ -16,7 +16,7 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                @TituloGrupo(1, Icons.Material.Filled.Badge, "Identificação")
+                <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Badge" Titulo="Identificação" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="3">
                     <MudSelect T="string" Value="@_dto.TipoPessoa" ValueChanged="OnTipoPessoaAlterado"
                                Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
@@ -46,7 +46,7 @@
                                       Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante" />
                     </MudItem>
                 }
-                @TituloGrupo(2, Icons.Material.Filled.Place, "Endereço")
+                <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Place" Titulo="Endereço" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="CidadeListDto" Label="Cidade"
@@ -86,9 +86,10 @@
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = MascaraCep(v); Alterou(2); })"
                                   Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => DocumentoHelper.ValidarCep(v))"
+                                  Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
-                @TituloGrupo(3, Icons.Material.Filled.ContactPhone, "Contato e Pagamento")
+                <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato e Pagamento" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = MascaraTel(v); Alterou(3); })"
                                   Label="Telefone" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -143,7 +144,7 @@
         {
             <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
-                       Disabled="@(_salvando || _grupoEditando.HasValue)" StartIcon="@Icons.Material.Filled.Save">
+                       Disabled="@(_salvando || _grupos.Editando.HasValue)" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")
             </MudButton>
         }
@@ -164,8 +165,7 @@
     private List<CidadeListDto> _cidades = new();
     private CidadeListDto? _cidadeSelecionada;
     private List<CondicaoPagamentoListDto> _condicoes = new();
-    private int _grupoAtual = 1;
-    private int? _grupoEditando;
+    private GruposProgressivos _grupos = null!;
     private bool? _readOnlyTitulo;
 
     protected override void OnAfterRender(bool firstRender)
@@ -179,6 +179,7 @@
     protected override async Task OnInitializedAsync()
     {
         _readOnly = SomenteLeitura;
+        _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "a identificação", "o endereço");
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync())
             .Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)).ToList();
         _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
@@ -276,11 +277,8 @@
     private bool RazaoOk => DocOk && !string.IsNullOrWhiteSpace(_dto.RazaoSocial);
     private string? AjudaRazao => DocOk ? null : $"Informe um {(_dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")} válido primeiro.";
     private string? AjudaRestante => RazaoOk ? null : AjudaRazao ?? $"Informe {(_dto.TipoPessoa == "PJ" ? "a razão social" : "o nome")} primeiro.";
-    private bool Travado(int g) => !Edicao && g < _grupoAtual;
-    private bool Liberado(int g) => g switch { 1 => true, 2 => GrupoOk(1), _ => GrupoOk(1) && GrupoOk(2) };
-    private bool Bloqueado(int g) => _readOnly || (!Edicao && (_grupoEditando.HasValue ? _grupoEditando != g : Travado(g) || !Liberado(g)));
-    private string? AjudaGrupo(int g) => _readOnly || Edicao || _grupoEditando.HasValue || Travado(g) || Liberado(g) ? null : !GrupoOk(1) ? "Complete a identificação primeiro." : "Complete o endereço primeiro.";
-    private bool GrupoOk(int g) => ErroGrupo(g) == null;
+    private bool Bloqueado(int g) => _readOnly || _grupos.Bloqueado(g);
+    private string? AjudaGrupo(int g) => _grupos.Ajuda(g);
     private string? ErroGrupo(int g) => g switch
     {
         1 when !DocOk => $"Informe um {(_dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")} válido.",
@@ -291,18 +289,13 @@
         2 when string.IsNullOrWhiteSpace(_dto.Numero) => "Informe o número.",
         2 when string.IsNullOrWhiteSpace(_dto.Bairro) => "Informe o bairro.",
         2 when string.IsNullOrWhiteSpace(_dto.Cep) => "Informe o CEP.",
+        2 when !DocumentoHelper.CepValido(_dto.Cep) => "CEP incompleto.",
         3 when ValidarTelefone(_dto.Telefone) is string erro => $"Telefone: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
         3 when !_dto.CondicaoPagamentoId.HasValue => "Selecione a condição de pagamento.",
         _ => null
     };
-    private void Alterou(int g) { if (!Edicao && g > _grupoAtual) _grupoAtual = g; }
-    private void ConfirmarGrupo(int g)
-    {
-        var erro = ErroGrupo(g);
-        if (erro != null) { Snackbar.Add(erro, Severity.Warning); return; }
-        _grupoEditando = null;
-    }
+    private void Alterou(int g) => _grupos.Alterou(g);
     private void OnCidadeAlterada(CidadeListDto? c)
     {
         if (c?.Id == _dto.CidadeId) return;
@@ -316,30 +309,6 @@
         _dto.CondicaoPagamentoId = c?.Id;
         Alterou(3);
     }
-    private RenderFragment TituloGrupo(int g, string icone, string titulo) =>
-        @<MudItem xs="12" Class="@(g > 1 ? "mt-2" : "")">
-            <div class="d-flex align-center justify-space-between" style="min-height:32px;">
-                <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
-                    <MudIcon Icon="@icone" Size="Size.Small" Class="mr-1" />@titulo
-                </MudText>
-                @if (!_readOnly && Travado(g))
-                {
-                    if (_grupoEditando == g)
-                    {
-                        <MudTooltip Text="Confirmar">
-                            <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="@(() => ConfirmarGrupo(g))" />
-                        </MudTooltip>
-                    }
-                    else
-                    {
-                        <MudTooltip Text="Editar">
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
-                                           Disabled="@_grupoEditando.HasValue" OnClick="@(() => _grupoEditando = g)" />
-                        </MudTooltip>
-                    }
-                }
-            </div>
-        </MudItem>;
     private object DadosEditaveis() => new { _dto, _docTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
     private void OnTipoPessoaAlterado(string tipo) { if (tipo == _dto.TipoPessoa) return; Alterou(1); _dto.TipoPessoa = tipo; _docTexto = ""; _dto.CpfCnpj = ""; if (tipo == "PF") _dto.NomeFantasia = null; }

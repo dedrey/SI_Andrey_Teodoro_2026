@@ -1,4 +1,5 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -71,6 +72,10 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
             dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
             dto.Cep = dto.Cep.Trim();
+            if (!dto.Estrangeiro && string.IsNullOrWhiteSpace(dto.Cep))
+                return (false, "CEP é obrigatório.", 0);
+            if (!dto.Estrangeiro && !DocumentoHelper.CepValido(dto.Cep))
+                return (false, "CEP incompleto.", 0);
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);
@@ -84,12 +89,13 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             {
                 var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
                 if (atual == null) return (false, "Cliente não encontrado.", 0);
-                if (atual.TipoPessoa != dto.TipoPessoa || atual.Estrangeiro != dto.Estrangeiro
+                var docSalvo = !string.IsNullOrWhiteSpace(atual.CpfCnpj) || !string.IsNullOrWhiteSpace(atual.DocumentoEstrangeiro);
+                if (docSalvo && (atual.TipoPessoa != dto.TipoPessoa || atual.Estrangeiro != dto.Estrangeiro
                     || LimparDigitos(atual.CpfCnpj ?? "") != LimparDigitos(dto.CpfCnpj ?? "")
-                    || (atual.DocumentoEstrangeiro ?? "").Trim().ToUpperInvariant() != (dto.DocumentoEstrangeiro ?? ""))
+                    || (atual.DocumentoEstrangeiro ?? "").Trim().ToUpperInvariant() != (dto.DocumentoEstrangeiro ?? "")))
                     return (false, "Tipo de pessoa, estrangeiro e documento não podem ser alterados após o cadastro.", 0);
             }
-            else if (dto.Estrangeiro ? string.IsNullOrWhiteSpace(dto.DocumentoEstrangeiro) : string.IsNullOrWhiteSpace(dto.CpfCnpj))
+            if (dto.Estrangeiro ? string.IsNullOrWhiteSpace(dto.DocumentoEstrangeiro) : string.IsNullOrWhiteSpace(dto.CpfCnpj))
                 return (false, dto.Estrangeiro ? "Informe o documento estrangeiro." : $"Informe o {(dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")}.", 0);
 
             if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))

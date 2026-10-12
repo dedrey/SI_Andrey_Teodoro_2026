@@ -1,4 +1,5 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -57,6 +58,10 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
             dto.Cep = dto.Cep.Trim();
+            if (string.IsNullOrWhiteSpace(dto.Cep))
+                return (false, "CEP é obrigatório.", 0);
+            if (!DocumentoHelper.CepValido(dto.Cep))
+                return (false, "CEP incompleto.", 0);
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);

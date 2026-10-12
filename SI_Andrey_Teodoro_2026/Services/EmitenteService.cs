@@ -30,6 +30,7 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             ApelidoNomeFantasia = e.ApelidoNomeFantasia,
             Cnpj = FormatarCnpj(e.Cnpj),
             InscricaoEstadual = e.InscricaoEstadual,
+            InscricaoMunicipal = e.InscricaoMunicipal,
             RegimeTributario = e.RegimeTributario,
             CidadeId = e.CidadeId,
             NomeCidade = e.NomeCidade,
@@ -52,6 +53,7 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim().ToUpperInvariant();
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia.Trim().ToUpperInvariant();
             dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim().ToUpperInvariant();
+            dto.InscricaoMunicipal = dto.InscricaoMunicipal?.Trim().ToUpperInvariant();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
             dto.Email = dto.Email?.Trim() ?? string.Empty;
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))

@@ -89,6 +89,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                      e.apelido_nomefantasia  AS ApelidoNomeFantasia,
                      e.cnpj,
                      e.inscricao_estadual    AS InscricaoEstadual,
+                     e.inscricao_municipal   AS InscricaoMunicipal,
                      e.regime_tributario     AS RegimeTributario,
                      e.cidade_id             AS CidadeId,
                      c.cidade                AS NomeCidade,
@@ -110,11 +111,11 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
         var proximoId = await ProximoIdAsync();
         await conn.ExecuteAsync(
             @"INSERT INTO emitentes
-                (id, nome_razaosocial, apelido_nomefantasia, cnpj, inscricao_estadual,
+                (id, nome_razaosocial, apelido_nomefantasia, cnpj, inscricao_estadual, inscricao_municipal,
                  regime_tributario, cidade_id, endereco, numero, complemento, bairro,
                  telefone, email, ativo)
               VALUES
-                (@ProximoId, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual,
+                (@ProximoId, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual, @InscricaoMunicipal,
                  @RegimeTributario, @CidadeId, @Endereco, @Numero, @Complemento, @Bairro,
                  @Telefone, @Email, @Ativo)",
             new
@@ -124,6 +125,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
                 dto.Cnpj,
                 dto.InscricaoEstadual,
+                dto.InscricaoMunicipal,
                 dto.RegimeTributario,
                 dto.CidadeId,
                 dto.Endereco,
@@ -147,6 +149,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                   apelido_nomefantasia = @ApelidoNomeFantasia,
                   cnpj                 = @Cnpj,
                   inscricao_estadual   = @InscricaoEstadual,
+                  inscricao_municipal  = @InscricaoMunicipal,
                   regime_tributario    = @RegimeTributario,
                   cidade_id            = @CidadeId,
                   endereco             = @Endereco,
@@ -165,6 +168,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
                 dto.Cnpj,
                 dto.InscricaoEstadual,
+                dto.InscricaoMunicipal,
                 dto.RegimeTributario,
                 dto.CidadeId,
                 dto.Endereco,

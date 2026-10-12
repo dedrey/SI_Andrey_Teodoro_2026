@@ -7,112 +7,107 @@
     <TitleContent>
         <div class="d-flex align-center gap-2">
             <MudIcon Icon="@Icons.Material.Filled.RequestQuote" Color="Color.Primary" />
-            <MudText Typo="Typo.h6">@(_readOnly ? "Detalhes da Condição de Pagamento" : DtoEdicao == null ? "Nova Condição de Pagamento" : "Editar Condição de Pagamento")</MudText>
+            <MudText Typo="Typo.h6">@(_readOnly ? "Detalhes da Condição de Pagamento" : Edicao ? "Editar Condição de Pagamento" : "Cadastrar Nova Condição de Pagamento")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
-            <MudGrid Spacing="2" Class="mb-2">
-                <MudItem xs="12" sm="7">
-                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => _dto.CondicaoPagamento = v)" Label="Condição de Pagamento" Immediate="true"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Disabled="@_readOnly" />
-                </MudItem>
+            <MudGrid Spacing="2">
+                <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.RequestQuote" Titulo="Condição" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="5">
+                    <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => { _dto.CondicaoPagamento = v; Alterou(1); })" Label="Condição de Pagamento" Immediate="true"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Disabled="@Bloqueado(1)" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="MetodoPagamentoListDto"
                                          Value="@(_metodos.FirstOrDefault(m => m.Id == _dto.MetodoPagamentoId))"
-                                         ValueChanged="@((MetodoPagamentoListDto? m) => _dto.MetodoPagamentoId = m?.Id ?? 0)"
+                                         ValueChanged="OnMetodoAlterado"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _metodos.AsEnumerable() : _metodos.Where(m => m.MetodoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase) || m.Codigo.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(m => m == null ? "" : $"{m.MetodoPagamento} ({m.Codigo})")"
                                          Label="Método de Pagamento"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false"
-                                         Disabled="@(_readOnly || !NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome da condição primeiro.")"
+                                         Disabled="@(Bloqueado(1) || !NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome da condição primeiro.")"
                                          Placeholder="Digite para pesquisar..." />
                         <MudTooltip Text="Pesquisar método de pagamento">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarMetodo" Disabled="@(_readOnly || !NomeOk)" />
+                                           OnClick="PesquisarMetodo" Disabled="@(Bloqueado(1) || !NomeOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
+                <MudItem xs="12" sm="3">
+                    <MudNumericField T="int" Value="_dto.NumeroParcelas"
+                                     ValueChanged="OnNumeroParcelas"
+                                     Label="Nº de parcelas" Variant="Variant.Outlined"
+                                     Margin="Margin.Dense" Min="1" Max="999" FullWidth="true"
+                                     Immediate="true" Disabled="@(Bloqueado(1) || !MetodoOk || _emUso)"
+                                     HelperText="@(_emUso && !_readOnly ? MsgEmUso : MetodoOk ? null : NomeOk ? "Selecione o método de pagamento primeiro." : "Informe o nome da condição primeiro.")" />
+                </MudItem>
+
+                <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.CalendarMonth" Titulo="@($"Parcelas ({_dto.Parcelas.Count})")" AoMudar="StateHasChanged">
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                               OnClick="OnGerar" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(Bloqueado(2) || _emUso)">
+                        Gerar
+                    </MudButton>
+                </TituloSecao>
+                <MudItem xs="12">
+                    @if (!_readOnly && (_emUso ? MsgEmUso : AjudaGrupo(2)) is string ajudaParcelas)
+                    {
+                        <MudText Typo="Typo.caption" Style="color:#888;display:block;margin-bottom:8px;">@ajudaParcelas</MudText>
+                    }
+                    @if (_dto.Parcelas.Count > 0)
+                    {
+                        <MudTable Items="@_dto.Parcelas" Dense="true" Elevation="0"
+                                  Style="border:1px solid #e9ecef;border-radius:6px;">
+                            <HeaderContent>
+                                <MudTh Style="font-weight:600;font-size:0.78rem;width:80px;">Parcela</MudTh>
+                                <MudTh Style="font-weight:600;font-size:0.78rem;">Dias até vencimento</MudTh>
+                                <MudTh Style="font-weight:600;font-size:0.78rem;color:#888;">Vencimento (a partir de hoje)</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd Style="font-weight:600;">@context.NumeroParcela</MudTd>
+                                <MudTd>
+                                    <MudTextField Value="@context.DiasVencimento.ToString()"
+                                                  ValueChanged="@((string v) => { context.DiasVencimento = int.TryParse(v, out int d) && d >= 0 ? d : 0; Alterou(2); })"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                  Immediate="true" Style="max-width:120px;" Placeholder="0 = no ato" Disabled="@(Bloqueado(2) || _emUso)" />
+                                </MudTd>
+                                <MudTd Style="color:#888;font-size:0.85rem;">
+                                    @if (context.DiasVencimento == 0)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">No ato</MudChip>
+                                    }
+                                    else
+                                    {
+                                        @DateTime.Today.AddDays(context.DiasVencimento).ToString("dd/MM/yyyy")
+                                    }
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                    else
+                    {
+                        <MudText Style="color:#bbb;font-size:0.85rem;padding:4px 0;">
+                            Defina o número de parcelas e clique em "Gerar" para configurar os prazos.
+                        </MudText>
+                    }
+                </MudItem>
+
+                <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.Percent" Titulo="Percentuais" AoMudar="StateHasChanged" />
+                @if (!_readOnly && AjudaGrupo(3) is string ajudaPercentuais)
+                {
+                    <MudItem xs="12" Class="py-0">
+                        <MudText Typo="Typo.caption" Style="color:#888;">@ajudaPercentuais</MudText>
+                    </MudItem>
+                }
+                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.EntradaMinimaPercentual" ValueChanged="@((decimal v) => { _dto.EntradaMinimaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.DescontoPercentual" ValueChanged="@((decimal v) => { _dto.DescontoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.AcrescimoPercentual" ValueChanged="@((decimal v) => { _dto.AcrescimoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.MultaPercentual" ValueChanged="@((decimal v) => { _dto.MultaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.TaxaJurosPercentual" ValueChanged="@((decimal v) => { _dto.TaxaJurosPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
             </MudGrid>
-
-            <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
-                <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Taxas e Percentuais</div>
-                @if (!_readOnly && AjudaDetalhes != null)
-                {
-                    <MudText Typo="Typo.caption" Style="color:#888;display:block;margin-bottom:8px;">@AjudaDetalhes</MudText>
-                }
-                <MudGrid Spacing="2">
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.DescontoPercentual" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@(_readOnly || !ParcelasOk)" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.AcrescimoPercentual" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@(_readOnly || !ParcelasOk)" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.TaxaJurosPercentual" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@(_readOnly || !ParcelasOk)" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.MultaPercentual" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@(_readOnly || !ParcelasOk)" /></MudItem>
-                    <MudItem xs="6" sm="4"><MudNumericField T="decimal" @bind-Value="_dto.EntradaMinimaPercentual" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@(_readOnly || !ParcelasOk)" /></MudItem>
-                </MudGrid>
-            </div>
-
-            <div style="background:#f8f9fa;border-radius:8px;padding:12px 14px;">
-                <div class="d-flex align-center justify-space-between mb-2">
-                    <div style="font-size:0.68rem;color:#9e9e9e;text-transform:uppercase;letter-spacing:1px;font-weight:700;">
-                        Parcelas (@_dto.Parcelas.Count)
-                    </div>
-                    <div class="d-flex gap-2 align-center">
-                        <MudNumericField T="int" Value="_dto.NumeroParcelas"
-                                         ValueChanged="OnNumeroParcelas"
-                                         Label="Nº parcelas" Variant="Variant.Outlined"
-                                         Margin="Margin.Dense" Min="1" Max="999"
-                                         Immediate="true"
-                                         Style="width:110px;" Disabled="@(_readOnly || !MetodoOk || _emUso)" />
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
-                                   OnClick="GerarParcelas" StartIcon="@Icons.Material.Filled.Refresh" Disabled="@(_readOnly || !MetodoOk || _emUso)">
-                            Gerar
-                        </MudButton>
-                    </div>
-                </div>
-                @if (!_readOnly && AjudaParcelas != null)
-                {
-                    <MudText Typo="Typo.caption" Style="color:#888;display:block;margin-bottom:8px;">@AjudaParcelas</MudText>
-                }
-
-                @if (_dto.Parcelas.Count > 0)
-                {
-                    <MudTable Items="@_dto.Parcelas" Dense="true" Elevation="0"
-                              Style="background:white;border:1px solid #e9ecef;border-radius:6px;">
-                        <HeaderContent>
-                            <MudTh Style="font-weight:600;font-size:0.78rem;width:80px;">Parcela</MudTh>
-                            <MudTh Style="font-weight:600;font-size:0.78rem;">Dias até vencimento</MudTh>
-                            <MudTh Style="font-weight:600;font-size:0.78rem;color:#888;">Vencimento (a partir de hoje)</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd Style="font-weight:600;">@context.NumeroParcela</MudTd>
-                            <MudTd>
-                                <MudTextField Value="@context.DiasVencimento.ToString()"
-                                              ValueChanged="@((string v) => { context.DiasVencimento = int.TryParse(v, out int d) && d >= 0 ? d : 0; StateHasChanged(); })"
-                                              Variant="Variant.Outlined" Margin="Margin.Dense"
-                                              Immediate="true" Style="max-width:120px;" Placeholder="0 = no ato" Disabled="@(_readOnly || !ParcelasOk || _emUso)" />
-                            </MudTd>
-                            <MudTd Style="color:#888;font-size:0.85rem;">
-                                @if (context.DiasVencimento == 0)
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Outlined">No ato</MudChip>
-                                }
-                                else
-                                {
-                                    @DateTime.Today.AddDays(context.DiasVencimento).ToString("dd/MM/yyyy")
-                                }
-                            </MudTd>
-                        </RowTemplate>
-                    </MudTable>
-                }
-                else
-                {
-                    <MudText Style="color:#bbb;font-size:0.85rem;padding:4px 0;">
-                        Defina o número de parcelas e clique em "Gerar" para configurar os prazos.
-                    </MudText>
-                }
-            </div>
         </MudForm>
         @if (_dto.AtualizadoEm.HasValue)
         {
@@ -138,7 +133,7 @@
             <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_salvando">Cancelar</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        StartIcon="@Icons.Material.Filled.Save"
-                       OnClick="Salvar" Disabled="_salvando">
+                       OnClick="Salvar" Disabled="@(_salvando || _grupos.Editando.HasValue)">
                 @(_salvando ? "Salvando..." : "Salvar")
             </MudButton>
         }
@@ -158,17 +153,40 @@
     private bool _formValido;
     private bool _salvando;
     private bool _emUso;
+    private GruposProgressivos _grupos = null!;
+    private bool? _readOnlyTitulo;
+    private const string MsgEmUso = "Condição já utilizada: para mudar as parcelas, inative e cadastre outra.";
 
+    private bool Edicao => _dto.IdOriginal > 0;
     private bool NomeOk => !string.IsNullOrWhiteSpace(_dto.CondicaoPagamento);
     private bool MetodoOk => NomeOk && _dto.MetodoPagamentoId > 0;
-    private bool ParcelasOk => MetodoOk && _dto.NumeroParcelas >= 1;
-    private string? AjudaParcelas => _emUso ? "Condição já utilizada: para mudar as parcelas, inative e cadastre outra."
-        : MetodoOk ? null : NomeOk ? "Selecione o método de pagamento primeiro." : "Informe o nome da condição primeiro.";
-    private string? AjudaDetalhes => ParcelasOk ? null : AjudaParcelas ?? "Informe o número de parcelas primeiro.";
+    private bool Bloqueado(int g) => _readOnly || _grupos.Bloqueado(g);
+    private string? AjudaGrupo(int g) => _grupos.Ajuda(g);
+    private void Alterou(int g) => _grupos.Alterou(g);
+    private string? ErroGrupo(int g) => g switch
+    {
+        1 when !NomeOk => "Informe o nome da condição.",
+        1 when !MetodoOk => "Selecione o método de pagamento.",
+        1 when _dto.NumeroParcelas < 1 => "Informe o número de parcelas.",
+        2 when _dto.Parcelas.Count != _dto.NumeroParcelas => "Clique em 'Gerar' para definir os prazos das parcelas.",
+        2 when !ValidarParcelasCrescentes(out var erro) => erro,
+        3 when new[] { _dto.EntradaMinimaPercentual, _dto.DescontoPercentual, _dto.AcrescimoPercentual, _dto.MultaPercentual, _dto.TaxaJurosPercentual }.Any(p => p < 0 || p > 100)
+            => "Os percentuais devem estar entre 0 e 100.",
+        _ => null
+    };
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_readOnlyTitulo == _readOnly) return;
+        var jaRenderizado = _readOnlyTitulo.HasValue;
+        _readOnlyTitulo = _readOnly;
+        if (jaRenderizado) MudDialog.StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {
         _readOnly = SomenteLeitura;
+        _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "a condição", "as parcelas");
         _dto = DtoEdicao != null
             ? new CondicaoPagamentoDto
             {
@@ -199,8 +217,23 @@
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 
+    private void OnMetodoAlterado(MetodoPagamentoListDto? m)
+    {
+        if ((m?.Id ?? 0) == _dto.MetodoPagamentoId) return;
+        _dto.MetodoPagamentoId = m?.Id ?? 0;
+        Alterou(1);
+    }
+
+    private void OnGerar()
+    {
+        GerarParcelas();
+        Alterou(2);
+    }
+
     private void OnNumeroParcelas(int valor)
     {
+        if (valor == _dto.NumeroParcelas) return;
+        Alterou(1);
         _dto.NumeroParcelas = valor;
         while (_dto.Parcelas.Count < valor)
         {
@@ -251,6 +284,7 @@
         var metodo = await DialogService.PesquisarMetodoPagamentoAsync(MetodoPagamentoService, _dto.MetodoPagamentoId, NovoMetodo);
         if (metodo == null) return;
         _dto.MetodoPagamentoId = _metodos.ObterOuAdicionar(metodo, m => m.Id).Id;
+        Alterou(1);
     }
 
     private async Task<MetodoPagamentoListDto?> NovoMetodo()

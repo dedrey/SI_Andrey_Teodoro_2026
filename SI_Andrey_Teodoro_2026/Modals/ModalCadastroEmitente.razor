@@ -9,89 +9,98 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <MudIcon Icon="@Icons.Material.Filled.Business" Class="mr-2" />
-            @(_readOnly ? "Detalhes do Emitente" : _dto.IdOriginal == 0 ? "Cadastrar Novo Emitente" : "Editar Emitente")
+            @(_readOnly ? "Detalhes do Emitente" : Edicao ? "Editar Emitente" : "Cadastrar Novo Emitente")
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
+                <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Badge" Titulo="Identificação" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Cnpj" ValueChanged="@((string v) => _dto.Cnpj = MascaraCnpj(v))"
+                    <MudTextField Value="@_dto.Cnpj" ValueChanged="@((string v) => { _dto.Cnpj = MascaraCnpj(v); Alterou(1); })"
                                   Label="CNPJ" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => DocumentoHelper.ValidarCnpj(v))"
-                                  Disabled="@(_readOnly || Edicao)" HelperText="@AjudaTravado" />
+                                  Disabled="@(Edicao || Bloqueado(1))" HelperText="@AjudaTravado" />
                 </MudItem>
                 <MudItem xs="12" sm="8">
-                    <MudTextField Value="@_dto.NomeRazaoSocial" ValueChanged="@((string v) => _dto.NomeRazaoSocial = v)"
+                    <MudTextField Value="@_dto.NomeRazaoSocial" ValueChanged="@((string v) => { _dto.NomeRazaoSocial = v; Alterou(1); })"
                                   Label="Razão Social" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
-                                  Disabled="@(_readOnly || !CnpjOk)" HelperText="@AjudaRazao" />
+                                  Disabled="@(Bloqueado(1) || !CnpjOk)" HelperText="@AjudaRazao" />
                 </MudItem>
-                <MudItem xs="12" sm="5">
-                    <MudTextField Value="@_dto.ApelidoNomeFantasia" ValueChanged="@((string v) => _dto.ApelidoNomeFantasia = v)"
+                <MudItem xs="12" sm="8">
+                    <MudTextField Value="@_dto.ApelidoNomeFantasia" ValueChanged="@((string v) => { _dto.ApelidoNomeFantasia = v; Alterou(1); })"
                                   Label="Nome Fantasia" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.InscricaoEstadual" ValueChanged="@((string v) => _dto.InscricaoEstadual = v)" Label="Inscrição Estadual"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudSelect T="string" @bind-Value="_dto.RegimeTributario" Label="Regime Tributário"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante">
+                    <MudSelect T="string" Value="@_dto.RegimeTributario" ValueChanged="@((string v) => { _dto.RegimeTributario = v; Alterou(1); })" Label="Regime Tributário"
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante">
                         <MudSelectItem T="string" Value="@("SIMPLES")">Simples Nacional</MudSelectItem>
                         <MudSelectItem T="string" Value="@("PRESUMIDO")">Lucro Presumido</MudSelectItem>
                         <MudSelectItem T="string" Value="@("REAL")">Lucro Real</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="6">
+                    <MudTextField Value="@(_dto.InscricaoEstadual ?? "")" ValueChanged="@((string v) => { _dto.InscricaoEstadual = v; Alterou(1); })" Label="Inscrição Estadual"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@(_dto.InscricaoMunicipal ?? "")" ValueChanged="@((string v) => { _dto.InscricaoMunicipal = v; Alterou(1); })" Label="Inscrição Municipal"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante" />
+                </MudItem>
+
+                <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Place" Titulo="Endereço" AoMudar="StateHasChanged" />
+                <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="CidadeListDto" Label="Cidade"
                                          Value="_cidadeSelecionada"
-                                         ValueChanged="@((CidadeListDto? c) => { _cidadeSelecionada = c; _dto.CidadeId = c?.Id; })"
+                                         ValueChanged="OnCidadeAlterada"
                                          SearchFunc="PesquisarCidade"
                                          ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} ({c.Uf})")"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          Required="true" RequiredError="Obrigatório"
-                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                         <MudTooltip Text="Pesquisar cidade">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarCidadeModal" Disabled="@RestanteBloqueado" />
+                                           OnClick="PesquisarCidadeModal" Disabled="@Bloqueado(2)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => _dto.Endereco = v)"
+                    <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => { _dto.Endereco = v; Alterou(2); })"
                                   Label="Endereço" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="2">
-                    <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => _dto.Numero = v)"
+                    <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => { _dto.Numero = v; Alterou(2); })"
                                   Label="Número" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => _dto.Bairro = v)"
-                                  Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
-                    <MudTextField Value="@_dto.Complemento" ValueChanged="@((string? v) => _dto.Complemento = v)"
-                                  Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                                  Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => _dto.Telefone = MascaraTel(v))"
+                    <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => { _dto.Bairro = v; Alterou(2); })"
+                                  Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@(_dto.Complemento ?? "")" ValueChanged="@((string v) => { _dto.Complemento = v; Alterou(2); })"
+                                  Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                </MudItem>
+
+                <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato" AoMudar="StateHasChanged" />
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = MascaraTel(v); Alterou(3); })"
                                   Label="Telefone" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11" }; })" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                                  Validation="@((string v) => ValidarTelefone(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => _dto.Email = v)" Label="E-mail" Class="sem-maiusculas"
+                    <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => { _dto.Email = v; Alterou(3); })" Label="E-mail" Class="sem-maiusculas"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarEmail(v))"
-                                  InputType="InputType.Email" Disabled="@RestanteBloqueado" HelperText="@AjudaRestante" />
+                                  InputType="InputType.Email" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -118,7 +127,7 @@
         {
             <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
-                       Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
+                       Disabled="@(_salvando || _grupos.Editando.HasValue)" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")
             </MudButton>
         }
@@ -137,10 +146,21 @@
     private bool _formValido, _salvando;
     private List<CidadeListDto> _cidades = new();
     private CidadeListDto? _cidadeSelecionada;
+    private GruposProgressivos _grupos = null!;
+    private bool? _readOnlyTitulo;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_readOnlyTitulo == _readOnly) return;
+        var jaRenderizado = _readOnlyTitulo.HasValue;
+        _readOnlyTitulo = _readOnly;
+        if (jaRenderizado) MudDialog.StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {
         _readOnly = SomenteLeitura;
+        _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "a identificação", "o endereço");
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync())
             .Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)).ToList();
         if (DtoEdicao is not null)
@@ -153,6 +173,7 @@
                 ApelidoNomeFantasia = DtoEdicao.ApelidoNomeFantasia,
                 Cnpj = DtoEdicao.Cnpj,
                 InscricaoEstadual = DtoEdicao.InscricaoEstadual,
+                InscricaoMunicipal = DtoEdicao.InscricaoMunicipal,
                 RegimeTributario = DtoEdicao.RegimeTributario,
                 CidadeId = DtoEdicao.CidadeId,
                 Endereco = DtoEdicao.Endereco ?? "",
@@ -183,6 +204,15 @@
         if (!cidade.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)) { Snackbar.Add("Selecione uma cidade do Brasil.", Severity.Warning); return; }
         _cidadeSelecionada = _cidades.ObterOuAdicionar(cidade, c => c.Id);
         _dto.CidadeId = _cidadeSelecionada.Id;
+        Alterou(2);
+    }
+
+    private void OnCidadeAlterada(CidadeListDto? c)
+    {
+        if (c?.Id == _dto.CidadeId) return;
+        _cidadeSelecionada = c;
+        _dto.CidadeId = c?.Id;
+        Alterou(2);
     }
 
     private async Task<CidadeListDto?> NovaCidade()
@@ -209,7 +239,24 @@
     private string? AjudaTravado => Edicao && !_readOnly ? "Não pode ser alterado após o cadastro." : null;
     private bool CnpjOk => Edicao || DocumentoHelper.CnpjValido(_dto.Cnpj);
     private bool RazaoOk => CnpjOk && !string.IsNullOrWhiteSpace(_dto.NomeRazaoSocial);
-    private bool RestanteBloqueado => _readOnly || !RazaoOk;
+    private bool Bloqueado(int g) => _readOnly || _grupos.Bloqueado(g);
+    private string? AjudaGrupo(int g) => _grupos.Ajuda(g);
+    private void Alterou(int g) => _grupos.Alterou(g);
+    private string? ErroGrupo(int g) => g switch
+    {
+        1 when !CnpjOk => "Informe um CNPJ válido.",
+        1 when !RazaoOk => "Informe a razão social.",
+        1 when string.IsNullOrWhiteSpace(_dto.ApelidoNomeFantasia) => "Informe o nome fantasia.",
+        1 when string.IsNullOrWhiteSpace(_dto.RegimeTributario) => "Selecione o regime tributário.",
+        2 when !_dto.CidadeId.HasValue => "Selecione a cidade.",
+        2 when string.IsNullOrWhiteSpace(_dto.Endereco) => "Informe o endereço.",
+        2 when string.IsNullOrWhiteSpace(_dto.Numero) => "Informe o número.",
+        2 when string.IsNullOrWhiteSpace(_dto.Bairro) => "Informe o bairro.",
+        3 when ValidarTelefone(_dto.Telefone) is string erro => $"Telefone: {erro}.",
+        3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
+        _ => null
+    };
+    private static string? ValidarTelefone(string? v) { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }
     private string? AjudaRazao => CnpjOk ? null : "Informe um CNPJ válido primeiro.";
     private string? AjudaRestante => RazaoOk ? null : AjudaRazao ?? "Informe a razão social primeiro.";
     private object DadosEditaveis() => new { _dto, Cidade = _cidadeSelecionada?.Id };

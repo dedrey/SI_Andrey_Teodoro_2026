@@ -1,0 +1,50 @@
+@inject ISnackbar Snackbar
+
+<MudItem xs="12" Class="@(Grupo > 1 ? "mt-2" : "")">
+    <div class="d-flex align-center justify-space-between" style="min-height:32px;">
+        <MudText Typo="Typo.subtitle2" Style="font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#888;">
+            <MudIcon Icon="@Icone" Size="Size.Small" Class="mr-1" />@Titulo
+        </MudText>
+        <div class="d-flex align-center gap-2">
+            @ChildContent
+            @if (Grupos.Travado(Grupo))
+            {
+                if (Grupos.Editando == Grupo)
+                {
+                    <MudTooltip Text="Confirmar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" OnClick="Confirmar" />
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Text="Editar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small"
+                                       Disabled="@Grupos.Editando.HasValue" OnClick="Editar" />
+                    </MudTooltip>
+                }
+            }
+        </div>
+    </div>
+</MudItem>
+
+@code {
+    [Parameter, EditorRequired] public GruposProgressivos Grupos { get; set; } = null!;
+    [Parameter] public int Grupo { get; set; }
+    [Parameter] public string Icone { get; set; } = "";
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback AoMudar { get; set; }
+
+    private Task Editar()
+    {
+        Grupos.Editar(Grupo);
+        return AoMudar.InvokeAsync();
+    }
+
+    private Task Confirmar()
+    {
+        var erro = Grupos.Confirmar();
+        if (erro != null) { Snackbar.Add(erro, Severity.Warning); return Task.CompletedTask; }
+        return AoMudar.InvokeAsync();
+    }
+}
