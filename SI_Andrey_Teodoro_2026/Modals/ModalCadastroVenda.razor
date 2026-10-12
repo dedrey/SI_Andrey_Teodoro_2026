@@ -124,14 +124,20 @@
                             </div>
                         </MudTd>
                         <MudTd>
-                            <MudAutocomplete T="ProdutoVariacaoDto"
-                                             Value="@(_variacoesPorItem.TryGetValue(context, out var vs2) ? vs2.FirstOrDefault(v => v.IdOriginal == context.ProdutoVariacaoId) : null)"
-                                             ValueChanged="@((ProdutoVariacaoDto? v) => OnVariacaoAlterada(context, v?.IdOriginal ?? 0))"
-                                             SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
-                                             ToStringFunc="@(v => v == null ? "" : $"{v.Cor} / {v.Tamanho} ({v.QuantidadeEstoque} un.)")"
-                                             Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                             Disabled="@(Leitura || !_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)"
-                                             ResetValueOnEmptyText="true" CoerceText="false" />
+                            <div class="d-flex align-center gap-1">
+                                <MudAutocomplete T="ProdutoVariacaoDto"
+                                                 Value="@(_variacoesPorItem.TryGetValue(context, out var vs2) ? vs2.FirstOrDefault(v => v.IdOriginal == context.ProdutoVariacaoId) : null)"
+                                                 ValueChanged="@((ProdutoVariacaoDto? v) => OnVariacaoAlterada(context, v?.IdOriginal ?? 0))"
+                                                 SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
+                                                 ToStringFunc="@(v => v == null ? "" : $"{v.Cor} / {v.Tamanho} ({v.QuantidadeEstoque} un.)")"
+                                                 Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                                 Disabled="@VariacaoDesabilitada(context)"
+                                                 ResetValueOnEmptyText="true" CoerceText="false" />
+                                <MudTooltip Text="Pesquisar variação">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                                   OnClick="@(() => PesquisarVariacaoItem(context))" Disabled="@VariacaoDesabilitada(context)" />
+                                </MudTooltip>
+                            </div>
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             @if (_variacoesPorItem.TryGetValue(context, out var vs) && context.ProdutoVariacaoId > 0)
@@ -322,6 +328,10 @@
     private readonly Dictionary<VendaItemDto, decimal> _custoPorItem = new();
     private readonly Dictionary<VendaItemDto, DateTime?> _dataCompraPorItem = new();
 
+    private bool VariacaoDesabilitada(VendaItemDto item) =>
+        Leitura || _produtosSelecionados.GetValueOrDefault(item) == null
+        || !_variacoesPorItem.TryGetValue(item, out var vars) || vars.Count == 0;
+
     private static int GetEstoqueVar(List<ProdutoVariacaoDto> vars, int id)
         => vars.FirstOrDefault(v => v.IdOriginal == id)?.QuantidadeEstoque ?? 0;
 
@@ -362,13 +372,13 @@
         item.ProdutoVariacaoId = 0; item.NomeProduto = produto?.Produto ?? "";
         item.Cor = ""; item.Tamanho = "";
         _custoPorItem[item] = 0; _dataCompraPorItem[item] = null;
-        if (produto != null)
-        {
-            var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
-            _variacoesPorItem[item] = dto?.Variacoes.Where(v => v.Ativo && v.QuantidadeEstoque > 0).ToList() ?? new();
-        }
-        else _variacoesPorItem[item] = new();
+        _variacoesPorItem[item] = produto != null ? await CarregarVariacoesComEstoque(produto.Id) : new();
         StateHasChanged();
+    }
+    private async Task<List<ProdutoVariacaoDto>> CarregarVariacoesComEstoque(int produtoId)
+    {
+        var dto = await ProdutoService.ObterPorIdAsync(produtoId);
+        return dto?.Variacoes.Where(v => v.Ativo && v.QuantidadeEstoque > 0).ToList() ?? new();
     }
     private void OnVariacaoAlterada(VendaItemDto item, int variacaoId)
     {
@@ -445,9 +455,20 @@
 
     private async Task PesquisarProdutoItem(VendaItemDto item)
     {
-        var produto = await DialogService.PesquisarProdutoAsync(ProdutoService, _produtosSelecionados.GetValueOrDefault(item)?.Id);
+        var produto = await DialogService.PesquisarProdutoAsync(ProdutoService, _produtosSelecionados.GetValueOrDefault(item)?.Id, somenteComEstoque: true);
         if (produto == null) return;
         await OnProdutoAlterado(item, _produtos.ObterOuAdicionar(produto, p => p.Id));
+    }
+
+    private async Task PesquisarVariacaoItem(VendaItemDto item)
+    {
+        var produto = _produtosSelecionados.GetValueOrDefault(item);
+        if (produto == null) return;
+        var variacao = await DialogService.PesquisarVariacaoAsync(ProdutoService, produto.Id, true, item.ProdutoVariacaoId > 0 ? item.ProdutoVariacaoId : null);
+        if (variacao == null) return;
+        if (!_variacoesPorItem.TryGetValue(item, out var vars) || vars.All(v => v.IdOriginal != variacao.Id))
+            _variacoesPorItem[item] = await CarregarVariacoesComEstoque(produto.Id);
+        OnVariacaoAlterada(item, variacao.Id);
     }
 
     private async Task<ClienteListDto?> NovoCliente()

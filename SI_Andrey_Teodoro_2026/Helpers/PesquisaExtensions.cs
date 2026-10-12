@@ -48,6 +48,9 @@ public static class PesquisaExtensions
             new("Cidade", e => e.NomeCidade)
         }, Ativos, novo, x => x.Id, selecionado);
 
+    private static Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> FiltroAdicional<TItem>(Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar, Action<FiltroConsultaDto> aplicar) =>
+        filtro => { aplicar(filtro); return buscar(filtro); };
+
     private static Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> FiltrarPorPais<TItem>(Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar, int? paisId) =>
         filtro => { filtro.PaisId = paisId is > 0 ? paisId : null; return buscar(filtro); };
 
@@ -142,15 +145,26 @@ public static class PesquisaExtensions
     public static Task<List<TamanhoListDto>?> PesquisarVariosTamanhosAsync(this IDialogService dialogService, ITamanhoService service, IEnumerable<int>? selecionados, IEnumerable<TamanhoListDto> itensDoCampo, Func<Task<TamanhoListDto?>>? novo = null) =>
         dialogService.PesquisarVariosAsync("Pesquisar Tamanhos", service.ObterTodosAsync, ColunasTamanho(), x => x.Id, selecionados, itensDoCampo, Ativos, novo);
 
-    public static Task<ProdutoListDto?> PesquisarProdutoAsync(this IDialogService dialogService, IProdutoService service, int? selecionado = null, Func<Task<ProdutoListDto?>>? novo = null) =>
-        dialogService.PesquisarAsync("Pesquisar Produto", service.ObterTodosAsync, new List<ColunaPesquisa<ProdutoListDto>>
+    public static Task<ProdutoListDto?> PesquisarProdutoAsync(this IDialogService dialogService, IProdutoService service, int? selecionado = null, Func<Task<ProdutoListDto?>>? novo = null, bool somenteComEstoque = false) =>
+        dialogService.PesquisarAsync("Pesquisar Produto", FiltroAdicional<ProdutoListDto>(service.ObterTodosAsync, f => f.SomenteComEstoque = somenteComEstoque), new List<ColunaPesquisa<ProdutoListDto>>
         {
             new("Código", p => p.Id),
             new("Produto", p => p.Produto),
             new("Categoria", p => p.NomeCategoria),
             new("Marca", p => p.NomeMarca),
-            new("Fornecedor", p => p.NomeFornecedor)
+            new("Fornecedor", p => p.NomeFornecedor),
+            new("Estoque", p => $"{p.TotalEstoque} un.", true)
         }, Ativos, novo, x => x.Id, selecionado);
+
+    public static Task<ProdutoVariacaoListDto?> PesquisarVariacaoAsync(this IDialogService dialogService, IProdutoService service, int produtoId, bool somenteComEstoque, int? selecionado = null) =>
+        dialogService.PesquisarAsync("Pesquisar Variação", FiltroAdicional<ProdutoVariacaoListDto>(service.ObterVariacoesAsync, f => { f.ProdutoId = produtoId; f.SomenteComEstoque = somenteComEstoque; }), new List<ColunaPesquisa<ProdutoVariacaoListDto>>
+        {
+            new("Código", v => v.Id),
+            new("Cor", v => v.Cor),
+            new("Tamanho", v => v.Tamanho),
+            new("Estoque", v => $"{v.QuantidadeEstoque} un.", true),
+            new("Preço de Venda (R$)", v => v.Preco, true, "N2")
+        }, null, null, x => x.Id, selecionado);
 
     public static Task<VendaParaNfeDto?> PesquisarVendaParaNfeAsync(this IDialogService dialogService, INfeService service, int? selecionado = null, Func<Task<VendaParaNfeDto?>>? novo = null) =>
         dialogService.PesquisarAsync("Pesquisar Venda", service.ObterVendasDisponiveisAsync, new List<ColunaPesquisa<VendaParaNfeDto>>

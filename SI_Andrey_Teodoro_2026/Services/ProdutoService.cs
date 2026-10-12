@@ -18,6 +18,9 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
     public Task<IEnumerable<ProdutoListDto>> ObterTodosAtivosAsync()
         => _repo.ObterTodosAtivosAsync();
 
+    public Task<PaginacaoDto<ProdutoVariacaoListDto>> ObterVariacoesAsync(FiltroConsultaDto filtro)
+        => _repo.ObterVariacoesAsync(filtro);
+
     public Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId) => _repo.ObterVariacoesComMovimentoAsync(produtoId);
 
     public async Task<ProdutoDto?> ObterPorIdAsync(int id)

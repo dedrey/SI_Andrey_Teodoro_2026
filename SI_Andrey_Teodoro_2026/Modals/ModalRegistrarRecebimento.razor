@@ -25,7 +25,7 @@
             </div>
         </div>
 
-        <MudForm @ref="_form" @bind-IsValid="_formValido">
+        <MudForm @ref="_form">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
                     <MudDatePicker @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento"
@@ -111,7 +111,7 @@
     [Parameter] public decimal ValorSaldo { get; set; }
 
     private MudForm? _form;
-    private bool _formValido, _salvando, _carregandoArquivo;
+    private bool _salvando, _carregandoArquivo;
     private DateTime? _dataRecebimento = DateTime.Today;
     private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
     private decimal _valorRecebidoPreview;
@@ -203,7 +203,7 @@
     private async Task Confirmar()
     {
         await _form!.Validate();
-        if (!_formValido || !_dataRecebimento.HasValue) return;
+        if (!_form.IsValid || !_dataRecebimento.HasValue) return;
         if (_valorRecebidoPreview <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
         if (_valorRecebidoPreview > ValorSaldo) { Snackbar.Add($"Valor não pode ser maior que o saldo (R$ {ValorSaldo:N2}).", Severity.Warning); return; }
 

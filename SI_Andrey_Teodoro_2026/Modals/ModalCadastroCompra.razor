@@ -26,7 +26,7 @@
         </div>
     </TitleContent>
     <DialogContent>
-        <MudForm @ref="_form" @bind-IsValid="_formValido">
+        <MudForm @ref="_form">
             @if (SomenteLeitura && _dto.StatusCompra == "CANCELADO")
             {
                 <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true">
@@ -100,8 +100,8 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudDatePicker @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao"
-                                   Label="Data de Emissão" Variant="Variant.Outlined" Margin="Margin.Dense"
+                    <MudDatePicker @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao" Label="Data de Emissão"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
                                    AutoClose="true" MaxDate="DateTime.Today"
@@ -109,8 +109,8 @@
                                    Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
-                    <MudDatePicker @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada"
-                                   Label="Data de Chegada" Variant="Variant.Outlined" Margin="Margin.Dense"
+                    <MudDatePicker @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada" Label="Data de Chegada"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório" Editable="true"
                                    Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
                                    AutoClose="true" MinDate="_dataEmissao" MaxDate="DateTime.Today"
@@ -429,7 +429,6 @@
     }
 
     private MudForm? _form;
-    private bool _formValido;
     private bool _salvando;
     private bool _itensConfirmados;
     private bool ItensTravados => SomenteLeitura || _itensConfirmados;

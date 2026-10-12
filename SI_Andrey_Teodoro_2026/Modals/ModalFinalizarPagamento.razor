@@ -17,7 +17,7 @@
             <div style="font-size:1.1rem;font-weight:700;color:#2e7d32;">R$ @ValorOriginal.ToString("N2")</div>
         </div>
 
-        <MudForm @ref="_form" @bind-IsValid="_formValido">
+        <MudForm @ref="_form">
             <MudDatePicker @bind-Date="_dataPagamento" PickerMonth="DateTime.Today" Label="Data de Pagamento"
                            Variant="Variant.Outlined" Margin="Margin.Dense"
                            Required="true" RequiredError="Informe a data de pagamento"
@@ -78,7 +78,7 @@
     [Parameter] public decimal ValorOriginal { get; set; }
 
     private MudForm? _form;
-    private bool _formValido, _salvando, _carregandoArquivo;
+    private bool _salvando, _carregandoArquivo;
     private DateTime? _dataPagamento = DateTime.Today;
     private byte[]? _conteudoArquivo;
     private string? _nomeArquivoSelecionado;
@@ -161,7 +161,7 @@
     private async Task Confirmar()
     {
         await _form!.Validate();
-        if (!_formValido || !_dataPagamento.HasValue) return;
+        if (!_form.IsValid || !_dataPagamento.HasValue) return;
 
         _salvando = true;
         string? caminhoArquivo = null;

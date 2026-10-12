@@ -121,7 +121,7 @@
             </MudTable>
         }
 
-        <MudForm @ref="_form" @bind-IsValid="_formValido">
+        <MudForm @ref="_form">
             <MudGrid Spacing="2">
                 <MudItem xs="12">
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = v)" Label="Descrição  "
@@ -212,7 +212,7 @@
     [Parameter] public ContaReceberDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
-    private bool _formValido, _salvando;
+    private bool _salvando;
     private ContaReceberDto _dto = new();
     private DateTime? _dataVencimento;
     private DateTime? _mesExibido = DateTime.Today;
@@ -291,7 +291,7 @@
     private async Task Salvar()
     {
         await _form!.Validate();
-        if (!_formValido) return;
+        if (!_form.IsValid) return;
         if (_dto.ClienteId <= 0) { Snackbar.Add("Selecione um cliente.", Severity.Warning); return; }
         if (_dto.ValorOriginal <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
         if (!_dataVencimento.HasValue) { Snackbar.Add("Informe a data de vencimento.", Severity.Warning); return; }

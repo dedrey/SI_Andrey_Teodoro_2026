@@ -164,20 +164,26 @@
                                 </div>
                             </MudTd>
                             <MudTd>
-                                <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
-                                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                           Disabled="@(!_variacoesPorItem.ContainsKey(context) || _variacoesPorItem[context].Count == 0)">
-                                    <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
-                                    @if (_variacoesPorItem.TryGetValue(context, out var vars))
-                                    {
-                                        @foreach (var v in vars)
+                                <div class="d-flex align-center gap-1">
+                                    <MudSelect T="int" Value="context.ProdutoVariacaoId" ValueChanged="@((int id) => OnVariacaoAlterada(context, id))"
+                                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                               Disabled="@VariacaoDesabilitada(context)">
+                                        <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
+                                        @if (_variacoesPorItem.TryGetValue(context, out var vars))
                                         {
-                                            <MudSelectItem T="int" Value="@v.IdOriginal">
-                                                @v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)
-                                            </MudSelectItem>
+                                            @foreach (var v in vars)
+                                            {
+                                                <MudSelectItem T="int" Value="@v.IdOriginal">
+                                                    @v.Cor / @v.Tamanho (@v.QuantidadeEstoque un.)
+                                                </MudSelectItem>
+                                            }
                                         }
-                                    }
-                                </MudSelect>
+                                    </MudSelect>
+                                    <MudTooltip Text="Pesquisar variação">
+                                        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
+                                                       OnClick="@(() => PesquisarVariacaoItem(context))" Disabled="@VariacaoDesabilitada(context)" />
+                                    </MudTooltip>
+                                </div>
                             </MudTd>
                             <MudTd Style="text-align:center;">
                                 <MudChip T="string" Size="Size.Small" Color="@(context.EstoqueAtual > 0 ? Color.Success : Color.Warning)">
@@ -325,6 +331,19 @@
         var produto = await DialogService.PesquisarProdutoAsync(ProdutoService, _produtosSelecionados.GetValueOrDefault(item)?.Id);
         if (produto == null) return;
         await OnProdutoAlterado(item, _todosProdutos.ObterOuAdicionar(produto, p => p.Id));
+    }
+
+    private bool VariacaoDesabilitada(MovimentacaoEstoqueItemDto item) =>
+        _produtosSelecionados.GetValueOrDefault(item) == null
+        || !_variacoesPorItem.TryGetValue(item, out var vars) || vars.Count == 0;
+
+    private async Task PesquisarVariacaoItem(MovimentacaoEstoqueItemDto item)
+    {
+        var produto = _produtosSelecionados.GetValueOrDefault(item);
+        if (produto == null) return;
+        var variacao = await DialogService.PesquisarVariacaoAsync(ProdutoService, produto.Id, _dto.TipoMovimentacao == "SAIDA", item.ProdutoVariacaoId > 0 ? item.ProdutoVariacaoId : null);
+        if (variacao == null) return;
+        OnVariacaoAlterada(item, variacao.Id);
     }
 
     private void AdicionarVariacoesLote()

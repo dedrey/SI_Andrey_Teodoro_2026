@@ -28,6 +28,11 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             "inativos" => "p.ativo = FALSE",
             _ => "1=1"
         });
+        if (filtro.SomenteComEstoque)
+            where.Add(@"(SELECT COALESCE(SUM(es.quantidade), 0)
+                         FROM produto_variacoes pvs
+                         INNER JOIN estoque     es ON es.produto_variacao_id = pvs.id
+                         WHERE pvs.produto_id = p.id AND pvs.ativo = TRUE) > 0");
         var whereClause = "WHERE " + string.Join(" AND ", where);
         var orderBy = filtro.OrdenarPor switch { "id" => "p.id", "data" => "p.criado_em", _ => "p.produto" };
 
@@ -183,6 +188,59 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
               WHERE pv.produto_id = @produtoId
               ORDER BY co.nome, ta.ordem, ta.nome", new { produtoId });
         return result.ToList();
+    }
+
+    public async Task<PaginacaoDto<ProdutoVariacaoListDto>> ObterVariacoesAsync(FiltroConsultaDto filtro)
+    {
+        using var conn = _factory.CreateConnection();
+        var where = new List<string> { "pv.produto_id = @ProdutoId", "pv.ativo = TRUE" };
+        if (filtro.SomenteComEstoque)
+            where.Add("COALESCE(e.quantidade, 0) > 0");
+        if (!string.IsNullOrWhiteSpace(filtro.Busca))
+            where.Add(@"(co.nome LIKE @Busca
+                      OR ta.nome LIKE @Busca
+                      OR CONCAT(co.nome, ' ', ta.nome) LIKE @Busca
+                      OR CAST(pv.id AS CHAR) = @BuscaExata)");
+        var whereClause = "WHERE " + string.Join(" AND ", where);
+
+        var from = $@"FROM produto_variacoes pv
+                      LEFT JOIN cores    co ON co.id = pv.cor_id
+                      LEFT JOIN tamanhos ta ON ta.id = pv.tamanho_id
+                      LEFT JOIN estoque  e  ON e.produto_variacao_id = pv.id
+                      {whereClause}";
+
+        var sqlData = $@"SELECT pv.id,
+                                 pv.produto_id             AS ProdutoId,
+                                 pv.cor_id                 AS CorId,
+                                 co.nome                   AS Cor,
+                                 pv.tamanho_id             AS TamanhoId,
+                                 ta.nome                   AS Tamanho,
+                                 pv.preco                  AS Preco,
+                                 pv.preco_custo            AS PrecoCusto,
+                                 COALESCE(e.quantidade, 0) AS QuantidadeEstoque,
+                                 pv.ativo                  AS Ativo
+                          {from}
+                          ORDER BY co.nome, ta.ordem, ta.nome
+                          LIMIT @Limit OFFSET @Offset";
+
+        var param = new
+        {
+            filtro.ProdutoId,
+            Busca = $"%{filtro.Busca}%",
+            BuscaExata = filtro.Busca,
+            Limit = filtro.TamanhoPagina,
+            Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
+        };
+
+        var total = await conn.ExecuteScalarAsync<int>($"SELECT COUNT(*) {from}", param);
+        var itens = await conn.QueryAsync<ProdutoVariacaoListDto>(sqlData, param);
+        return new PaginacaoDto<ProdutoVariacaoListDto>
+        {
+            Itens = itens.ToList(),
+            TotalItens = total,
+            Pagina = filtro.Pagina,
+            TamanhoPagina = filtro.TamanhoPagina
+        };
     }
 
     public async Task<int> InserirAsync(ProdutoDto dto)

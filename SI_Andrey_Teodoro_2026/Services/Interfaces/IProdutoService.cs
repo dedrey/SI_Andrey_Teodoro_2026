@@ -7,6 +7,7 @@ public interface IProdutoService
     Task<PaginacaoDto<ProdutoListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<ProdutoListDto>> ObterTodosAtivosAsync();
     Task<ProdutoDto?> ObterPorIdAsync(int id);
+    Task<PaginacaoDto<ProdutoVariacaoListDto>> ObterVariacoesAsync(FiltroConsultaDto filtro);
     Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(ProdutoDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);

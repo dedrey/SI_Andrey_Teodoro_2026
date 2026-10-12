@@ -9,6 +9,7 @@ public interface IProdutoRepository
     Task<IEnumerable<ProdutoListDto>> ObterTodosAtivosAsync();
     Task<Produto?> ObterPorIdAsync(int id);
     Task<List<ProdutoVariacaoDto>> ObterVariacoesPorProdutoAsync(int produtoId);
+    Task<PaginacaoDto<ProdutoVariacaoListDto>> ObterVariacoesAsync(FiltroConsultaDto filtro);
     Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId);
     Task<int> InserirAsync(ProdutoDto dto);
     Task AtualizarAsync(ProdutoDto dto);
