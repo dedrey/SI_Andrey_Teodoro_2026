@@ -18,6 +18,8 @@ public class EstadoRepository : BaseRepository, IEstadoRepository
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add("(e.estado LIKE @Busca OR e.uf LIKE @Busca OR p.pais LIKE @Busca OR CAST(e.id AS CHAR) = @BuscaExata)");
+        if (filtro.PaisId.HasValue)
+            where.Add("e.pais_id = @PaisId");
         where.Add(filtro.StatusFiltro switch { "ativos" => "e.ativo = TRUE", "inativos" => "e.ativo = FALSE", _ => "1=1" });
         var whereClause = "WHERE " + string.Join(" AND ", where);
         var orderBy = filtro.OrdenarPor switch { "id" => "e.id", "data" => "e.criado_em", _ => "e.estado" };
@@ -32,6 +34,7 @@ public class EstadoRepository : BaseRepository, IEstadoRepository
         {
             Busca = $"%{filtro.Busca}%",
             BuscaExata = filtro.Busca,
+            filtro.PaisId,
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };

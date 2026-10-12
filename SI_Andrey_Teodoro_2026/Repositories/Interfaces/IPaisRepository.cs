@@ -8,6 +8,7 @@ public interface IPaisRepository
     Task<PaginacaoDto<PaisListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<PaisListDto>> ObterTodosAtivosSemPaginacaoAsync();
     Task<Pais?> ObterPorIdAsync(int id);
+    Task<int> ObterIdBrasilAsync();
     Task<int> InserirAsync(PaisDto dto);
     Task AtualizarAsync(PaisDto dto);
     Task AlterarStatusAsync(int id, bool ativo);

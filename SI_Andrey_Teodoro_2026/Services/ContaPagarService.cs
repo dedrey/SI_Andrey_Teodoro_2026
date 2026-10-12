@@ -26,6 +26,7 @@ public class ContaPagarService : IContaPagarService
             CompraId = c.CompraId,
             NumeroNfCompra = c.NumeroNfCompra,
             DataEmissaoCompra = c.DataEmissaoCompra,
+            MotivoCancelamentoCompra = c.MotivoCancelamentoCompra,
             Descricao = c.Descricao,
             DataVencimento = c.DataVencimento,
             DataPagamento = c.DataPagamento,
@@ -47,6 +48,8 @@ public class ContaPagarService : IContaPagarService
                 var existente = await _repo.ObterPorIdAsync(dto.IdOriginal);
                 if (existente == null)
                     return (false, "Conta a pagar não encontrada.", 0);
+                if (existente.Status != "ABERTA")
+                    return (false, MensagemNaoAlteravel(existente.Status), 0);
                 if (existente.CompraId.HasValue)
                 {
                     if (dto.DataVencimento == default)
@@ -90,6 +93,7 @@ public class ContaPagarService : IContaPagarService
     {
         try
         {
+            if (await ValidarAlteracaoAsync(id) is string erro) return (false, erro);
             await _repo.AtualizarStatusAsync(id, "PAGA", dataPagamento, comprovanteArquivo);
             return (true, "Conta marcada como paga!");
         }
@@ -100,9 +104,20 @@ public class ContaPagarService : IContaPagarService
     {
         try
         {
+            if (await ValidarAlteracaoAsync(id) is string erro) return (false, erro);
             await _repo.AtualizarStatusAsync(id, "CANCELADA");
             return (true, "Conta cancelada.");
         }
         catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
     }
+
+    private async Task<string?> ValidarAlteracaoAsync(int id)
+    {
+        var conta = await _repo.ObterPorIdAsync(id);
+        if (conta == null) return "Conta a pagar não encontrada.";
+        return conta.Status == "ABERTA" ? null : MensagemNaoAlteravel(conta.Status);
+    }
+
+    private static string MensagemNaoAlteravel(string status) =>
+        status == "PAGA" ? "Conta já paga não pode ser alterada." : "Conta cancelada não pode ser alterada.";
 }

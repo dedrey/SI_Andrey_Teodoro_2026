@@ -11,7 +11,13 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.ShoppingBag" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(Edicao ? "Editar Produto" : "Cadastrar Novo Produto")</MudText>
+            <MudText Typo="Typo.h6">@(_readOnly ? "Detalhes do Produto" : Edicao ? "Editar Produto" : "Cadastrar Novo Produto")</MudText>
+            @if (Edicao)
+            {
+                <MudChip T="string" Size="Size.Small" Color="@(_dto.Ativo ? Color.Success : Color.Error)" Class="ml-2">
+                    @(_dto.Ativo ? "Ativo" : "Inativo")
+                </MudChip>
+            }
         </div>
     </TitleContent>
     <DialogContent>
@@ -91,25 +97,38 @@
                                   MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !CabecalhoOk)"
                                   HelperText="@(CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
                 </MudItem>
+                @if (Edicao)
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@(_dto.NomeFornecedor ?? "—")" Label="Último Fornecedor" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@(_dto.NumeroNfUltimaEntrada ?? "—")" Label="Nota Fiscal de Entrada" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
+                    </MudItem>
+                }
 
-                <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Style" Titulo="Variações (Cor / Tamanho / Preço de Venda)" AoMudar="StateHasChanged">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.AddCircleOutline" OnClick="AdicionarVariacao" Disabled="@VariacoesBloqueadas">
-                        Nova Variação
-                    </MudButton>
-                </TituloSecao>
+                <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Style" Titulo="@($"Variações ({VariacoesVisiveis.Count()})")" AoMudar="StateHasChanged" />
             </MudGrid>
-            @if (!CabecalhoOk)
+            @if (_readOnly)
             {
-                <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Preencha nome, categoria, marca e unidade para adicionar variações.</MudText>
+                <div class="mb-3"></div>
             }
-            else if (Bloqueado(2))
+            else
             {
-                <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Confirme os dados do produto para voltar a editar as variações.</MudText>
+                @if (!CabecalhoOk)
+                {
+                    <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Preencha nome, categoria, marca e unidade para adicionar variações.</MudText>
+                }
+                else if (Bloqueado(2))
+                {
+                    <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Confirme os dados do produto para voltar a editar as variações.</MudText>
+                }
+                <div class="mb-3"></div>
             }
-            <div class="mb-3"></div>
 
-            @if (_dto.Variacoes.Count(v => !v.Removida) > 1)
+            @if (!_readOnly && _dto.Variacoes.Count(v => !v.Removida) > 1)
             {
                 <div class="d-flex align-center gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
                     <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Style="color:#888;" />
@@ -124,6 +143,8 @@
                 </div>
             }
 
+            @if (!_readOnly)
+            {
             <MudExpansionPanels Elevation="0" Class="mb-3" Style="border:1px solid #e0e0e0;border-radius:8px;">
                 <MudExpansionPanel Text="Gerar várias combinações de cor × tamanho de uma vez" Icon="@Icons.Material.Filled.GridView" Disabled="@VariacoesBloqueadas">
                     <div class="d-flex flex-wrap align-end gap-3">
@@ -167,10 +188,11 @@
                     </MudText>
                 </MudExpansionPanel>
             </MudExpansionPanels>
+            }
 
-            @if (_dto.Variacoes.Any(v => !v.Removida))
+            @if (VariacoesVisiveis.Any())
             {
-                <MudTable Items="@_dto.Variacoes.Where(v => !v.Removida)" Dense="true" Hover="false"
+                <MudTable Items="@VariacoesVisiveis" Dense="true" Hover="false"
                           Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
                     <HeaderContent>
                         <MudTh Style="font-weight:600;">Cor</MudTh>
@@ -179,6 +201,7 @@
                         <MudTh Style="font-weight:600;text-align:right;">Custo</MudTh>
                         <MudTh Style="font-weight:600;">Última Compra</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Estoque</MudTh>
+                        <MudTh Style="font-weight:600;text-align:center;">Ativo</MudTh>
                         <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                     </HeaderContent>
                     <RowTemplate>
@@ -186,40 +209,8 @@
                             bool fastFashion = context.IdOriginal > 0 && context.PrecoCusto > 0 && context.PermiteVendaAbaixoCusto;
                             bool abaixoCusto = context.PrecoCusto > 0 && context.Preco < context.PrecoCusto;
                         }
-                        <MudTd>
-                            <div class="d-flex align-center gap-1">
-                                <MudSelect T="int" Value="context.CorId" ValueChanged="@((int id) => { context.CorId = id; context.Cor = _cores.FirstOrDefault(c => c.Id == id)?.Nome ?? ""; })"
-                                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                           Disabled="@(ComMovimento(context) || Bloqueado(2))" HelperText="@AjudaMovimento(context)">
-                                    <MudSelectItem T="int" Value="0" Disabled="true">— Cor —</MudSelectItem>
-                                    @foreach (var c in _cores)
-                                    {
-                                        <MudSelectItem T="int" Value="@c.Id">@c.Nome</MudSelectItem>
-                                    }
-                                </MudSelect>
-                                <MudTooltip Text="Pesquisar cor">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                                   OnClick="@(() => PesquisarCorVariacao(context))" Disabled="@(ComMovimento(context) || Bloqueado(2))" />
-                                </MudTooltip>
-                            </div>
-                        </MudTd>
-                        <MudTd>
-                            <div class="d-flex align-center gap-1">
-                                <MudSelect T="int" Value="context.TamanhoId" ValueChanged="@((int id) => { context.TamanhoId = id; context.Tamanho = _tamanhos.FirstOrDefault(t => t.Id == id)?.Nome ?? ""; })"
-                                           Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                           Disabled="@(ComMovimento(context) || Bloqueado(2))" HelperText="@AjudaMovimento(context)">
-                                    <MudSelectItem T="int" Value="0" Disabled="true">— Tam —</MudSelectItem>
-                                    @foreach (var t in _tamanhos)
-                                    {
-                                        <MudSelectItem T="int" Value="@t.Id">@t.Nome</MudSelectItem>
-                                    }
-                                </MudSelect>
-                                <MudTooltip Text="Pesquisar tamanho">
-                                    <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                                   OnClick="@(() => PesquisarTamanhoVariacao(context))" Disabled="@(ComMovimento(context) || Bloqueado(2))" />
-                                </MudTooltip>
-                            </div>
-                        </MudTd>
+                        <MudTd Style="font-weight:600;">@context.Cor</MudTd>
+                        <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
                         <MudTd>
                             <MudTextField Value="@GetPrecoTexto(context)" ValueChanged="@((string v) => OnPrecoAlterado(context, v))"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
@@ -237,6 +228,10 @@
                         </MudTd>
                         <MudTd Style="color:#666;">
                             @(context.DataUltimaCompra.HasValue ? context.DataUltimaCompra.Value.ToString("dd/MM/yyyy") : "—")
+                            @if (context.PermiteVendaAbaixoCusto)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Class="ml-1">⚡ Fast Fashion</MudChip>
+                            }
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             @if (context.IdOriginal > 0)
@@ -247,6 +242,10 @@
                             {
                                 <MudText Typo="Typo.caption" Style="color:#bbb;">Salve primeiro</MudText>
                             }
+                        </MudTd>
+                        <MudTd Style="text-align:center;">
+                            <MudSwitch T="bool" Value="context.Ativo" ValueChanged="@((bool a) => context.Ativo = a)"
+                                       Color="Color.Success" Disabled="@Bloqueado(2)" />
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             @if (context.IdOriginal == 0)
@@ -271,18 +270,29 @@
             else
             {
                 <div class="d-flex align-center justify-center pa-4" style="border:1px dashed #ddd;border-radius:8px;color:#bbb;">
-                    <MudIcon Icon="@Icons.Material.Filled.AddCircleOutline" Class="mr-2" />
-                    <MudText Typo="Typo.body2">Clique em "Nova Variação" para adicionar cor, tamanho e preço.</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.GridView" Class="mr-2" />
+                    <MudText Typo="Typo.body2">@(_readOnly ? "Nenhuma variação cadastrada." : "Use \"Gerar várias combinações\" para adicionar cor, tamanho e preço.")</MudText>
                 </div>
             }
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
-                   Disabled="@(_salvando || _grupos.Editando.HasValue)" Style="height:40px;font-weight:700;min-width:140px;">
-            @(_salvando ? "Salvando..." : "SALVAR")
-        </MudButton>
+        @if (_readOnly)
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="Fechar">Fechar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => _readOnly = false)"
+                       StartIcon="@Icons.Material.Filled.Edit" Style="height:40px;font-weight:700;min-width:140px;">
+                Editar
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="Fechar">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
+                       Disabled="@(_salvando || _grupos.Editando.HasValue)" Style="height:40px;font-weight:700;min-width:140px;">
+                @(_salvando ? "Salvando..." : "SALVAR")
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -290,6 +300,7 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     private string? _snapshot;
     [Parameter] public ProdutoDto? DtoEdicao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; }
 
     private MudForm? _form;
     private bool _formValido, _salvando;
@@ -306,13 +317,15 @@
     private HashSet<int> _variacoesComMovimento = new();
     private const string MsgMovimento = "Variação com movimentação: só preço e situação podem ser alterados.";
     private GruposProgressivos _grupos = null!;
+    private bool _readOnly;
+    private bool? _readOnlyTitulo;
 
     private bool NomeOk => ValidarNome(_dto.Produto) == null;
     private bool CategoriaOk => NomeOk && _dto.CategoriaId > 0;
     private bool MarcaOk => CategoriaOk && _dto.MarcaId > 0;
     private bool CabecalhoOk => MarcaOk && _dto.UnidadeMedidaId > 0;
     private bool Edicao => _dto.IdOriginal > 0;
-    private bool Bloqueado(int g) => _grupos.Bloqueado(g);
+    private bool Bloqueado(int g) => _readOnly || _grupos.Bloqueado(g);
     private bool VariacoesBloqueadas => Bloqueado(2) || !CabecalhoOk;
     private string? ErroGrupo(int g) => g switch
     {
@@ -323,15 +336,26 @@
         _ => null
     };
     private bool ComMovimento(ProdutoVariacaoDto v) => v.IdOriginal > 0 && _variacoesComMovimento.Contains(v.IdOriginal);
-    private string? AjudaMovimento(ProdutoVariacaoDto v) => ComMovimento(v) ? MsgMovimento : null;
+    private IEnumerable<ProdutoVariacaoDto> VariacoesVisiveis => _dto.Variacoes.Where(v => !v.Removida)
+        .OrderBy(v => v.Cor).ThenBy(OrdemTamanho).ThenBy(v => v.Tamanho);
+    private int OrdemTamanho(ProdutoVariacaoDto v) => _tamanhos.FirstOrDefault(t => t.Id == v.TamanhoId)?.Ordem ?? int.MaxValue;
     private static string? ValidarNome(string? v) =>
         string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null;
 
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_readOnlyTitulo == _readOnly) return;
+        var jaRenderizado = _readOnlyTitulo.HasValue;
+        _readOnlyTitulo = _readOnly;
+        if (jaRenderizado) MudDialog.StateHasChanged();
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        _readOnly = SomenteLeitura;
         _dto = DtoEdicao ?? new ProdutoDto();
-        _grupos = new(() => !Edicao, ErroGrupo, "os dados do produto");
+        _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "os dados do produto");
         if (DtoEdicao != null)
         {
             foreach (var v in _dto.Variacoes)
@@ -349,17 +373,6 @@
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
-    private void AdicionarVariacao()
-    {
-        var nova = new ProdutoVariacaoDto();
-        var ultima = _dto.Variacoes.LastOrDefault(v => !v.Removida);
-        if (ultima != null)
-            nova.Preco = ultima.Preco;
-        _dto.Variacoes.Add(nova);
-        _precoTextos[nova] = nova.Preco > 0 ? nova.Preco.ToString("N2") : "";
-        _grupos.Alterou(2);
-        StateHasChanged();
-    }
     private void RemoverVariacao(ProdutoVariacaoDto v)
     {
         if (v.IdOriginal == 0) { _dto.Variacoes.Remove(v); _precoTextos.Remove(v); }
@@ -479,24 +492,6 @@
         _tamanhosLote = tamanhos.Select(t => _tamanhos.ObterOuAdicionar(t, x => x.Id).Id).Distinct().ToList();
     }
 
-    private async Task PesquisarCorVariacao(ProdutoVariacaoDto variacao)
-    {
-        var cor = await DialogService.PesquisarCorAsync(CorService, variacao.CorId, NovaCor);
-        if (cor == null) return;
-        var selecionada = _cores.ObterOuAdicionar(cor, c => c.Id);
-        variacao.CorId = selecionada.Id;
-        variacao.Cor = selecionada.Nome;
-    }
-
-    private async Task PesquisarTamanhoVariacao(ProdutoVariacaoDto variacao)
-    {
-        var tamanho = await DialogService.PesquisarTamanhoAsync(TamanhoService, variacao.TamanhoId, NovoTamanho);
-        if (tamanho == null) return;
-        var selecionado = _tamanhos.ObterOuAdicionar(tamanho, t => t.Id);
-        variacao.TamanhoId = selecionado.Id;
-        variacao.Tamanho = selecionado.Nome;
-    }
-
     private async Task<CorListDto?> NovaCor()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
@@ -553,5 +548,5 @@
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }
     private object DadosEditaveis() => new { _dto, _replicarVendaTexto, _coresLote, _tamanhosLote };
-    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, DadosEditaveis());
+    private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }

@@ -48,8 +48,11 @@ public static class PesquisaExtensions
             new("Cidade", e => e.NomeCidade)
         }, Ativos, novo, x => x.Id, selecionado);
 
-    public static Task<CidadeListDto?> PesquisarCidadeAsync(this IDialogService dialogService, ICidadeService service, int? selecionado = null, Func<Task<CidadeListDto?>>? novo = null) =>
-        dialogService.PesquisarAsync("Pesquisar Cidade", service.ObterTodosAsync, new List<ColunaPesquisa<CidadeListDto>>
+    private static Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> FiltrarPorPais<TItem>(Func<FiltroConsultaDto, Task<PaginacaoDto<TItem>>> buscar, int? paisId) =>
+        filtro => { filtro.PaisId = paisId is > 0 ? paisId : null; return buscar(filtro); };
+
+    public static Task<CidadeListDto?> PesquisarCidadeAsync(this IDialogService dialogService, ICidadeService service, int? selecionado = null, Func<Task<CidadeListDto?>>? novo = null, int? paisId = null) =>
+        dialogService.PesquisarAsync("Pesquisar Cidade",FiltrarPorPais<CidadeListDto>(service.ObterTodosAsync, paisId), new List<ColunaPesquisa<CidadeListDto>>
         {
             new("Código", c => c.Id),
             new("Cidade", c => c.NomeCidade),
@@ -57,8 +60,8 @@ public static class PesquisaExtensions
             new("País", c => c.NomePais)
         }, Ativos, novo, x => x.Id, selecionado);
 
-    public static Task<EstadoListDto?> PesquisarEstadoAsync(this IDialogService dialogService, IEstadoService service, int? selecionado = null, Func<Task<EstadoListDto?>>? novo = null) =>
-        dialogService.PesquisarAsync("Pesquisar Estado", service.ObterTodosAsync, new List<ColunaPesquisa<EstadoListDto>>
+    public static Task<EstadoListDto?> PesquisarEstadoAsync(this IDialogService dialogService, IEstadoService service, int? selecionado = null, Func<Task<EstadoListDto?>>? novo = null, int? paisId = null) =>
+        dialogService.PesquisarAsync("Pesquisar Estado", FiltrarPorPais<EstadoListDto>(service.ObterTodosAsync, paisId), new List<ColunaPesquisa<EstadoListDto>>
         {
             new("Código", e => e.Id),
             new("Estado", e => e.NomeEstado),

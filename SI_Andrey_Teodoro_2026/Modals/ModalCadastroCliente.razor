@@ -1,5 +1,6 @@
 ﻿@inject IClienteService ClienteService
 @inject ICidadeService CidadeService
+@inject IPaisService PaisService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @using SI_Andrey_Teodoro_2026.DTOs
@@ -204,6 +205,7 @@
     private string _docTexto = "";
     private List<CidadeListDto> _cidades = new();
     private CidadeListDto? _cidadeSelecionada;
+    private int _brasilId;
     private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
     private GruposProgressivos _grupos = null!;
     private bool _docSalvo;
@@ -221,6 +223,7 @@
     {
         _readOnly = SomenteLeitura;
         _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "a identificação", "o endereço");
+        _brasilId = await PaisService.ObterIdBrasilAsync();
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
         if (DtoEdicao is not null)
         {
@@ -266,16 +269,15 @@
 
     private Task<IEnumerable<CidadeListDto>> PesquisarCidade(string? busca, CancellationToken ct)
     {
-        var fonte = _dto.Estrangeiro ? _cidades : _cidades.Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase));
+        var fonte = _dto.Estrangeiro ? _cidades : _cidades.Where(c => c.PaisId == _brasilId);
         var r = string.IsNullOrWhiteSpace(busca) ? fonte.Take(50) : fonte.Where(c => c.NomeCidade.Contains(busca, StringComparison.OrdinalIgnoreCase) || c.Uf.Contains(busca, StringComparison.OrdinalIgnoreCase));
         return Task.FromResult(r);
     }
 
     private async Task PesquisarCidadeModal()
     {
-        var cidade = await DialogService.PesquisarCidadeAsync(CidadeService, _dto.CidadeId, NovaCidade);
+        var cidade = await DialogService.PesquisarCidadeAsync(CidadeService, _dto.CidadeId, NovaCidade, _dto.Estrangeiro ? null : _brasilId);
         if (cidade == null) return;
-        if (!_dto.Estrangeiro && !cidade.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)) { Snackbar.Add("Cliente não estrangeiro: selecione uma cidade do Brasil.", Severity.Warning); return; }
         _cidadeSelecionada = _cidades.ObterOuAdicionar(cidade, c => c.Id);
         _dto.CidadeId = _cidadeSelecionada.Id;
         Alterou(2);
@@ -292,7 +294,8 @@
     private async Task<CidadeListDto?> NovaCidade()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
+        var param = new DialogParameters<ModalCadastroCidade> { { x => x.PaisIdInicial, _dto.Estrangeiro ? 0 : _brasilId } };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", param, opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;
         var todas = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
@@ -365,7 +368,7 @@
         _dto.Estrangeiro = v;
         _dto.DocumentoEstrangeiro = null; _docTexto = ""; _dto.CpfCnpj = null;
         if (v) _dto.Cep = "";
-        else if (_cidadeSelecionada != null && !_cidadeSelecionada.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)) { _cidadeSelecionada = null; _dto.CidadeId = null; }
+        else if (_cidadeSelecionada != null && _cidadeSelecionada.PaisId != _brasilId) { _cidadeSelecionada = null; _dto.CidadeId = null; }
     }
 
 }

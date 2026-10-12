@@ -48,7 +48,6 @@
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(produto.Ativo ? Color.Success : Color.Error)">@(produto.Ativo ? "Ativo" : "Inativo")</MudChip></MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Visualizar"><MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(async ()=>await Visualizar(produto.Id))"/></MudTooltip>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(async ()=>await Editar(produto.Id))"/>
                 <MudIconButton Icon="@(produto.Ativo ? Icons.Material.Filled.ToggleOn : Icons.Material.Filled.ToggleOff)" Color="@(produto.Ativo ? Color.Success : Color.Error)" Size="Size.Small" OnClick="@(async ()=>await AlterarStatus(produto.Id, produto.Produto, produto.Ativo))"/>
             </MudTd>
         </RowTemplate>

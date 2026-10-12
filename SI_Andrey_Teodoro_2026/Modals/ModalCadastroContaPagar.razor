@@ -17,8 +17,15 @@
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.Inventory2" Color="Color.Info" Size="Size.Small" />
                     <MudText Typo="Typo.body2" Style="color:#1565c0;">
-                        Gerada automaticamente pela Compra
-                        @(string.IsNullOrWhiteSpace(_dto.NumeroNfCompra) ? $"#{_dto.CompraId}" : $"(NF {_dto.NumeroNfCompra})")
+                        @if (CanceladaComCompra)
+                        {
+                            @($"Cancelada junto com a Compra #{_dto.CompraId}{(string.IsNullOrWhiteSpace(_dto.NumeroNfCompra) ? "" : $" (NF {_dto.NumeroNfCompra})")}. Motivo: {_dto.MotivoCancelamentoCompra}")
+                        }
+                        else
+                        {
+                            @("Gerada automaticamente pela Compra ")
+                            @(string.IsNullOrWhiteSpace(_dto.NumeroNfCompra) ? $"#{_dto.CompraId}" : $"(NF {_dto.NumeroNfCompra})")
+                        }
                     </MudText>
                 </div>
             </div>
@@ -53,7 +60,7 @@
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string v) => _dto.Descricao = v)" Label="Descrição"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true"
                                   Required="true" RequiredError="Obrigatório" MaxLength="150" FullWidth="true"
-                                  ReadOnly="@_somenteLeitura" Disabled="@(DaCompra || !FornecedorOk)" HelperText="@AjudaDescricao"
+                                  ReadOnly="@_somenteLeitura" Disabled="@(_somenteLeitura || DaCompra || !FornecedorOk)" HelperText="@AjudaDescricao"
                                   Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
                 </MudItem>
                 <MudItem xs="12" sm="6">
@@ -61,14 +68,14 @@
                                   Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" FullWidth="true" Immediate="true"
                                   Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura"
-                                  Disabled="@(DaCompra || !DescricaoOk)" HelperText="@AjudaValor" />
+                                  Disabled="@(_somenteLeitura || DaCompra || !DescricaoOk)" HelperText="@AjudaValor" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Required="true" RequiredError="Obrigatório" Editable="true"
+                                   Required="@(!_somenteLeitura)" RequiredError="Obrigatório" Editable="@(!_somenteLeitura)"
                                    DateFormat="dd/MM/yyyy" ReadOnly="@_somenteLeitura"
-                                   Disabled="@(!DaCompra && !ValorOk)" HelperText="@AjudaVencimento" />
+                                   Disabled="@(_somenteLeitura || (!DaCompra && !ValorOk))" HelperText="@AjudaVencimento" />
                 </MudItem>
                 @if (_dto.Status == "PAGA" && _dto.DataPagamento.HasValue)
                 {
@@ -80,7 +87,7 @@
 
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@FormatarStatus(_dto.Status)" Label="Status"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="@_somenteLeitura" />
                 </MudItem>
             </MudGrid>
             @if (DaCompra)
@@ -116,6 +123,7 @@
 
     private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
     private bool DaCompra => _dto.CompraId.HasValue;
+    private bool CanceladaComCompra => DaCompra && _dto.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(_dto.MotivoCancelamentoCompra);
     private bool _semFornecedor;
     private bool FornecedorOk => DaCompra || _semFornecedor || _dto.FornecedorId.HasValue;
     private bool DescricaoOk => FornecedorOk && !string.IsNullOrWhiteSpace(_dto.Descricao);
@@ -144,6 +152,7 @@
                 NomeFornecedor = DtoEdicao.NomeFornecedor,
                 CompraId = DtoEdicao.CompraId,
                 NumeroNfCompra = DtoEdicao.NumeroNfCompra,
+                MotivoCancelamentoCompra = DtoEdicao.MotivoCancelamentoCompra,
                 Descricao = DtoEdicao.Descricao,
                 DataVencimento = DtoEdicao.DataVencimento,
                 DataPagamento = DtoEdicao.DataPagamento,

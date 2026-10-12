@@ -18,6 +18,8 @@ public class CidadeRepository : BaseRepository, ICidadeRepository
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
             where.Add("(c.cidade LIKE @Busca OR e.uf LIKE @Busca OR p.pais LIKE @Busca OR e.estado LIKE @Busca OR CAST(c.id AS CHAR) = @BuscaExata)");
+        if (filtro.PaisId.HasValue)
+            where.Add("e.pais_id = @PaisId");
         where.Add(filtro.StatusFiltro switch { "ativos" => "c.ativo = TRUE", "inativos" => "c.ativo = FALSE", _ => "1=1" });
         var whereClause = "WHERE " + string.Join(" AND ", where);
         var orderBy = filtro.OrdenarPor switch { "id" => "c.id", "data" => "c.criado_em", _ => "c.cidade" };
@@ -38,6 +40,7 @@ public class CidadeRepository : BaseRepository, ICidadeRepository
         {
             Busca = $"%{filtro.Busca}%",
             BuscaExata = filtro.Busca,
+            filtro.PaisId,
             Limit = filtro.TamanhoPagina,
             Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };

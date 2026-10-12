@@ -56,6 +56,13 @@ public class PaisRepository : BaseRepository, IPaisRepository
             "SELECT id, pais AS NomePais, sigla, ddi FROM paises WHERE ativo = TRUE ORDER BY pais");
     }
 
+    public async Task<int> ObterIdBrasilAsync()
+    {
+        using var conn = _factory.CreateConnection();
+        return await conn.ExecuteScalarAsync<int?>(
+            "SELECT id FROM paises WHERE pais = 'Brasil' ORDER BY id LIMIT 1") ?? 0;
+    }
+
     public async Task<Pais?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();

@@ -347,9 +347,10 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                               tamanho       = @Tamanho,
                               tamanho_id    = @TamanhoId,
                               preco         = @Preco,
+                              ativo         = @Ativo,
                               atualizado_em = NOW()
                           WHERE id = @IdOriginal",
-                        new { v.Id, v.IdOriginal, v.Cor, v.CorId, v.Tamanho, v.TamanhoId, v.Preco }, tx);
+                        new { v.Id, v.IdOriginal, v.Cor, v.CorId, v.Tamanho, v.TamanhoId, v.Preco, v.Ativo }, tx);
                 }
             }
 

@@ -35,13 +35,13 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task Editar(int id)
+    private async Task Visualizar(int id)
     {
         var dto = await ProdutoService.ObterPorIdAsync(id);
         if (dto == null) { Snackbar.Add("Produto não encontrado.", Severity.Warning); return; }
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
-        var param = new DialogParameters<ModalCadastroProduto> { { x => x.DtoEdicao, dto } };
-        var dialog = await DialogService.ShowAsync<ModalCadastroProduto>("Editar Produto", param, opts);
+        var param = new DialogParameters<ModalCadastroProduto> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
+        var dialog = await DialogService.ShowAsync<ModalCadastroProduto>("Detalhes do Produto", param, opts);
         if ((await dialog.Result) is { Canceled: false }) { _variacoesCache.Remove(id); await CarregarDados(); }
     }
 
@@ -62,14 +62,5 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual,
             async (i, a) => await ProdutoService.AlterarStatusAsync(i, a), CarregarDados);
-    private async Task Visualizar(int id)
-    {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
-        var param = new DialogParameters<ModalVisualizarProduto> { { x => x.Id, id } };
-        var dialog = await DialogService.ShowAsync<ModalVisualizarProduto>("Detalhes do Produto", param, opts);
-        var result = await dialog.Result;
-        if (result is { Canceled: false } && result.Data is "editar")
-            await Editar(id);
-    }
 
 }

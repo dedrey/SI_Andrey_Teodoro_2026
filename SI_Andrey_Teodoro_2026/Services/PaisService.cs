@@ -18,6 +18,9 @@ public class PaisService : BaseService<PaisDto, PaisListDto>, IPaisService
     public Task<IEnumerable<PaisListDto>> ObterTodosAtivosAsync()
         => _repo.ObterTodosAtivosSemPaginacaoAsync();
 
+    public Task<int> ObterIdBrasilAsync()
+        => _repo.ObterIdBrasilAsync();
+
     public async Task<PaisDto?> ObterPorIdAsync(int id)
     {
         var p = await _repo.ObterPorIdAsync(id);

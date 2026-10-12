@@ -163,10 +163,8 @@
 
     private async Task PesquisarEstado()
     {
-        var estado = await DialogService.PesquisarEstadoAsync(EstadoService, _dto.EstadoId, NovoEstado);
+        var estado = await DialogService.PesquisarEstadoAsync(EstadoService, _dto.EstadoId, NovoEstado, _dto.PaisId);
         if (estado == null) return;
-        if (estado.PaisId != _dto.PaisId)
-            await OnPaisAlterado(_paises.ObterOuAdicionar(new PaisListDto { Id = estado.PaisId, NomePais = estado.NomePais }, p => p.Id).Id);
         _dto.EstadoId = _estados.ObterOuAdicionar(estado, e => e.Id).Id;
     }
 

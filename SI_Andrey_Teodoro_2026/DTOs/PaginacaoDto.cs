@@ -12,6 +12,7 @@ public class PaginacaoDto<T>
 public class FiltroConsultaDto
 {
     public string? Busca { get; set; }
+    public int? PaisId { get; set; }
     public string StatusFiltro { get; set; } = "ativos";
     public string OrdenarPor { get; set; } = "id";
     public int Pagina { get; set; } = 1;

@@ -1,5 +1,6 @@
 ﻿@inject IFornecedorService FornecedorService
 @inject ICidadeService CidadeService
+@inject IPaisService PaisService
 @inject ICondicaoPagamentoService CondicaoPagamentoService
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
@@ -164,6 +165,7 @@
     private string _docTexto = "";
     private List<CidadeListDto> _cidades = new();
     private CidadeListDto? _cidadeSelecionada;
+    private int _brasilId;
     private List<CondicaoPagamentoListDto> _condicoes = new();
     private GruposProgressivos _grupos = null!;
     private bool? _readOnlyTitulo;
@@ -180,8 +182,9 @@
     {
         _readOnly = SomenteLeitura;
         _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "a identificação", "o endereço");
+        _brasilId = await PaisService.ObterIdBrasilAsync();
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync())
-            .Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)).ToList();
+            .Where(c => c.PaisId == _brasilId).ToList();
         _condicoes = (await CondicaoPagamentoService.ObterTodosAtivosAsync()).ToList();
         if (DtoEdicao is not null)
         {
@@ -242,9 +245,8 @@
 
     private async Task PesquisarCidadeModal()
     {
-        var cidade = await DialogService.PesquisarCidadeAsync(CidadeService, _dto.CidadeId, NovaCidade);
+        var cidade = await DialogService.PesquisarCidadeAsync(CidadeService, _dto.CidadeId, NovaCidade, _brasilId);
         if (cidade == null) return;
-        if (!cidade.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)) { Snackbar.Add("Selecione uma cidade do Brasil.", Severity.Warning); return; }
         _cidadeSelecionada = _cidades.ObterOuAdicionar(cidade, c => c.Id);
         _dto.CidadeId = _cidadeSelecionada.Id;
         Alterou(2);
@@ -253,11 +255,12 @@
     private async Task<CidadeListDto?> NovaCidade()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
+        var param = new DialogParameters<ModalCadastroCidade> { { x => x.PaisIdInicial, _brasilId } };
+        var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", param, opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;
         var todas = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
-        _cidades = todas.Where(c => c.NomePais.Equals("Brasil", StringComparison.OrdinalIgnoreCase)).ToList();
+        _cidades = todas.Where(c => c.PaisId == _brasilId).ToList();
         return todas.FirstOrDefault(c => c.Id == id);
     }
 

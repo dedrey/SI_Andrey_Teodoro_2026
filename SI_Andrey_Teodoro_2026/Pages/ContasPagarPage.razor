@@ -102,9 +102,12 @@
             </MudTd>
             <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
             <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
-                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
-                </MudChip>
+                <MudTooltip Text="@(context.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(context.MotivoCancelamentoCompra) ? $"Motivo: {context.MotivoCancelamentoCompra}" : "")"
+                            Disabled="@(context.Status != "CANCELADA" || string.IsNullOrWhiteSpace(context.MotivoCancelamentoCompra))">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
+                        @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
+                    </MudChip>
+                </MudTooltip>
             </MudTd>
             <MudTd Style="text-align:center;">
                 @if (context.Status == "ABERTA")
