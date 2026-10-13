@@ -203,24 +203,22 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
     public async Task<int> InserirAsync(ContaReceberDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        return await conn.ExecuteScalarAsync<int>(
             @"INSERT INTO contas_receber
-                (id, cliente_id, venda_id, descricao, data_vencimento,
+                (cliente_id, venda_id, descricao, data_vencimento,
                  valor_original, valor_saldo, status)
               VALUES
-                (@ProximoId, @ClienteId, @VendaId, @Descricao, @DataVencimento,
-                 @ValorOriginal, @ValorOriginal, 'ABERTA')",
+                (@ClienteId, @VendaId, @Descricao, @DataVencimento,
+                 @ValorOriginal, @ValorOriginal, 'ABERTA');
+              SELECT LAST_INSERT_ID();",
             new
             {
-                ProximoId = proximoId,
                 dto.ClienteId,
                 dto.VendaId,
                 dto.Descricao,
                 dto.DataVencimento,
                 dto.ValorOriginal
             });
-        return proximoId;
     }
 
     public async Task AtualizarAsync(ContaReceberDto dto)
@@ -263,20 +261,17 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
     {
         using var conn = _factory.CreateConnection();
 
-        var proximoBaixaId = await conn.ExecuteScalarAsync<int>(
-            @"SELECT MIN(seq) FROM (SELECT 1 AS seq UNION ALL SELECT id + 1 FROM contas_receber_baixas) t
-              WHERE seq NOT IN (SELECT id FROM contas_receber_baixas)");
-
-        await conn.ExecuteAsync(
+        var baixaId = await conn.ExecuteScalarAsync<int>(
             @"INSERT INTO contas_receber_baixas
-                (id, conta_receber_id, data_recebimento, valor_recebido, comprovante_arquivo, observacao)
+                (conta_receber_id, data_recebimento, valor_recebido, comprovante_arquivo, observacao)
               VALUES
-                (@proximoBaixaId, @contaReceberId, @dataRecebimento, @valorRecebido, @comprovanteArquivo, @observacao)",
-            new { proximoBaixaId, contaReceberId, dataRecebimento, valorRecebido, comprovanteArquivo, observacao });
+                (@contaReceberId, @dataRecebimento, @valorRecebido, @comprovanteArquivo, @observacao);
+              SELECT LAST_INSERT_ID();",
+            new { contaReceberId, dataRecebimento, valorRecebido, comprovanteArquivo, observacao });
 
         await RecalcularSaldoAsync(conn, contaReceberId);
 
-        return proximoBaixaId;
+        return baixaId;
     }
 
     public async Task RemoverBaixaAsync(int baixaId, int contaReceberId)
