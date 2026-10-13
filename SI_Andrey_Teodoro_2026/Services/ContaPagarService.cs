@@ -113,7 +113,13 @@ public class ContaPagarService : IContaPagarService
     {
         try
         {
-            if (await ValidarAlteracaoAsync(id) is string erro) return (false, erro);
+            var conta = await _repo.ObterPorIdAsync(id);
+            if (conta == null) return (false, "Conta a pagar não encontrada.");
+            if (conta.Status != "ABERTA") return (false, MensagemNaoAlteravel(conta.Status));
+            if (dataPagamento.Date > DateTime.Today)
+                return (false, "A data de pagamento não pode ser maior que a data atual.");
+            if (conta.CompraId.HasValue && conta.DataEmissaoCompra.HasValue && dataPagamento.Date < conta.DataEmissaoCompra.Value.Date)
+                return (false, "A data de pagamento não pode ser anterior à data de emissão da compra.");
             await _repo.AtualizarStatusAsync(id, "PAGA", dataPagamento, comprovanteArquivo);
             return (true, "Conta marcada como paga!");
         }
@@ -133,13 +139,6 @@ public class ContaPagarService : IContaPagarService
             return (true, "Conta cancelada.");
         }
         catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
-    }
-
-    private async Task<string?> ValidarAlteracaoAsync(int id)
-    {
-        var conta = await _repo.ObterPorIdAsync(id);
-        if (conta == null) return "Conta a pagar não encontrada.";
-        return conta.Status == "ABERTA" ? null : MensagemNaoAlteravel(conta.Status);
     }
 
     private static string MensagemNaoAlteravel(string status) =>

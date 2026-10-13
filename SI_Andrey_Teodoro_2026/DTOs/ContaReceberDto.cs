@@ -13,6 +13,7 @@ public class ContaReceberDto
 
     public int? VendaId { get; set; }
     public string? MotivoCancelamentoVenda { get; set; }
+    public DateTime? DataVenda { get; set; }
 
     [Required(ErrorMessage = "Descrição é obrigatória")]
     [MinLength(3)]

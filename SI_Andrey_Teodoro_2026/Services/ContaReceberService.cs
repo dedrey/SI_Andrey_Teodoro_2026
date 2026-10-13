@@ -27,6 +27,7 @@ public class ContaReceberService : IContaReceberService
             NomeCliente = c.NomeCliente,
             VendaId = c.VendaId,
             MotivoCancelamentoVenda = c.MotivoCancelamentoVenda,
+            DataVenda = c.DataVenda,
             Descricao = c.Descricao,
             DataVencimento = c.DataVencimento,
             ValorOriginal = c.ValorOriginal,
@@ -91,6 +92,10 @@ public class ContaReceberService : IContaReceberService
                 return (false, "Conta a receber não encontrada.");
             if (conta.Status != "ABERTA")
                 return (false, "Apenas contas abertas podem receber baixas.");
+            if (dataRecebimento.Date > DateTime.Today)
+                return (false, "A data de recebimento não pode ser maior que a data atual.");
+            if (conta.VendaId.HasValue && conta.DataVenda.HasValue && dataRecebimento.Date < conta.DataVenda.Value.Date)
+                return (false, "A data de recebimento não pode ser anterior à data da venda.");
             if (valorRecebido > conta.ValorSaldo)
                 return (false, $"Valor recebido (R$ {valorRecebido:N2}) é maior que o saldo devido (R$ {conta.ValorSaldo:N2}).");
 

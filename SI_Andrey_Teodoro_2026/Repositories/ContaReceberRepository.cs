@@ -167,6 +167,7 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                      c.nome_razaosocial   AS NomeCliente,
                      cr.venda_id          AS VendaId,
                      ve.motivo_cancelamento AS MotivoCancelamentoVenda,
+                     DATE(ve.criado_em)   AS DataVenda,
                      cr.descricao,
                      cr.data_vencimento   AS DataVencimento,
                      cr.valor_original    AS ValorOriginal,

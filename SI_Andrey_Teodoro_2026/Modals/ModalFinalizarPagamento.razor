@@ -22,6 +22,8 @@
                            Variant="Variant.Outlined" Margin="Margin.Dense"
                            Required="true" RequiredError="Informe a data de pagamento"
                            Editable="true" Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                           AutoClose="true" MinDate="_dataEmissaoCompra" MaxDate="DateTime.Today"
+                           Error="@(ErroPagamento != null)" ErrorText="@ErroPagamento"
                            HelperText="Pode ser diferente da data de vencimento" />
 
             <MudText Typo="Typo.caption" Style="color:#888;text-transform:uppercase;letter-spacing:1px;font-weight:600;display:block;margin-top:16px;margin-bottom:8px;">
@@ -86,7 +88,22 @@
     private long _tamanhoArquivo;
     private string? _erroArquivo;
 
+    private DateTime? _dataEmissaoCompra;
+
     private const long TamanhoMaximoBytes = 5 * 1024 * 1024;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var conta = await ContaPagarService.ObterPorIdAsync(ContaId);
+        _dataEmissaoCompra = conta?.CompraId.HasValue == true ? conta.DataEmissaoCompra?.Date : null;
+    }
+
+    private string? ErroPagamento =>
+        _dataPagamento.HasValue && _dataPagamento.Value.Date > DateTime.Today
+            ? "A data de pagamento não pode ser maior que a data atual."
+        : _dataEmissaoCompra.HasValue && _dataPagamento.HasValue && _dataPagamento.Value.Date < _dataEmissaoCompra.Value
+            ? "A data de pagamento não pode ser anterior à data de emissão da compra."
+        : null;
 
     private async Task OnArquivoSelecionado(InputFileChangeEventArgs e)
     {
@@ -161,7 +178,10 @@
     private async Task Confirmar()
     {
         await _form!.Validate();
-        if (!_form.IsValid || !_dataPagamento.HasValue) return;
+        if (!_form.IsValid) return;
+        if (!_dataPagamento.HasValue) { Snackbar.Add("Informe a data de pagamento.", Severity.Warning); return; }
+        if (_dataPagamento.Value.Date > DateTime.Today) { Snackbar.Add("A data de pagamento não pode ser maior que a data atual.", Severity.Warning); return; }
+        if (_dataEmissaoCompra.HasValue && _dataPagamento.Value.Date < _dataEmissaoCompra.Value) { Snackbar.Add("A data de pagamento não pode ser anterior à data de emissão da compra.", Severity.Warning); return; }
 
         _salvando = true;
         string? caminhoArquivo = null;

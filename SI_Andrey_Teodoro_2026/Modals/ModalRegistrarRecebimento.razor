@@ -31,7 +31,9 @@
                     <MudDatePicker @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Required="true" RequiredError="Obrigatório"
-                                   Editable="true" Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa" />
+                                   Editable="true" Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
+                                   AutoClose="true" MinDate="_dataVenda" MaxDate="DateTime.Today"
+                                   Error="@(ErroRecebimento != null)" ErrorText="@ErroRecebimento" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudNumericField T="decimal" Value="_valorRecebidoPreview" ValueChanged="@((decimal v) => _valorRecebidoPreview = Math.Max(v, 0))"
@@ -125,10 +127,21 @@
 
     private const long TamanhoMaximoBytes = 5 * 1024 * 1024;
 
-    protected override void OnInitialized()
+    private DateTime? _dataVenda;
+
+    protected override async Task OnInitializedAsync()
     {
         _valorRecebidoPreview = ValorSaldo;
+        var conta = await ContaReceberService.ObterPorIdAsync(ContaReceberId);
+        _dataVenda = conta?.VendaId.HasValue == true ? conta.DataVenda?.Date : null;
     }
+
+    private string? ErroRecebimento =>
+        _dataRecebimento.HasValue && _dataRecebimento.Value.Date > DateTime.Today
+            ? "A data de recebimento não pode ser maior que a data atual."
+        : _dataVenda.HasValue && _dataRecebimento.HasValue && _dataRecebimento.Value.Date < _dataVenda.Value
+            ? "A data de recebimento não pode ser anterior à data da venda."
+        : null;
 
     private async Task OnArquivoSelecionado(InputFileChangeEventArgs e)
     {
@@ -203,7 +216,10 @@
     private async Task Confirmar()
     {
         await _form!.Validate();
-        if (!_form.IsValid || !_dataRecebimento.HasValue) return;
+        if (!_form.IsValid) return;
+        if (!_dataRecebimento.HasValue) { Snackbar.Add("Informe a data de recebimento.", Severity.Warning); return; }
+        if (_dataRecebimento.Value.Date > DateTime.Today) { Snackbar.Add("A data de recebimento não pode ser maior que a data atual.", Severity.Warning); return; }
+        if (_dataVenda.HasValue && _dataRecebimento.Value.Date < _dataVenda.Value) { Snackbar.Add("A data de recebimento não pode ser anterior à data da venda.", Severity.Warning); return; }
         if (_valorRecebidoPreview <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
         if (_valorRecebidoPreview > ValorSaldo) { Snackbar.Add($"Valor não pode ser maior que o saldo (R$ {ValorSaldo:N2}).", Severity.Warning); return; }
 
