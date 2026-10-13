@@ -6,7 +6,6 @@ namespace SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 public interface IVeiculoRepository
 {
     Task<PaginacaoDto<VeiculoListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
-    Task<IEnumerable<VeiculoListDto>> ObterTodosAtivosAsync();
     Task<Veiculo?> ObterPorIdAsync(int id);
     Task<int> InserirAsync(VeiculoDto dto);
     Task AtualizarAsync(VeiculoDto dto);

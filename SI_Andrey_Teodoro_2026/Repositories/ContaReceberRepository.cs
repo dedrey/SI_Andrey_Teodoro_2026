@@ -13,67 +13,6 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
 
     protected override string Tabela => "contas_receber";
 
-    public async Task<PaginacaoDto<ContaReceberListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
-    {
-        using var conn = _factory.CreateConnection();
-        var where = new List<string>();
-        if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add(@"(cr.descricao    LIKE @Busca
-                      OR c.nome_razaosocial LIKE @Busca
-                      OR CAST(cr.id AS CHAR) = @BuscaExata
-                      OR CAST(cr.venda_id AS CHAR) = @BuscaExata)");
-        where.Add(filtro.StatusFiltro switch
-        {
-            "aberta" => "cr.status = 'ABERTA'",
-            "recebida" => "cr.status = 'RECEBIDA'",
-            "cancelada" => "cr.status = 'CANCELADA'",
-            "vencidas" => "cr.status = 'ABERTA' AND cr.data_vencimento < CURDATE()",
-            _ => "1=1"
-        });
-        var whereClause = "WHERE " + string.Join(" AND ", where);
-        var orderBy = filtro.OrdenarPor switch
-        {
-            "id" => "cr.id",
-            "valor" => "cr.valor_original DESC",
-            "vencimento" => "cr.data_vencimento",
-            _ => "cr.data_vencimento"
-        };
-
-        var sqlCount = $@"SELECT COUNT(*) FROM contas_receber cr
-                          LEFT JOIN clientes c ON c.id = cr.cliente_id
-                          {whereClause}";
-
-        var sqlData = $@"SELECT cr.id,
-                                 c.nome_razaosocial  AS NomeCliente,
-                                 cr.venda_id          AS VendaId,
-                                 cr.descricao,
-                                 cr.data_vencimento   AS DataVencimento,
-                                 cr.valor_original    AS ValorOriginal,
-                                 cr.valor_saldo        AS ValorSaldo,
-                                 (SELECT MAX(crb.data_recebimento)
-                                  FROM contas_receber_baixas crb
-                                  WHERE crb.conta_receber_id = cr.id) AS DataUltimoRecebimento,
-                                 cr.status,
-                                 cr.criado_em          AS CriadoEm
-                          FROM contas_receber cr
-                          LEFT JOIN clientes c ON c.id = cr.cliente_id
-                          {whereClause}
-                          ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
-
-        var param = new
-        {
-            Busca = $"%{filtro.Busca}%",
-            BuscaExata = filtro.Busca,
-            Limit = filtro.TamanhoPagina,
-            Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
-        };
-
-        var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
-        var itens = await conn.QueryAsync<ContaReceberListDto>(sqlData, param);
-        return new PaginacaoDto<ContaReceberListDto>
-        { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
-    }
-
     public async Task<PaginacaoDto<ContaReceberVendaGrupoListDto>> ObterTodosAgrupadosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
@@ -92,13 +31,6 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
             "cancelada" => "HAVING Status = 'CANCELADA'",
             "vencidas" => "HAVING Status = 'ABERTA' AND DataVencimento < CURDATE()",
             _ => ""
-        };
-        var orderBy = filtro.OrdenarPor switch
-        {
-            "id" => "Id",
-            "valor" => "ValorOriginal DESC",
-            "vencimento" => "DataVencimento",
-            _ => "DataVencimento"
         };
 
         var sqlBase = $@"
@@ -140,9 +72,7 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
         var param = new
         {
             Busca = $"%{filtro.Busca}%",
-            BuscaExata = filtro.Busca,
-            Limit = filtro.TamanhoPagina,
-            Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
+            BuscaExata = filtro.Busca
         };
 
         var todos = (await conn.QueryAsync<ContaReceberVendaGrupoListDto>(sqlBase, param)).ToList();
@@ -272,14 +202,6 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
         await RecalcularSaldoAsync(conn, contaReceberId);
 
         return baixaId;
-    }
-
-    public async Task RemoverBaixaAsync(int baixaId, int contaReceberId)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "DELETE FROM contas_receber_baixas WHERE id = @baixaId", new { baixaId });
-        await RecalcularSaldoAsync(conn, contaReceberId);
     }
     public async Task AtualizarComprovanteBaixaAsync(int baixaId, string comprovanteArquivo)
     {

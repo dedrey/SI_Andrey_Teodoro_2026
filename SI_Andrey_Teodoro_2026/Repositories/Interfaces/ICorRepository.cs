@@ -7,6 +7,5 @@ public interface ICorRepository
     Task<IEnumerable<CorListDto>> ObterTodosAtivosAsync();
     Task<int> InserirAsync(CorDto dto);
     Task AtualizarAsync(CorDto dto);
-    Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteNomeAsync(string nome, int? idIgnorar = null);
 }

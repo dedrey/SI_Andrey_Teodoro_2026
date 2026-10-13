@@ -56,9 +56,6 @@ public class TamanhoRepository : BaseRepository, ITamanhoRepository
             new { dto.Nome, dto.Ordem, dto.IdOriginal });
     }
 
-    public Task AlterarStatusAsync(int id, bool ativo)
-        => AlterarStatusBaseAsync(id, ativo);
-
     public async Task<bool> ExisteNomeAsync(string nome, int? idIgnorar = null)
     {
         using var conn = _factory.CreateConnection();

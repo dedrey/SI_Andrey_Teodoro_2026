@@ -38,10 +38,4 @@ public class CorService : BaseService<CorDto, CorListDto>, ICorService
         }
         catch (Exception ex) { return (false, Erro(ex).mensagem, 0); }
     }
-
-    public async Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar)
-    {
-        try { await _repo.AlterarStatusAsync(id, ativar); return SucessoStatus(ativar); }
-        catch (Exception ex) { return ErroStatus(ex); }
-    }
 }

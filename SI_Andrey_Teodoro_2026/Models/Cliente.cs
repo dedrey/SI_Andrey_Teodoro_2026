@@ -9,7 +9,6 @@ public class Cliente
     public string Sexo { get; set; } = "NAO_INFORMAR";
     public bool Estrangeiro { get; set; } = false;
     public string? DocumentoEstrangeiro { get; set; }
-    public string? PaisOrigem { get; set; }
     public string? ApelidoNomeFantasia { get; set; }
     public int? CidadeId { get; set; }
     public string? NomeCidade { get; set; }

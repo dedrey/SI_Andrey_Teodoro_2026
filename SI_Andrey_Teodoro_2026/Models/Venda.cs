@@ -17,17 +17,3 @@ public class Venda
     public DateTime CriadoEm { get; set; }
     public DateTime AtualizadoEm { get; set; }
 }
-
-public class VendaItem
-{
-    public int Id { get; set; }
-    public int VendaId { get; set; }
-    public int ProdutoVariacaoId { get; set; }
-    public string NomeProduto { get; set; } = string.Empty;
-    public string Cor { get; set; } = string.Empty;
-    public string Tamanho { get; set; } = string.Empty;
-    public int Quantidade { get; set; }
-    public decimal ValorUnitario { get; set; }
-    public decimal ValorDesconto { get; set; }
-    public decimal ValorTotal { get; set; }
-}

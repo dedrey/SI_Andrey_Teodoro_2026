@@ -133,14 +133,8 @@ public static class PesquisaExtensions
         new("Ordem", t => t.Ordem, true)
     };
 
-    public static Task<CorListDto?> PesquisarCorAsync(this IDialogService dialogService, ICorService service, int? selecionado = null, Func<Task<CorListDto?>>? novo = null) =>
-        dialogService.PesquisarAsync("Pesquisar Cor", service.ObterTodosAsync, ColunasCor(), Ativos, novo, x => x.Id, selecionado);
-
     public static Task<List<CorListDto>?> PesquisarVariasCoresAsync(this IDialogService dialogService, ICorService service, IEnumerable<int>? selecionados, IEnumerable<CorListDto> itensDoCampo, Func<Task<CorListDto?>>? novo = null) =>
         dialogService.PesquisarVariosAsync("Pesquisar Cores", service.ObterTodosAsync, ColunasCor(), x => x.Id, selecionados, itensDoCampo, Ativos, novo);
-
-    public static Task<TamanhoListDto?> PesquisarTamanhoAsync(this IDialogService dialogService, ITamanhoService service, int? selecionado = null, Func<Task<TamanhoListDto?>>? novo = null) =>
-        dialogService.PesquisarAsync("Pesquisar Tamanho", service.ObterTodosAsync, ColunasTamanho(), Ativos, novo, x => x.Id, selecionado);
 
     public static Task<List<TamanhoListDto>?> PesquisarVariosTamanhosAsync(this IDialogService dialogService, ITamanhoService service, IEnumerable<int>? selecionados, IEnumerable<TamanhoListDto> itensDoCampo, Func<Task<TamanhoListDto?>>? novo = null) =>
         dialogService.PesquisarVariosAsync("Pesquisar Tamanhos", service.ObterTodosAsync, ColunasTamanho(), x => x.Id, selecionados, itensDoCampo, Ativos, novo);

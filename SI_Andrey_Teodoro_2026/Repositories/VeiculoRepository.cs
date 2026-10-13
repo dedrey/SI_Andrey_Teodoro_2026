@@ -72,18 +72,6 @@ public class VeiculoRepository : BaseRepository, IVeiculoRepository
         };
     }
 
-    public async Task<IEnumerable<VeiculoListDto>> ObterTodosAtivosAsync()
-    {
-        using var conn = _factory.CreateConnection();
-        return await conn.QueryAsync<VeiculoListDto>(
-            @"SELECT v.id, v.placa, v.uf,
-                     v.transportadora_id AS TransportadoraId,
-                     t.razaosocial       AS NomeTransportadora
-              FROM veiculos v
-              INNER JOIN transportadoras t ON t.id = v.transportadora_id
-              WHERE v.ativo = TRUE ORDER BY v.placa");
-    }
-
     public async Task<Veiculo?> ObterPorIdAsync(int id)
     {
         using var conn = _factory.CreateConnection();

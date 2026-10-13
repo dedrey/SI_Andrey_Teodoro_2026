@@ -11,7 +11,6 @@ public interface IVendaRepository
     Task AtualizarAsync(VendaDto dto);
     Task InserirItemAsync(VendaItemDto item, int vendaId);
     Task RemoverItensAsync(int vendaId);
-    Task AtualizarTotaisAsync(int vendaId, decimal subtotal, decimal desconto, decimal total);
     Task AtualizarStatusAsync(int vendaId, string status, IDbTransaction tx,
         int? movimentacaoId = null, string? motivoCancelamento = null);
     Task<int> ObterEstoqueAtualAsync(int variacaoId);

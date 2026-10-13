@@ -13,9 +13,6 @@ public class VeiculoService : BaseService<VeiculoDto, VeiculoListDto>, IVeiculoS
 
     public Task<PaginacaoDto<VeiculoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
-
-    public Task<IEnumerable<VeiculoListDto>> ObterTodosAtivosAsync()
-        => _repo.ObterTodosAtivosAsync();
     public async Task<VeiculoDto?> ObterPorIdAsync(int id)
     {
         var v = await _repo.ObterPorIdAsync(id);

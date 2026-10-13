@@ -56,19 +56,6 @@ public class CidadeRepository : BaseRepository, ICidadeRepository
         };
     }
 
-    public async Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
-    {
-        using var conn = _factory.CreateConnection();
-        return await conn.QueryAsync<CidadeListDto>(
-            @"SELECT c.id, c.cidade AS NomeCidade, c.ddd, c.estado_id AS EstadoId, e.pais_id AS PaisId,
-                     e.estado AS NomeEstado, e.uf, p.pais AS NomePais
-              FROM cidades c
-              INNER JOIN estados e ON e.id = c.estado_id
-              INNER JOIN paises  p ON p.id = e.pais_id
-              WHERE c.estado_id = @estadoId AND c.ativo = TRUE ORDER BY c.cidade",
-            new { estadoId });
-    }
-
     public async Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync()
     {
         using var conn = _factory.CreateConnection();

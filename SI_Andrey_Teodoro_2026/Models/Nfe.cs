@@ -35,7 +35,6 @@ public class Nfe
     public DateTime CriadoEm { get; set; }
     public int? CriadoPor { get; set; }
     public DateTime AtualizadoEm { get; set; }
-    public int? AtualizadoPor { get; set; }
 }
 
 public class NfeProduto

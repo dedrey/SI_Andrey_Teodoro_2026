@@ -204,16 +204,6 @@ public class VendaRepository : BaseRepository, IVendaRepository
         await conn.ExecuteAsync("DELETE FROM vendas_itens WHERE venda_id = @vendaId", new { vendaId });
     }
 
-    public async Task AtualizarTotaisAsync(int vendaId, decimal subtotal, decimal desconto, decimal total)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            @"UPDATE vendas SET valor_subtotal = @subtotal, valor_desconto = @desconto,
-                                valor_total = @total, atualizado_em = NOW()
-              WHERE id = @vendaId",
-            new { vendaId, subtotal, desconto, total });
-    }
-
     public async Task AtualizarStatusAsync(int vendaId, string status, IDbTransaction tx,
         int? movimentacaoId = null, string? motivoCancelamento = null)
     {

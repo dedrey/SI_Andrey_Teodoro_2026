@@ -11,16 +11,10 @@ public interface IProdutoRepository
     Task<List<ProdutoVariacaoDto>> ObterVariacoesPorProdutoAsync(int produtoId);
     Task<PaginacaoDto<ProdutoVariacaoListDto>> ObterVariacoesAsync(FiltroConsultaDto filtro);
     Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId);
-    Task<int> InserirAsync(ProdutoDto dto);
-    Task AtualizarAsync(ProdutoDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null);
     Task<int> SalvarComVariacoesAsync(ProdutoDto dto, List<ProdutoVariacaoDto> variacoes);
-    Task AlterarStatusVariacaoAsync(int id, bool ativo);
-
     Task<bool> ExisteVariacaoAsync(int produtoId, int corId, int tamanhoId, int? idIgnorar = null);
 
     Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null);
-    Task InserirEstoqueAsync(int variacaoId);
-    Task AtualizarEstoqueAsync(int variacaoId, int quantidade);
 }

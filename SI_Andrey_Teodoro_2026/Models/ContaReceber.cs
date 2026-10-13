@@ -18,14 +18,3 @@ public class ContaReceber
     public DateTime AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
 }
-
-public class ContaReceberBaixa
-{
-    public int Id { get; set; }
-    public int ContaReceberId { get; set; }
-    public DateTime DataRecebimento { get; set; }
-    public decimal ValorRecebido { get; set; }
-    public string? ComprovanteArquivo { get; set; }
-    public string? Observacao { get; set; }
-    public DateTime CriadoEm { get; set; }
-}

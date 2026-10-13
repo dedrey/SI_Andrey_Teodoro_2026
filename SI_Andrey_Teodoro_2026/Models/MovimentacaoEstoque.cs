@@ -11,15 +11,3 @@ public class MovimentacaoEstoque
     public int? CriadoPor { get; set; }
     public string? NomeCriadoPor { get; set; }
 }
-
-public class MovimentacaoEstoqueItem
-{
-    public int Id { get; set; }
-    public int MovimentacaoId { get; set; }
-    public int ProdutoVariacaoId { get; set; }
-    public string NomeProduto { get; set; } = string.Empty;
-    public string Cor { get; set; } = string.Empty;
-    public string Tamanho { get; set; } = string.Empty;
-    public int Quantidade { get; set; }
-    public decimal ValorUnitario { get; set; }
-}

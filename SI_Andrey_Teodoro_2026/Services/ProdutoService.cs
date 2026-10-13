@@ -130,25 +130,4 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
         try { await _repo.AlterarStatusAsync(id, ativar); return SucessoStatus(ativar); }
         catch (Exception ex) { return ErroStatus(ex); }
     }
-
-    public async Task<(bool sucesso, string mensagem)> AlterarStatusVariacaoAsync(int id, bool ativar)
-    {
-        try
-        {
-            await _repo.AlterarStatusVariacaoAsync(id, ativar);
-            return (true, $"Variação {(ativar ? "ativada" : "desativada")} com sucesso!");
-        }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
-    }
-
-    public async Task<(bool sucesso, string mensagem)> AtualizarEstoqueAsync(int variacaoId, int quantidade)
-    {
-        try
-        {
-            if (quantidade < 0) return (false, "Quantidade não pode ser negativa.");
-            await _repo.AtualizarEstoqueAsync(variacaoId, quantidade);
-            return (true, "Estoque atualizado com sucesso!");
-        }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
-    }
 }

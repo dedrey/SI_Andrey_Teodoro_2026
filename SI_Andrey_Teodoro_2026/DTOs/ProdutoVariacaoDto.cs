@@ -28,7 +28,6 @@ public class ProdutoVariacaoDto
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }
 
-    public bool IsNova => IdOriginal == 0 && Id == 0;
     public bool Removida { get; set; } = false;
 
     public bool PermiteVendaAbaixoCusto =>

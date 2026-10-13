@@ -6,7 +6,7 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.Straighten" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(_dto.IdOriginal == 0 ? "Novo Tamanho" : "Editar Tamanho")</MudText>
+            <MudText Typo="Typo.h6">Novo Tamanho</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -39,7 +39,6 @@
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     private string? _snapshot;
-    [Parameter] public TamanhoDto? DtoEdicao { get; set; }
 
     private MudForm? _form;
     private bool _formValido, _salvando;
@@ -47,7 +46,6 @@
 
     protected override void OnInitialized()
     {
-        _dto = DtoEdicao ?? new TamanhoDto();
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 

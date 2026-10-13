@@ -40,5 +40,4 @@ public class VendaItemDto
     public string Tamanho { get; set; } = string.Empty;
     public int EstoqueAtual { get; set; }
     public bool Removido { get; set; } = false;
-    public bool EstoqueInsuficiente => EstoqueAtual > 0 && Quantidade > EstoqueAtual;
 }

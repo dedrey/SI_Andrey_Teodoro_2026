@@ -9,9 +9,6 @@ namespace SI_Andrey_Teodoro_2026.Pages;
 public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
 {
     [Inject] private IProdutoService ProdutoService { get; set; } = null!;
-    [Inject] private ICategoriaService CategoriaService { get; set; } = null!;
-    [Inject] private IMarcaService MarcaService { get; set; } = null!;
-    [Inject] private IUnidadeMedidaService UnidadeMedidaService { get; set; } = null!;
 
     protected override string NomeEntidade => "Produto";
 

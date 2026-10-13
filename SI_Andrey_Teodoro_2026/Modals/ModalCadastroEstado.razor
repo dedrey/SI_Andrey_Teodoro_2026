@@ -144,5 +144,4 @@
     private static string? ValidarNome(string? v) =>
         string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null;
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
 }

@@ -113,7 +113,6 @@
     private string? _snapshot;
     [Parameter] public CidadeDto? DtoEdicao { get; set; }
     [Parameter] public int PaisIdInicial { get; set; }
-    [Parameter] public int EstadoIdInicial { get; set; }
     [Parameter] public bool SomenteLeitura { get; set; } = false;
 
     private bool _readOnly;
@@ -148,7 +147,6 @@
         else
         {
             if (PaisIdInicial > 0) { _dto.PaisId = PaisIdInicial; _estados = (await EstadoService.ObterPorPaisAsync(PaisIdInicial)).ToList(); }
-            if (EstadoIdInicial > 0) _dto.EstadoId = EstadoIdInicial;
         }
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }

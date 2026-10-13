@@ -243,56 +243,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         };
     }
 
-    public async Task<int> InserirAsync(ProdutoDto dto)
-    {
-        using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            @"INSERT INTO produtos (id, produto, descricao, codigo_barras,
-                                    categoria_id, marca_id, unidade_medida_id, ativo)
-              VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras,
-                      @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
-            new
-            {
-                ProximoId = proximoId,
-                dto.Produto,
-                dto.Descricao,
-                dto.CodigoBarras,
-                dto.CategoriaId,
-                dto.MarcaId,
-                dto.UnidadeMedidaId,
-                dto.Ativo
-            });
-        return proximoId;
-    }
-
-    public async Task AtualizarAsync(ProdutoDto dto)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            @"UPDATE produtos
-              SET id                = @Id,
-                  produto           = @Produto,
-                  descricao         = @Descricao,
-                  codigo_barras     = @CodigoBarras,
-                  categoria_id      = @CategoriaId,
-                  marca_id          = @MarcaId,
-                  unidade_medida_id = @UnidadeMedidaId,
-                  atualizado_em     = NOW()
-              WHERE id = @IdOriginal",
-            new
-            {
-                dto.Id,
-                dto.IdOriginal,
-                dto.Produto,
-                dto.Descricao,
-                dto.CodigoBarras,
-                dto.CategoriaId,
-                dto.MarcaId,
-                dto.UnidadeMedidaId
-            });
-    }
-
     public Task AlterarStatusAsync(int id, bool ativo) => AlterarStatusBaseAsync(id, ativo);
 
     public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
@@ -422,14 +372,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
         }
     }
 
-    public async Task AlterarStatusVariacaoAsync(int id, bool ativo)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE produto_variacoes SET ativo = @ativo, atualizado_em = NOW() WHERE id = @id",
-            new { ativo, id });
-    }
-
     public async Task<bool> ExisteVariacaoAsync(int produtoId, int corId, int tamanhoId, int? idIgnorar = null)
     {
         using var conn = _factory.CreateConnection();
@@ -437,21 +379,5 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             ? "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor_id = @corId AND tamanho_id = @tamanhoId AND id <> @idIgnorar"
             : "SELECT COUNT(*) FROM produto_variacoes WHERE produto_id = @produtoId AND cor_id = @corId AND tamanho_id = @tamanhoId";
         return await conn.ExecuteScalarAsync<int>(sql, new { produtoId, corId, tamanhoId, idIgnorar }) > 0;
-    }
-
-    public async Task InserirEstoqueAsync(int variacaoId)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "INSERT IGNORE INTO estoque (produto_variacao_id, quantidade) VALUES (@variacaoId, 0)",
-            new { variacaoId });
-    }
-
-    public async Task AtualizarEstoqueAsync(int variacaoId, int quantidade)
-    {
-        using var conn = _factory.CreateConnection();
-        await conn.ExecuteAsync(
-            "UPDATE estoque SET quantidade = @quantidade, atualizado_em = NOW() WHERE produto_variacao_id = @variacaoId",
-            new { variacaoId, quantidade });
     }
 }

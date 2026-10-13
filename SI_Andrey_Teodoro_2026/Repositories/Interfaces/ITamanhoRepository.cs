@@ -7,6 +7,5 @@ public interface ITamanhoRepository
     Task<IEnumerable<TamanhoListDto>> ObterTodosAtivosAsync();
     Task<int> InserirAsync(TamanhoDto dto);
     Task AtualizarAsync(TamanhoDto dto);
-    Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteNomeAsync(string nome, int? idIgnorar = null);
 }

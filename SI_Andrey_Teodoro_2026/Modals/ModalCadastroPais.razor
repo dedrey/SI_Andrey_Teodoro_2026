@@ -119,5 +119,4 @@
     }
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
     private string? ValidarNome(string? v, string campo) { if (string.IsNullOrWhiteSpace(v)) return $"{campo} obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$")) return "Apenas letras"; return null; }
-    private static readonly HashSet<string> _prep = new(StringComparer.OrdinalIgnoreCase) { "da", "de", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "no", "na", "of", "and", "the" };
 }

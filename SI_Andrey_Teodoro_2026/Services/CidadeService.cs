@@ -15,9 +15,6 @@ public class CidadeService : BaseService<CidadeDto, CidadeListDto>, ICidadeServi
     public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
 
-    public Task<IEnumerable<CidadeListDto>> ObterPorEstadoAsync(int estadoId)
-        => _repo.ObterPorEstadoAsync(estadoId);
-
     public Task<IEnumerable<CidadeListDto>> ObterTodosAtivosSemPaginacaoAsync()
         => _repo.ObterTodosAtivosSemPaginacaoAsync();
 

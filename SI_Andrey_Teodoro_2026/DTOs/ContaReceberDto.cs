@@ -65,18 +65,3 @@ public class ContaReceberVendaGrupoListDto
     public string Status { get; set; } = string.Empty;
     public string? MotivoCancelamentoVenda { get; set; }
 }
-
-public class ContaReceberListDto
-{
-    public int Id { get; set; }
-    public string? NomeCliente { get; set; }
-    public int? VendaId { get; set; }
-    public string Descricao { get; set; } = string.Empty;
-    public DateTime DataVencimento { get; set; }
-    public decimal ValorOriginal { get; set; }
-    public decimal ValorSaldo { get; set; }
-    public decimal ValorRecebido => ValorOriginal - ValorSaldo;
-    public DateTime? DataUltimoRecebimento { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public DateTime CriadoEm { get; set; }
-}
