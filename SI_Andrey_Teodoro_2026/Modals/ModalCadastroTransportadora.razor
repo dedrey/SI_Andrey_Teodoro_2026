@@ -14,7 +14,13 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Badge" Titulo="Identificação" AoMudar="StateHasChanged" />
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="2">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => { _dto.Id = v; Alterou(1); })"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
                     <MudTextField Value="@_cnpjTexto" ValueChanged="@((string v) => { _cnpjTexto = MascaraCnpj(v); _dto.Cnpj = _cnpjTexto; Alterou(1); })"
                                   Label="CNPJ" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
@@ -25,15 +31,15 @@
                     <MudTextField Value="@_dto.RazaoSocial" ValueChanged="@((string v) => { _dto.RazaoSocial = v; Alterou(1); })" Label="Razão Social" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true"
-                                  Disabled="@(Bloqueado(1) || !CnpjOk)" HelperText="@AjudaRazao" />
+                                  Disabled="@(Bloqueado(1) || !Edicao && !CnpjOk)" HelperText="@AjudaRazao" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.NomeFantasia" ValueChanged="@((string? v) => { _dto.NomeFantasia = v; Alterou(1); })" Label="Nome Fantasia" Immediate="true"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="100" FullWidth="true" Disabled="@(Bloqueado(1) || !Edicao && !RazaoOk)" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.InscricaoEstadual" ValueChanged="@((string v) => { _dto.InscricaoEstadual = v; Alterou(1); })" Label="Inscrição Estadual"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="30" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !RazaoOk)" HelperText="@AjudaRestante" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="30" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !RazaoOk)" HelperText="@AjudaRestante" />
                 </MudItem>
 
                 <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Place" Titulo="Endereço" AoMudar="StateHasChanged" />
@@ -160,8 +166,10 @@
         _dto.Telefone = MascaraTel(_dto.Telefone);
         _cnpjTexto = _dto.Cnpj ?? "";
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
+        await _cidades.IncluirSeAusenteAsync(_dto.CidadeId, c => c.Id, async id => await CidadeService.ObterPorIdAsync(id) is { } c ? new CidadeListDto { Id = c.Id, NomeCidade = c.NomeCidade, EstadoId = c.EstadoId, PaisId = c.PaisId, Uf = c.Uf } : null);
         if (_dto.CidadeId.HasValue)
             _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
+        if (_dto.IdOriginal == 0) _dto.Id = await TransportadoraService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
@@ -234,8 +242,8 @@
         _ => null
     };
     private static string? ValidarTelefone(string? v) { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }
-    private string? AjudaRazao => CnpjOk ? null : "Informe um CNPJ válido primeiro.";
-    private string? AjudaRestante => RazaoOk ? null : AjudaRazao ?? "Informe a razão social primeiro.";
+    private string? AjudaRazao => Edicao || CnpjOk ? null : "Informe um CNPJ válido primeiro.";
+    private string? AjudaRestante => Edicao || RazaoOk ? null : AjudaRazao ?? "Informe a razão social primeiro.";
     private object DadosEditaveis() => new { _dto, _cnpjTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 

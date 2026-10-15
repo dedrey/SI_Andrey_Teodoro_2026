@@ -14,5 +14,6 @@ public interface ICondicaoPagamentoRepository
     Task<bool> ExisteNomeAsync(string nome, int metodoPagamentoId, int? idOriginalIgnorar = null);
     Task<List<CondicaoPagamentoParcelaDto>> ObterParcelasAsync(int condicaoId);
     Task<bool> EmUsoAsync(int id);
-
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

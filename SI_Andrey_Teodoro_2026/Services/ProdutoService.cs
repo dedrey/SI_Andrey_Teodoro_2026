@@ -51,10 +51,16 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
         };
     }
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(ProdutoDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Produto = dto.Produto.Trim().ToUpperInvariant();
             dto.Descricao = dto.Descricao?.Trim().ToUpperInvariant();
             dto.CodigoBarras = string.IsNullOrWhiteSpace(dto.CodigoBarras) ? null : dto.CodigoBarras.Trim();

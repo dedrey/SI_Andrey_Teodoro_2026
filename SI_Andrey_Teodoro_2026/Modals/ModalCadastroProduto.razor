@@ -24,14 +24,13 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Inventory2" Titulo="Dados do Produto" AoMudar="StateHasChanged" />
-                @if (_dto.IdOriginal != 0)
-                {
-                    <MudItem xs="3" sm="2" md="1">
-                        <MudTextField @bind-Value="_dto.Id" Label="ID" Variant="Variant.Outlined"
-                                      Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
-                    </MudItem>
-                }
-                <MudItem xs="@(_dto.IdOriginal != 0 ? 9 : 12)" sm="@(_dto.IdOriginal != 0 ? 10 : 12)" md="@(_dto.IdOriginal != 0 ? 11 : 12)">
+                <MudItem xs="3" sm="2" md="1">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
+                </MudItem>
+                <MudItem xs="9" sm="10" md="11">
                     <MudTextField Value="@_dto.Produto" ValueChanged="@((string v) => _dto.Produto = v)"
                                   Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
@@ -46,10 +45,10 @@
                                          ToStringFunc="@(c => c?.NomeCategoria ?? "")"
                                          Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
-                                         Disabled="@(Bloqueado(1) || !NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome do produto primeiro.")" />
+                                         Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o nome do produto primeiro.")" />
                         <MudTooltip Text="Pesquisar categoria">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarCategoria" Disabled="@(Bloqueado(1) || !NomeOk)" />
+                                           OnClick="PesquisarCategoria" Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -62,10 +61,10 @@
                                          ToStringFunc="@(m => m?.NomeMarca ?? "")"
                                          Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
-                                         Disabled="@(Bloqueado(1) || !CategoriaOk)" HelperText="@(CategoriaOk ? null : "Selecione a categoria primeiro.")" />
+                                         Disabled="@(Bloqueado(1) || !Edicao && !CategoriaOk)" HelperText="@(Edicao || CategoriaOk ? null : "Selecione a categoria primeiro.")" />
                         <MudTooltip Text="Pesquisar marca">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarMarca" Disabled="@(Bloqueado(1) || !CategoriaOk)" />
+                                           OnClick="PesquisarMarca" Disabled="@(Bloqueado(1) || !Edicao && !CategoriaOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -78,10 +77,10 @@
                                          ToStringFunc="@(u => u == null ? "" : $"{u.Sigla} — {u.Descricao}")"
                                          Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
-                                         Disabled="@(Bloqueado(1) || !MarcaOk)" HelperText="@(MarcaOk ? null : "Selecione a marca primeiro.")" />
+                                         Disabled="@(Bloqueado(1) || !Edicao && !MarcaOk)" HelperText="@(Edicao || MarcaOk ? null : "Selecione a marca primeiro.")" />
                         <MudTooltip Text="Pesquisar unidade de medida">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarUnidade" Disabled="@(Bloqueado(1) || !MarcaOk)" />
+                                           OnClick="PesquisarUnidade" Disabled="@(Bloqueado(1) || !Edicao && !MarcaOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -89,13 +88,13 @@
                     <MudTextField Value="@_dto.Descricao" ValueChanged="@((string? v) => _dto.Descricao = v)"
                                   Label="Descrição" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="500" FullWidth="true" Lines="2"
-                                  Disabled="@(Bloqueado(1) || !CabecalhoOk)" HelperText="@(CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
+                                  Disabled="@(Bloqueado(1) || !Edicao && !CabecalhoOk)" HelperText="@(Edicao || CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
                 </MudItem>
                 <MudItem xs="12" sm="4" md="3">
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
                                   Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !CabecalhoOk)"
-                                  HelperText="@(CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
+                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !CabecalhoOk)"
+                                  HelperText="@(Edicao || CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
                 </MudItem>
                 @if (Edicao)
                 {
@@ -117,7 +116,7 @@
             }
             else
             {
-                @if (!CabecalhoOk)
+                @if (!Edicao && !CabecalhoOk)
                 {
                     <MudText Typo="Typo.caption" Style="color:#888;display:block;margin:4px 0 12px;">Preencha nome, categoria, marca e unidade para adicionar variações.</MudText>
                 }
@@ -328,7 +327,7 @@
     private bool CabecalhoOk => MarcaOk && _dto.UnidadeMedidaId > 0;
     private bool Edicao => _dto.IdOriginal > 0;
     private bool Bloqueado(int g) => _readOnly || _grupos.Bloqueado(g);
-    private bool VariacoesBloqueadas => Bloqueado(2) || !CabecalhoOk;
+    private bool VariacoesBloqueadas => Bloqueado(2) || !Edicao && !CabecalhoOk;
     private string? ErroGrupo(int g) => g switch
     {
         1 when ValidarNome(_dto.Produto) is string erro => $"Produto: {erro}.",
@@ -367,6 +366,10 @@
         );
         if (_dto.IdOriginal > 0)
             _variacoesComMovimento = (await ProdutoService.ObterVariacoesComMovimentoAsync(_dto.IdOriginal)).ToHashSet();
+        await _categorias.IncluirSeAusenteAsync(_dto.CategoriaId, c => c.Id, async id => await CategoriaService.ObterPorIdAsync(id) is { } c ? new CategoriaListDto { Id = c.Id, NomeCategoria = c.NomeCategoria } : null);
+        await _marcas.IncluirSeAusenteAsync(_dto.MarcaId, m => m.Id, async id => await MarcaService.ObterPorIdAsync(id) is { } m ? new MarcaListDto { Id = m.Id, NomeMarca = m.NomeMarca } : null);
+        await _unidades.IncluirSeAusenteAsync(_dto.UnidadeMedidaId, u => u.Id, async id => await UnidadeMedidaService.ObterPorIdAsync(id) is { } u ? new UnidadeMedidaListDto { Id = u.Id, Sigla = u.Sigla, Descricao = u.Descricao } : null);
+        if (_dto.IdOriginal == 0) _dto.Id = await ProdutoService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 

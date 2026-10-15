@@ -16,7 +16,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="2">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
+                </MudItem>
+                <MudItem xs="12" sm="5">
                     <div class="d-flex align-center gap-1">
                         <MudSelect T="int" Value="_dto.PaisId" ValueChanged="OnPaisAlterado"
                                    Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
@@ -39,12 +45,12 @@
                         <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um país</MudText>
                     }
                 </MudItem>
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="5">
                     <div class="d-flex align-center gap-1">
                         <MudSelect T="int" @bind-Value="_dto.EstadoId"
                                    Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Disabled="@(!PaisOk || _readOnly)" HelperText="@(PaisOk ? null : "Selecione o país primeiro.")" FullWidth="true"
+                                   Disabled="@(!Edicao && !PaisOk || _readOnly)" HelperText="@(Edicao || PaisOk ? null : "Selecione o país primeiro.")" FullWidth="true"
                                    Class="@(_estadoNaoSelecionado ? "mud-input-error" : "")">
                             <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                             @foreach (var estado in _estados)
@@ -54,7 +60,7 @@
                         </MudSelect>
                         <MudTooltip Text="Pesquisar estado">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarEstado" Disabled="@(!PaisOk || _readOnly)" />
+                                           OnClick="PesquisarEstado" Disabled="@(!Edicao && !PaisOk || _readOnly)" />
                         </MudTooltip>
                     </div>
                     @if (_estadoNaoSelecionado)
@@ -67,14 +73,14 @@
                                   Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarCidade(v))"
-                                  Disabled="@(_readOnly || !EstadoOk)" HelperText="@(EstadoOk ? null : "Selecione o estado primeiro.")" />
+                                  Disabled="@(_readOnly || !Edicao && !EstadoOk)" HelperText="@(Edicao || EstadoOk ? null : "Selecione o estado primeiro.")" />
                 </MudItem>
                 <MudItem xs="4" sm="3">
                     <MudTextField Value="@_dddTexto" ValueChanged="@((string v) => OnDddAlterado(v))"
                                   Label="DDD" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return !short.TryParse(d, out short n) || n < 1 || n > 999 ? "DDD: 1 a 999" : null; })"
-                                  Disabled="@(_readOnly || !CidadeOk)" HelperText="@(CidadeOk ? null : "Informe a cidade primeiro.")" />
+                                  Disabled="@(_readOnly || !Edicao && !CidadeOk)" HelperText="@(Edicao || CidadeOk ? null : "Informe a cidade primeiro.")" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -129,6 +135,7 @@
         _paises = (await PaisService.ObterTodosAtivosAsync()).ToList();
         if (DtoEdicao is not null)
         {
+            if (DtoEdicao.PaisId > 0) _estados = (await EstadoService.ObterPorPaisAsync(DtoEdicao.PaisId)).ToList();
             _dto = new CidadeDto
             {
                 Id = DtoEdicao.Id,
@@ -142,12 +149,14 @@
                 NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
             _dddTexto = DtoEdicao.Ddd > 0 ? DtoEdicao.Ddd.ToString() : "";
-            if (_dto.PaisId > 0) _estados = (await EstadoService.ObterPorPaisAsync(_dto.PaisId)).ToList();
         }
         else
         {
             if (PaisIdInicial > 0) { _dto.PaisId = PaisIdInicial; _estados = (await EstadoService.ObterPorPaisAsync(PaisIdInicial)).ToList(); }
         }
+        await _paises.IncluirSeAusenteAsync(_dto.PaisId, p => p.Id, async id => await PaisService.ObterPorIdAsync(id) is { } p ? new PaisListDto { Id = p.Id, NomePais = p.NomePais } : null);
+        await _estados.IncluirSeAusenteAsync(_dto.EstadoId, e => e.Id, async id => await EstadoService.ObterPorIdAsync(id) is { } e ? new EstadoListDto { Id = e.Id, PaisId = e.PaisId, NomeEstado = e.NomeEstado, Uf = e.Uf } : null);
+        if (_dto.IdOriginal == 0) _dto.Id = await CidadeService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
@@ -201,6 +210,7 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
+    private bool Edicao => _dto.IdOriginal > 0;
     private bool PaisOk => _dto.PaisId > 0;
     private bool EstadoOk => PaisOk && _dto.EstadoId > 0;
     private bool CidadeOk => EstadoOk && ValidarCidade(_dto.NomeCidade) == null;

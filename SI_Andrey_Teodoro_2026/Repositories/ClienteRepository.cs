@@ -117,21 +117,20 @@ public class ClienteRepository : BaseRepository, IClienteRepository
     public async Task<int> InserirAsync(ClienteDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO clientes
                 (id, tipo_pessoa, sexo, estrangeiro, nome_razaosocial, apelido_nomefantasia,
                  cpf_cnpj, documento_estrangeiro, cidade_id,
                  endereco, numero, complemento, bairro, cep, telefone, celular, email,
                  inscricao_estadual, inscricao_municipal, limite_credito, ativo)
               VALUES
-                (@ProximoId, @TipoPessoa, @Sexo, @Estrangeiro, @NomeRazaoSocial, @ApelidoNomeFantasia,
+                (@Id, @TipoPessoa, @Sexo, @Estrangeiro, @NomeRazaoSocial, @ApelidoNomeFantasia,
                  @CpfCnpj, @DocumentoEstrangeiro, @CidadeId,
                  @Endereco, @Numero, @Complemento, @Bairro, @Cep, @Telefone, @Celular, @Email,
                  @InscricaoEstadual, @InscricaoMunicipal, @LimiteCredito, @Ativo)",
             new
             {
-                ProximoId = proximoId,
+                dto.Id,
                 dto.TipoPessoa,
                 dto.Sexo,
                 dto.Estrangeiro,
@@ -152,8 +151,8 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                 dto.InscricaoMunicipal,
                 dto.LimiteCredito,
                 dto.Ativo
-            });
-        return proximoId;
+            }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(ClienteDto dto)
@@ -161,8 +160,7 @@ public class ClienteRepository : BaseRepository, IClienteRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE clientes
-              SET id                    = @Id,
-                  tipo_pessoa           = @TipoPessoa,
+              SET tipo_pessoa           = @TipoPessoa,
                   sexo                  = @Sexo,
                   estrangeiro           = @Estrangeiro,
                   nome_razaosocial      = @NomeRazaoSocial,
@@ -185,7 +183,6 @@ public class ClienteRepository : BaseRepository, IClienteRepository
               WHERE id = @IdOriginal",
             new
             {
-                dto.Id,
                 dto.IdOriginal,
                 dto.TipoPessoa,
                 dto.Sexo,

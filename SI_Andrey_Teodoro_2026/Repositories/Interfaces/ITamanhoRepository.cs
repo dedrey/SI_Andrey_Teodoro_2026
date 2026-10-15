@@ -8,4 +8,6 @@ public interface ITamanhoRepository
     Task<int> InserirAsync(TamanhoDto dto);
     Task AtualizarAsync(TamanhoDto dto);
     Task<bool> ExisteNomeAsync(string nome, int? idIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

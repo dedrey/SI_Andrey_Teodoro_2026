@@ -73,7 +73,7 @@ public class CidadeRepository : BaseRepository, ICidadeRepository
     {
         using var conn = _factory.CreateConnection();
         return await conn.QueryFirstOrDefaultAsync<Cidade>(
-            @"SELECT c.id, c.cidade AS NomeCidade, c.ddd, c.estado_id AS EstadoId,
+            @"SELECT c.id, c.cidade AS NomeCidade, c.ddd, c.estado_id AS EstadoId, e.pais_id AS PaisId,
                      e.estado AS NomeEstado, e.uf, p.pais AS NomePais, c.ativo,
                      c.criado_em AS CriadoEm, c.atualizado_em AS AtualizadoEm,
                      ua.nome AS NomeAtualizadoPor
@@ -87,12 +87,11 @@ public class CidadeRepository : BaseRepository, ICidadeRepository
     public async Task<int> InserirAsync(CidadeDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO cidades (id, cidade, ddd, estado_id, ativo)
-              VALUES (@ProximoId, @NomeCidade, @Ddd, @EstadoId, @Ativo)",
-            new { ProximoId = proximoId, dto.NomeCidade, dto.Ddd, dto.EstadoId, dto.Ativo });
-        return proximoId;
+              VALUES (@Id, @NomeCidade, @Ddd, @EstadoId, @Ativo)",
+            new { dto.Id, dto.NomeCidade, dto.Ddd, dto.EstadoId, dto.Ativo }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(CidadeDto dto)
@@ -100,7 +99,7 @@ public class CidadeRepository : BaseRepository, ICidadeRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE cidades
-              SET id = @Id, cidade = @NomeCidade, ddd = @Ddd, estado_id = @EstadoId,
+              SET cidade = @NomeCidade, ddd = @Ddd, estado_id = @EstadoId,
                   atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }

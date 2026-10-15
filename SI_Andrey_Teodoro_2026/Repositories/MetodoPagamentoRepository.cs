@@ -78,20 +78,18 @@ public class MetodoPagamentoRepository : BaseRepository, IMetodoPagamentoReposit
     public async Task<int> InserirAsync(MetodoPagamentoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO metodos_pagamento (id, codigo, metodo_pagamento, ativo)
-              VALUES (@ProximoId, @Codigo, @MetodoPagamento, @Ativo)",
-            new { ProximoId = proximoId, dto.Codigo, dto.MetodoPagamento, dto.Ativo });
-        return proximoId;
+              VALUES (@Id, @Codigo, @MetodoPagamento, @Ativo)",
+            new { dto.Id, dto.Codigo, dto.MetodoPagamento, dto.Ativo }));
+        return dto.Id;
     }
     public async Task AtualizarAsync(MetodoPagamentoDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE metodos_pagamento
-              SET id               = @Id,
-                  codigo           = @Codigo,
+              SET codigo           = @Codigo,
                   metodo_pagamento = @MetodoPagamento,
                   atualizado_em    = NOW()
               WHERE id = @IdOriginal", dto);

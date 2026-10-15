@@ -69,19 +69,17 @@ public class MarcaRepository : BaseRepository, IMarcaRepository
     public async Task<int> InserirAsync(MarcaDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            "INSERT INTO marcas (id, marca, ativo) VALUES (@ProximoId, @NomeMarca, @Ativo)",
-            new { ProximoId = proximoId, dto.NomeMarca, dto.Ativo });
-        return proximoId;
+        await InserirComIdAsync(() => conn.ExecuteAsync(
+            "INSERT INTO marcas (id, marca, ativo) VALUES (@Id, @NomeMarca, @Ativo)",
+            new { dto.Id, dto.NomeMarca, dto.Ativo }));
+        return dto.Id;
     }
     public async Task AtualizarAsync(MarcaDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE marcas
-              SET id            = @Id,
-                  marca         = @NomeMarca,
+              SET marca         = @NomeMarca,
                   atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }

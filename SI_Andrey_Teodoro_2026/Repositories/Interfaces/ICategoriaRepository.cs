@@ -12,4 +12,6 @@ public interface ICategoriaRepository
     Task AtualizarAsync(CategoriaDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

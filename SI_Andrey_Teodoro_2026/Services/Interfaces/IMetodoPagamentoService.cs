@@ -9,4 +9,5 @@ public interface IMetodoPagamentoService
     Task<MetodoPagamentoDto?> ObterPorIdAsync(int id);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(MetodoPagamentoDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);
+    Task<int> ObterProximoIdAsync();
 }

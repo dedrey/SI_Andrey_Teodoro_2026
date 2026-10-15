@@ -11,4 +11,6 @@ public interface IVeiculoRepository
     Task AtualizarAsync(VeiculoDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExistePlacaAsync(string placa, int? idOriginalIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

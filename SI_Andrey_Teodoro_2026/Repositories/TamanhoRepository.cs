@@ -15,7 +15,7 @@ public class TamanhoRepository : BaseRepository, ITamanhoRepository
         using var conn = _factory.CreateConnection();
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add("nome LIKE @Busca");
+            where.Add("(nome LIKE @Busca OR CAST(id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
             "ativos" => "ativo = TRUE",
@@ -24,10 +24,10 @@ public class TamanhoRepository : BaseRepository, ITamanhoRepository
         });
         var w = "WHERE " + string.Join(" AND ", where);
         var total = await conn.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM tamanhos {w}",
-            new { Busca = $"%{filtro.Busca}%" });
+            new { Busca = $"%{filtro.Busca}%", BuscaExata = filtro.Busca });
         var itens = await conn.QueryAsync<TamanhoListDto>(
             $"SELECT id, nome, ordem, ativo FROM tamanhos {w} ORDER BY ordem, nome LIMIT @Limit OFFSET @Offset",
-            new { Busca = $"%{filtro.Busca}%", Limit = filtro.TamanhoPagina, Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina });
+            new { Busca = $"%{filtro.Busca}%", BuscaExata = filtro.Busca, Limit = filtro.TamanhoPagina, Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina });
         return new PaginacaoDto<TamanhoListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
     }
 
@@ -41,11 +41,10 @@ public class TamanhoRepository : BaseRepository, ITamanhoRepository
     public async Task<int> InserirAsync(TamanhoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var id = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            "INSERT INTO tamanhos (id, nome, ordem, ativo) VALUES (@id, @Nome, @Ordem, @Ativo)",
-            new { id, dto.Nome, dto.Ordem, dto.Ativo });
-        return id;
+        await InserirComIdAsync(() => conn.ExecuteAsync(
+            "INSERT INTO tamanhos (id, nome, ordem, ativo) VALUES (@Id, @Nome, @Ordem, @Ativo)",
+            new { dto.Id, dto.Nome, dto.Ordem, dto.Ativo }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(TamanhoDto dto)

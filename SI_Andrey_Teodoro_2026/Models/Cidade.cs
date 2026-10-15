@@ -5,6 +5,7 @@ public class Cidade
     public string NomeCidade { get; set; } = string.Empty;
     public short Ddd { get; set; }
     public int EstadoId { get; set; }
+    public int PaisId { get; set; }
     public bool Ativo { get; set; } = true;
     public DateTime CriadoEm { get; set; } = DateTime.Now;
     public DateTime? AtualizadoEm { get; set; }

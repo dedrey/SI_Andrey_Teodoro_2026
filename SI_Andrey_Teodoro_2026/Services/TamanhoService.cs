@@ -16,10 +16,16 @@ public class TamanhoService : BaseService<TamanhoDto, TamanhoListDto>, ITamanhoS
     public Task<IEnumerable<TamanhoListDto>> ObterTodosAtivosAsync()
         => _repo.ObterTodosAtivosAsync();
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(TamanhoDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Nome = dto.Nome.Trim().ToUpperInvariant();
             if (string.IsNullOrWhiteSpace(dto.Nome))
                 return (false, "Nome do tamanho é obrigatório.", 0);

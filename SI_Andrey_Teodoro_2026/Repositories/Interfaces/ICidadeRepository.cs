@@ -12,4 +12,6 @@ public interface ICidadeRepository
     Task AtualizarAsync(CidadeDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteNomeNoEstadoAsync(string nome, int estadoId, int? idIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

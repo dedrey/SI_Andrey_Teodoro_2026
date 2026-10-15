@@ -15,6 +15,7 @@ public class CidadeDto
     [Range(1, int.MaxValue, ErrorMessage = "Selecione um estado válido")]
     public int EstadoId { get; set; }
     public int PaisId { get; set; }
+    public string? Uf { get; set; }
     public bool Ativo { get; set; } = true;
     public DateTime? AtualizadoEm { get; set; }
     public string? NomeAtualizadoPor { get; set; }

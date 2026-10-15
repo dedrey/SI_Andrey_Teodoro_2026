@@ -26,10 +26,16 @@ public class UnidadeMedidaService : BaseService<UnidadeMedidaDto, UnidadeMedidaL
             NomeAtualizadoPor = u.NomeAtualizadoPor
         };
     }
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(UnidadeMedidaDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Sigla = dto.Sigla.Trim().ToUpperInvariant();
             dto.Descricao = dto.Descricao.Trim().ToUpperInvariant();
 

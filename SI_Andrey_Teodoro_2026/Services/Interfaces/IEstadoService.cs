@@ -10,4 +10,5 @@ public interface IEstadoService
     Task<EstadoDto?> ObterPorIdAsync(int id);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(EstadoDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);
+    Task<int> ObterProximoIdAsync();
 }

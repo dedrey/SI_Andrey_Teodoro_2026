@@ -15,7 +15,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="12">
+                <MudItem xs="12" sm="3">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
+                </MudItem>
+                <MudItem xs="12" sm="9">
                     <div class="d-flex align-center gap-1">
                         <MudSelect T="int" @bind-Value="_dto.PaisId" Label="País"
                                    Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@_readOnly">
@@ -36,14 +42,14 @@
                                   Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarNome(v))"
-                                  Disabled="@(_readOnly || !PaisOk)" HelperText="@(PaisOk ? null : "Selecione o país primeiro.")" />
+                                  Disabled="@(_readOnly || !Edicao && !PaisOk)" HelperText="@(Edicao || PaisOk ? null : "Selecione o país primeiro.")" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = new string(v.Where(char.IsLetter).ToArray()).ToUpper())"
                                   Label="UF" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[A-Z]{2}$") ? "2 letras maiúsculas" : null)"
-                                  Disabled="@(_readOnly || !NomeOk)" HelperText="@(NomeOk ? null : "Informe o estado primeiro.")" />
+                                  Disabled="@(_readOnly || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o estado primeiro.")" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -108,6 +114,8 @@
             };
         else if (PaisIdInicial > 0)
             _dto.PaisId = PaisIdInicial;
+        await _paises.IncluirSeAusenteAsync(_dto.PaisId, p => p.Id, async id => await PaisService.ObterPorIdAsync(id) is { } p ? new PaisListDto { Id = p.Id, NomePais = p.NomePais } : null);
+        if (_dto.IdOriginal == 0) _dto.Id = await EstadoService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 
@@ -139,6 +147,7 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
+    private bool Edicao => _dto.IdOriginal > 0;
     private bool PaisOk => _dto.PaisId > 0;
     private bool NomeOk => PaisOk && ValidarNome(_dto.NomeEstado) == null;
     private static string? ValidarNome(string? v) =>

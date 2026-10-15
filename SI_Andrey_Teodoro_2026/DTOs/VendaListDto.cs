@@ -23,6 +23,7 @@ public class VendaItemListDto
     public int Id { get; set; }
     public int VendaId { get; set; }
     public int ProdutoVariacaoId { get; set; }
+    public int ProdutoId { get; set; }
     public string NomeProduto { get; set; } = string.Empty;
     public string Cor { get; set; } = string.Empty;
     public string Tamanho { get; set; } = string.Empty;

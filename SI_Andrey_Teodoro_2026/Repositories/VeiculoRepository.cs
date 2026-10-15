@@ -93,14 +93,13 @@ public class VeiculoRepository : BaseRepository, IVeiculoRepository
     public async Task<int> InserirAsync(VeiculoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
 
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO veiculos (id, transportadora_id, placa, uf, ativo)
-              VALUES (@ProximoId, @TransportadoraId, @Placa, @Uf, @Ativo)",
-            new { ProximoId = proximoId, dto.TransportadoraId, dto.Placa, dto.Uf, dto.Ativo });
+              VALUES (@Id, @TransportadoraId, @Placa, @Uf, @Ativo)",
+            new { dto.Id, dto.TransportadoraId, dto.Placa, dto.Uf, dto.Ativo }));
 
-        return proximoId;
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(VeiculoDto dto)
@@ -108,8 +107,7 @@ public class VeiculoRepository : BaseRepository, IVeiculoRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE veiculos
-              SET id                = @Id,
-                  transportadora_id = @TransportadoraId,
+              SET transportadora_id = @TransportadoraId,
                   placa             = @Placa,
                   uf                = @Uf,
                   atualizado_em     = NOW()

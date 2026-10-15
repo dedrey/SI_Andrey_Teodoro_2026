@@ -117,6 +117,7 @@ public class VendaRepository : BaseRepository, IVendaRepository
             @"SELECT vi.id,
                      vi.venda_id             AS VendaId,
                      vi.produto_variacao_id  AS ProdutoVariacaoId,
+                     pv.produto_id           AS ProdutoId,
                      p.produto               AS NomeProduto,
                      pv.cor                  AS Cor,
                      pv.tamanho              AS Tamanho,

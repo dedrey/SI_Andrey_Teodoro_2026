@@ -45,10 +45,16 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
 
     public Task<bool> EmUsoAsync(int id) => _repo.EmUsoAsync(id);
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CondicaoPagamentoDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.CondicaoPagamento = dto.CondicaoPagamento.Trim().ToUpperInvariant();
 
             if (dto.MetodoPagamentoId == 0)

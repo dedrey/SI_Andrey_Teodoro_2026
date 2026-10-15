@@ -53,10 +53,16 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
         };
     }
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(ClienteDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.NomeRazaoSocial = dto.NomeRazaoSocial.Trim().ToUpperInvariant();
             dto.ApelidoNomeFantasia = dto.ApelidoNomeFantasia?.Trim().ToUpperInvariant();
             dto.DocumentoEstrangeiro = dto.DocumentoEstrangeiro?.Trim().ToUpperInvariant();

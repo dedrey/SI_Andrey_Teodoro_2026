@@ -38,10 +38,16 @@ public class EstadoService : BaseService<EstadoDto, EstadoListDto>, IEstadoServi
         };
     }
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(EstadoDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Uf = dto.Uf.Trim().ToUpperInvariant();
             dto.NomeEstado = dto.NomeEstado.Trim().ToUpperInvariant();
 

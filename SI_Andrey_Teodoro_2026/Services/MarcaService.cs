@@ -25,10 +25,16 @@ public class MarcaService : BaseService<MarcaDto, MarcaListDto>, IMarcaService
             NomeAtualizadoPor = m.NomeAtualizadoPor
         };
     }
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(MarcaDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.NomeMarca = dto.NomeMarca.Trim().ToUpperInvariant();
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;

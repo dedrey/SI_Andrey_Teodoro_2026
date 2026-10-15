@@ -16,7 +16,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="2">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="TransportadoraListDto" Label="Transportadora"
                                          Value="_transportadoraSelecionada"
@@ -45,10 +51,10 @@
                                          SearchFunc="PesquisarUf"
                                          ToStringFunc="@(u => u ?? "")"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(_readOnly || !PlacaOk)" HelperText="@AjudaUf" />
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(_readOnly || !Edicao && !PlacaOk)" HelperText="@AjudaUf" />
                         <MudTooltip Text="Pesquisar estado">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarUfModal" Disabled="@(_readOnly || !PlacaOk)" />
+                                           OnClick="PesquisarUfModal" Disabled="@(_readOnly || !Edicao && !PlacaOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
@@ -118,8 +124,10 @@
                 NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
             _placaTexto = DtoEdicao.Placa;
+            await _transportadoras.IncluirSeAusenteAsync(_dto.TransportadoraId, t => t.Id, async id => await TransportadoraService.ObterPorIdAsync(id) is { } t ? new TransportadoraListDto { Id = t.Id, RazaoSocial = t.RazaoSocial, NomeFantasia = t.NomeFantasia } : null);
             _transportadoraSelecionada = _transportadoras.FirstOrDefault(t => t.Id == DtoEdicao.TransportadoraId);
         }
+        if (_dto.IdOriginal == 0) _dto.Id = await VeiculoService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
@@ -169,7 +177,7 @@
     private bool TransportadoraOk => _dto.TransportadoraId > 0;
     private bool PlacaOk => TransportadoraOk && (Edicao || ValidarPlaca(_placaTexto) == null);
     private string? AjudaPlaca => Edicao ? (_readOnly ? null : "Não pode ser alterado após o cadastro.") : TransportadoraOk ? null : "Selecione a transportadora primeiro.";
-    private string? AjudaUf => PlacaOk ? null : TransportadoraOk ? "Informe uma placa válida primeiro." : "Selecione a transportadora primeiro.";
+    private string? AjudaUf => Edicao || PlacaOk ? null : TransportadoraOk ? "Informe uma placa válida primeiro." : "Selecione a transportadora primeiro.";
     private object DadosEditaveis() => new { _dto, _placaTexto, Transportadora = _transportadoraSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 }

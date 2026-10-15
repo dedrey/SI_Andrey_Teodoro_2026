@@ -77,19 +77,17 @@ public class UnidadeMedidaRepository : BaseRepository, IUnidadeMedidaRepository
     public async Task<int> InserirAsync(UnidadeMedidaDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            "INSERT INTO unidades_medida (id, unidade_medida, descricao, ativo) VALUES (@ProximoId, @Sigla, @Descricao, @Ativo)",
-            new { ProximoId = proximoId, dto.Sigla, dto.Descricao, dto.Ativo });
-        return proximoId;
+        await InserirComIdAsync(() => conn.ExecuteAsync(
+            "INSERT INTO unidades_medida (id, unidade_medida, descricao, ativo) VALUES (@Id, @Sigla, @Descricao, @Ativo)",
+            new { dto.Id, dto.Sigla, dto.Descricao, dto.Ativo }));
+        return dto.Id;
     }
     public async Task AtualizarAsync(UnidadeMedidaDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE unidades_medida
-              SET id             = @Id,
-                  unidade_medida = @Sigla,
+              SET unidade_medida = @Sigla,
                   descricao      = @Descricao,
                   atualizado_em  = NOW()
               WHERE id = @IdOriginal", dto);

@@ -12,14 +12,19 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="8">
+                <MudItem xs="3">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)" />
+                </MudItem>
+                <MudItem xs="6">
                     <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = v.Trim().ToUpper())"
                                   Label="Tamanho" Placeholder="Ex: M, GG, 42"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true"
                                   Immediate="true" Autofocus="true" />
                 </MudItem>
-                <MudItem xs="4">
+                <MudItem xs="3">
                     <MudNumericField @bind-Value="_dto.Ordem" Label="Ordem"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="999"
                                      HelperText="Menor = primeiro" FullWidth="true" />
@@ -44,8 +49,9 @@
     private bool _formValido, _salvando;
     private TamanhoDto _dto = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        if (_dto.IdOriginal == 0) _dto.Id = await TamanhoService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 

@@ -81,12 +81,11 @@ public class PaisRepository : BaseRepository, IPaisRepository
     public async Task<int> InserirAsync(PaisDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO paises (id, ddi, sigla, moeda, simbolo_moeda, pais, ativo)
-              VALUES (@ProximoId, @Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo)",
-            new { ProximoId = proximoId, dto.Ddi, dto.Sigla, dto.Moeda, dto.SimboleMoeda, dto.NomePais, dto.Ativo });
-        return proximoId;
+              VALUES (@Id, @Ddi, @Sigla, @Moeda, @SimboleMoeda, @NomePais, @Ativo)",
+            new { dto.Id, dto.Ddi, dto.Sigla, dto.Moeda, dto.SimboleMoeda, dto.NomePais, dto.Ativo }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(PaisDto dto)
@@ -94,8 +93,7 @@ public class PaisRepository : BaseRepository, IPaisRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE paises
-              SET id            = @Id,
-                  ddi           = @Ddi,
+              SET ddi           = @Ddi,
                   sigla         = @Sigla,
                   moeda         = @Moeda,
                   simbolo_moeda = @SimboleMoeda,

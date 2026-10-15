@@ -60,6 +60,7 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 VendaId = i.VendaId,
                 ProdutoVariacaoId = i.ProdutoVariacaoId,
                 NomeProduto = i.NomeProduto,
+                ProdutoId = i.ProdutoId,
                 Cor = i.Cor,
                 Tamanho = i.Tamanho,
                 Quantidade = i.Quantidade,

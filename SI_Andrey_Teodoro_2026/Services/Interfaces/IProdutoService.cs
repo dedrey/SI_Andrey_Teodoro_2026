@@ -11,4 +11,5 @@ public interface IProdutoService
     Task<List<int>> ObterVariacoesComMovimentoAsync(int produtoId);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(ProdutoDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);
+    Task<int> ObterProximoIdAsync();
 }

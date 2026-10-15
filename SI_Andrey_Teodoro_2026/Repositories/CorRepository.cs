@@ -15,7 +15,7 @@ public class CorRepository : BaseRepository, ICorRepository
         using var conn = _factory.CreateConnection();
         var where = new List<string>();
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
-            where.Add("nome LIKE @Busca");
+            where.Add("(nome LIKE @Busca OR CAST(id AS CHAR) = @BuscaExata)");
         where.Add(filtro.StatusFiltro switch
         {
             "ativos" => "ativo = TRUE",
@@ -24,10 +24,10 @@ public class CorRepository : BaseRepository, ICorRepository
         });
         var w = "WHERE " + string.Join(" AND ", where);
         var total = await conn.ExecuteScalarAsync<int>($"SELECT COUNT(*) FROM cores {w}",
-            new { Busca = $"%{filtro.Busca}%" });
+            new { Busca = $"%{filtro.Busca}%", BuscaExata = filtro.Busca });
         var itens = await conn.QueryAsync<CorListDto>(
             $"SELECT id, nome, ativo FROM cores {w} ORDER BY nome LIMIT @Limit OFFSET @Offset",
-            new { Busca = $"%{filtro.Busca}%", Limit = filtro.TamanhoPagina, Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina });
+            new { Busca = $"%{filtro.Busca}%", BuscaExata = filtro.Busca, Limit = filtro.TamanhoPagina, Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina });
         return new PaginacaoDto<CorListDto> { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
     }
 
@@ -41,11 +41,10 @@ public class CorRepository : BaseRepository, ICorRepository
     public async Task<int> InserirAsync(CorDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var id = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            "INSERT INTO cores (id, nome, ativo) VALUES (@id, @Nome, @Ativo)",
-            new { id, dto.Nome, dto.Ativo });
-        return id;
+        await InserirComIdAsync(() => conn.ExecuteAsync(
+            "INSERT INTO cores (id, nome, ativo) VALUES (@Id, @Nome, @Ativo)",
+            new { dto.Id, dto.Nome, dto.Ativo }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(CorDto dto)

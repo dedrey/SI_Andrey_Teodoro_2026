@@ -249,6 +249,7 @@
             if (DtoEdicao.VendaId.HasValue)
                 _contasDaVenda = await ContaReceberService.ObterContasDaVendaAsync(DtoEdicao.VendaId.Value);
         }
+        await _clientes.IncluirSeAusenteAsync(_dto.ClienteId, c => c.Id, async id => await ClienteService.ObterPorIdAsync(id) is { } c ? new ClienteListDto { Id = c.Id, NomeRazaoSocial = c.NomeRazaoSocial, ApelidoNomeFantasia = c.ApelidoNomeFantasia, TipoPessoa = c.TipoPessoa, CpfCnpj = c.CpfCnpj, Estrangeiro = c.Estrangeiro, DocumentoEstrangeiro = c.DocumentoEstrangeiro, LimiteCredito = c.LimiteCredito } : null);
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 

@@ -273,15 +273,14 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
             int produtoId;
             if (dto.IdOriginal == 0)
             {
-                var proximoId = await ProximoIdAsync();
-                await conn.ExecuteAsync(
+                await InserirComIdAsync(() => conn.ExecuteAsync(
                     @"INSERT INTO produtos (id, produto, descricao, codigo_barras,
                                             categoria_id, marca_id, unidade_medida_id, ativo)
-                      VALUES (@ProximoId, @Produto, @Descricao, @CodigoBarras,
+                      VALUES (@Id, @Produto, @Descricao, @CodigoBarras,
                               @CategoriaId, @MarcaId, @UnidadeMedidaId, @Ativo)",
                     new
                     {
-                        ProximoId = proximoId,
+                        dto.Id,
                         dto.Produto,
                         dto.Descricao,
                         dto.CodigoBarras,
@@ -289,16 +288,15 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                         dto.MarcaId,
                         dto.UnidadeMedidaId,
                         dto.Ativo
-                    }, tx);
-                produtoId = proximoId;
+                    }, tx));
+                produtoId = dto.Id;
             }
             else
             {
-                produtoId = dto.Id;
+                produtoId = dto.IdOriginal;
                 await conn.ExecuteAsync(
                     @"UPDATE produtos
-                      SET id                = @Id,
-                          produto           = @Produto,
+                      SET produto           = @Produto,
                           descricao         = @Descricao,
                           codigo_barras     = @CodigoBarras,
                           categoria_id      = @CategoriaId,
@@ -308,7 +306,6 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                       WHERE id = @IdOriginal",
                     new
                     {
-                        dto.Id,
                         dto.IdOriginal,
                         dto.Produto,
                         dto.Descricao,

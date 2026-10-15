@@ -415,6 +415,8 @@
             );
         }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        await _fornecedores.IncluirSeAusenteAsync(_dto.FornecedorId, f => f.Id, async id => await FornecedorService.ObterPorIdAsync(id) is { } f ? new FornecedorListDto { Id = f.Id, RazaoSocial = f.RazaoSocial, NomeFantasia = f.NomeFantasia, TipoPessoa = f.TipoPessoa, CpfCnpj = f.CpfCnpj, CondicaoPagamentoId = f.CondicaoPagamentoId, NomeCondicaoPagamento = f.NomeCondicaoPagamento } : null);
+        await _transportadoras.IncluirSeAusenteAsync(_dto.TransportadoraId, t => t.Id, async id => await TransportadoraService.ObterPorIdAsync(id) is { } t ? new TransportadoraListDto { Id = t.Id, RazaoSocial = t.RazaoSocial, NomeFantasia = t.NomeFantasia, Cnpj = t.Cnpj } : null);
         if (SomenteLeitura && _dto.Id > 0)
             _contasPagar = await CompraService.ObterContasPagarAsync(_dto.Id);
         try { _ordemTamanhos = (await TamanhoService.ObterTodosAtivosAsync()).GroupBy(t => t.Nome).ToDictionary(g => g.Key, g => g.First().Ordem); }

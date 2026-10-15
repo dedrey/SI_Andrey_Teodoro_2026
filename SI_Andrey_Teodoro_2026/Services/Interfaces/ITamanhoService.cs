@@ -6,4 +6,5 @@ public interface ITamanhoService
     Task<PaginacaoDto<TamanhoListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<TamanhoListDto>> ObterTodosAtivosAsync();
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(TamanhoDto dto);
+    Task<int> ObterProximoIdAsync();
 }

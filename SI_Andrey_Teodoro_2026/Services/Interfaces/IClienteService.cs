@@ -9,4 +9,5 @@ public interface IClienteService
     Task<ClienteDto?> ObterPorIdAsync(int id);
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(ClienteDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);
+    Task<int> ObterProximoIdAsync();
 }

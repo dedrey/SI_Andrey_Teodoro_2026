@@ -13,5 +13,6 @@ public interface IEstadoRepository
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteUfNoPaisAsync(string uf, int paisId, int? idIgnorar = null);
     Task<IEnumerable<EstadoListDto>> ObterTodosAtivosAsync();
-
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

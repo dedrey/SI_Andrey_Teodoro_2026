@@ -40,10 +40,16 @@ public class PaisService : BaseService<PaisDto, PaisListDto>, IPaisService
         };
     }
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(PaisDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Sigla = dto.Sigla.Trim().ToUpperInvariant();
             dto.NomePais = dto.NomePais.Trim().ToUpperInvariant();
             dto.Ddi = dto.Ddi.Trim();

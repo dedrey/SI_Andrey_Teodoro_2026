@@ -14,7 +14,13 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.RequestQuote" Titulo="Condição" AoMudar="StateHasChanged" />
-                <MudItem xs="12" sm="5">
+                <MudItem xs="12" sm="2">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => { _dto.Id = v; Alterou(1); })"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => { _dto.CondicaoPagamento = v; Alterou(1); })" Label="Condição de Pagamento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Disabled="@Bloqueado(1)" />
@@ -29,21 +35,21 @@
                                          Label="Método de Pagamento"
                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false"
-                                         Disabled="@(Bloqueado(1) || !NomeOk)" HelperText="@(NomeOk ? null : "Informe o nome da condição primeiro.")"
+                                         Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o nome da condição primeiro.")"
                                          Placeholder="Digite para pesquisar..." />
                         <MudTooltip Text="Pesquisar método de pagamento">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="PesquisarMetodo" Disabled="@(Bloqueado(1) || !NomeOk)" />
+                                           OnClick="PesquisarMetodo" Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" />
                         </MudTooltip>
                     </div>
                 </MudItem>
-                <MudItem xs="12" sm="3">
+                <MudItem xs="12" sm="2">
                     <MudNumericField T="int" Value="_dto.NumeroParcelas"
                                      ValueChanged="OnNumeroParcelas"
                                      Label="Nº de parcelas" Variant="Variant.Outlined"
                                      Margin="Margin.Dense" Min="1" Max="999" FullWidth="true"
-                                     Immediate="true" Disabled="@(Bloqueado(1) || !MetodoOk || _emUso)"
-                                     HelperText="@(_emUso && !_readOnly ? MsgEmUso : MetodoOk ? null : NomeOk ? "Selecione o método de pagamento primeiro." : "Informe o nome da condição primeiro.")" />
+                                     Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !MetodoOk || _emUso)"
+                                     HelperText="@(_emUso && !_readOnly ? MsgEmUso : Edicao || MetodoOk ? null : NomeOk ? "Selecione o método de pagamento primeiro." : "Informe o nome da condição primeiro.")" />
                 </MudItem>
 
                 <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.CalendarMonth" Titulo="@($"Parcelas ({_dto.Parcelas.Count})")" AoMudar="StateHasChanged">
@@ -214,6 +220,8 @@
 
         if (_dto.Parcelas.Count == 0 && _dto.NumeroParcelas > 0)
             GerarParcelas();
+        await _metodos.IncluirSeAusenteAsync(_dto.MetodoPagamentoId, m => m.Id, async id => await MetodoPagamentoService.ObterPorIdAsync(id) is { } m ? new MetodoPagamentoListDto { Id = m.Id, Codigo = m.Codigo, MetodoPagamento = m.MetodoPagamento } : null);
+        if (_dto.IdOriginal == 0) _dto.Id = await CondicaoPagamentoService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 

@@ -111,17 +111,16 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
     public async Task<int> InserirAsync(TransportadoraDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO transportadoras
                 (id, razaosocial, nomefantasia, cnpj, inscricao_estadual, cidade_id,
                 endereco, numero, complemento, bairro, cep, telefone, email, ativo)
             VALUES
-                (@ProximoId, @RazaoSocial, @NomeFantasia, @Cnpj, @InscricaoEstadual, @CidadeId,
+                (@Id, @RazaoSocial, @NomeFantasia, @Cnpj, @InscricaoEstadual, @CidadeId,
                 @Endereco, @Numero, @Complemento, @Bairro, @Cep, @Telefone, @Email, @Ativo)",
             new
             {
-                ProximoId = proximoId,
+                dto.Id,
                 dto.RazaoSocial,
                 dto.NomeFantasia,
                 dto.Cnpj,
@@ -135,8 +134,8 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                 dto.Telefone,
                 dto.Email,
                 dto.Ativo
-            });
-        return proximoId;
+            }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(TransportadoraDto dto)
@@ -144,8 +143,7 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE transportadoras
-              SET id                 = @Id,
-                  razaosocial        = @RazaoSocial,
+              SET razaosocial        = @RazaoSocial,
                   nomefantasia       = @NomeFantasia,
                   cnpj               = @Cnpj,
                   inscricao_estadual = @InscricaoEstadual,

@@ -17,6 +17,12 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Badge" Titulo="Identificação" AoMudar="StateHasChanged" />
+                <MudItem xs="6" sm="2">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => { _dto.Id = v; Alterou(1); })"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
+                </MudItem>
                 <MudItem xs="6" sm="3">
                     <MudSelect T="string" Value="@_dto.TipoPessoa" ValueChanged="OnTipoPessoaAlterado"
                                Label="Tipo" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
@@ -25,7 +31,7 @@
                         <MudSelectItem T="string" Value="@("PJ")">Pessoa Jurídica</MudSelectItem>
                     </MudSelect>
                 </MudItem>
-                <MudItem xs="6" sm="3" Class="d-flex flex-column justify-center">
+                <MudItem xs="6" sm="2" Class="d-flex flex-column justify-center">
                     <MudCheckBox T="bool" Value="@_dto.Estrangeiro" ValueChanged="OnEstrangeiroAlterado"
                                  Color="Color.Primary" Label="Estrangeiro" Disabled="@(DocTravado || Bloqueado(1))" />
                     @if (AjudaTravado != null)
@@ -33,7 +39,7 @@
                         <MudText Typo="Typo.caption" Style="color:#888;margin-left:12px;">@AjudaTravado</MudText>
                     }
                 </MudItem>
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="5">
                     @if (_dto.Estrangeiro)
                     {
                         <MudTextField Value="@(_dto.DocumentoEstrangeiro ?? "")"
@@ -58,16 +64,16 @@
                                   Label="@(_dto.TipoPessoa == "PJ" ? "Razão Social" : "Nome")"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
-                                  Disabled="@(Bloqueado(1) || !DocOk)" HelperText="@AjudaNome" />
+                                  Disabled="@(Bloqueado(1) || !Edicao && !DocOk)" HelperText="@AjudaNome" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudTextField Value="@(_dto.ApelidoNomeFantasia ?? "")" ValueChanged="@((string v) => { _dto.ApelidoNomeFantasia = v; Alterou(1); })"
                                   Label="@(_dto.TipoPessoa == "PJ" ? "Nome Fantasia" : "Apelido")" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="100" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !NomeOk)" HelperText="@AjudaRestante" />
+                                  MaxLength="100" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" HelperText="@AjudaRestante" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <MudSelect T="string" Value="@_dto.Sexo" ValueChanged="@((string v) => { _dto.Sexo = v; Alterou(1); })" Label="Sexo"
-                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@(Bloqueado(1) || !NomeOk)" HelperText="@AjudaRestante">
+                               Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" HelperText="@AjudaRestante">
                         <MudSelectItem T="string" Value="@("MASCULINO")">Masculino</MudSelectItem>
                         <MudSelectItem T="string" Value="@("FEMININO")">Feminino</MudSelectItem>
                         <MudSelectItem T="string" Value="@("OUTRO")">Outro</MudSelectItem>
@@ -257,8 +263,10 @@
             _docTexto = DtoEdicao.CpfCnpj ?? "";
             _docSalvo = !string.IsNullOrWhiteSpace(DtoEdicao.CpfCnpj) || !string.IsNullOrWhiteSpace(DtoEdicao.DocumentoEstrangeiro);
 
+            await _cidades.IncluirSeAusenteAsync(_dto.CidadeId, c => c.Id, async id => await CidadeService.ObterPorIdAsync(id) is { } c ? new CidadeListDto { Id = c.Id, NomeCidade = c.NomeCidade, EstadoId = c.EstadoId, PaisId = c.PaisId, Uf = c.Uf } : null);
             if (_dto.CidadeId.HasValue) _cidadeSelecionada = _cidades.FirstOrDefault(c => c.Id == _dto.CidadeId);
         }
+        if (_dto.IdOriginal == 0) _dto.Id = await ClienteService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
@@ -339,8 +347,8 @@
         3 when _dto.LimiteCredito < 0 => "O limite de crédito não pode ser negativo.",
         _ => null
     };
-    private string? AjudaNome => DocOk ? null : _dto.Estrangeiro ? "Informe o documento estrangeiro primeiro." : $"Informe um {(_dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")} válido primeiro.";
-    private string? AjudaRestante => NomeOk ? null : AjudaNome ?? $"Informe {(_dto.TipoPessoa == "PJ" ? "a razão social" : "o nome")} primeiro.";
+    private string? AjudaNome => Edicao || DocOk ? null : _dto.Estrangeiro ? "Informe o documento estrangeiro primeiro." : $"Informe um {(_dto.TipoPessoa == "PF" ? "CPF" : "CNPJ")} válido primeiro.";
+    private string? AjudaRestante => Edicao || NomeOk ? null : AjudaNome ?? $"Informe {(_dto.TipoPessoa == "PJ" ? "a razão social" : "o nome")} primeiro.";
     private object DadosEditaveis() => new { _dto, _docTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 

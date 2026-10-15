@@ -17,4 +17,6 @@ public interface IProdutoRepository
     Task<bool> ExisteVariacaoAsync(int produtoId, int corId, int tamanhoId, int? idIgnorar = null);
 
     Task<bool> ExisteCodigoBarrasAsync(string codigoBarras, int? idIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

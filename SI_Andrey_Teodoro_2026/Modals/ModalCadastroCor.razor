@@ -11,10 +11,19 @@
     </TitleContent>
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
-            <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = v)"
-                          Label="Cor" Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true"
-                          Immediate="true" Autofocus="true" />
+            <MudGrid Spacing="2">
+                <MudItem xs="4">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)" />
+                </MudItem>
+                <MudItem xs="8">
+                    <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = v)"
+                                  Label="Cor" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true"
+                                  Immediate="true" Autofocus="true" />
+                </MudItem>
+            </MudGrid>
         </MudForm>
     </DialogContent>
     <DialogActions>
@@ -34,8 +43,9 @@
     private bool _formValido, _salvando;
     private CorDto _dto = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        if (_dto.IdOriginal == 0) _dto.Id = await CorService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
     }
 

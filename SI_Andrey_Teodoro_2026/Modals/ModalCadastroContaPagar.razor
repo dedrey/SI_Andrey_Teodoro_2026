@@ -199,6 +199,7 @@
             _mesExibido = DtoEdicao.DataVencimento;
             _semFornecedor = !DtoEdicao.CompraId.HasValue && !DtoEdicao.VendaId.HasValue && !DtoEdicao.FornecedorId.HasValue;
         }
+        await _fornecedores.IncluirSeAusenteAsync(_dto.FornecedorId, f => f.Id, async id => await FornecedorService.ObterPorIdAsync(id) is { } f ? new FornecedorListDto { Id = f.Id, RazaoSocial = f.RazaoSocial, NomeFantasia = f.NomeFantasia, TipoPessoa = f.TipoPessoa, CpfCnpj = f.CpfCnpj, CondicaoPagamentoId = f.CondicaoPagamentoId, NomeCondicaoPagamento = f.NomeCondicaoPagamento } : null);
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 

@@ -286,16 +286,20 @@
             );
         }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        await _clientes.IncluirSeAusenteAsync(_dto.ClienteId, c => c.Id, async id => await ClienteService.ObterPorIdAsync(id) is { } c ? new ClienteListDto { Id = c.Id, NomeRazaoSocial = c.NomeRazaoSocial, ApelidoNomeFantasia = c.ApelidoNomeFantasia, TipoPessoa = c.TipoPessoa, CpfCnpj = c.CpfCnpj, Estrangeiro = c.Estrangeiro, DocumentoEstrangeiro = c.DocumentoEstrangeiro, LimiteCredito = c.LimiteCredito } : null);
+        await _condicoes.IncluirSeAusenteAsync(_dto.CondicaoPagamentoId, c => c.Id, async id => await CondicaoPagamentoService.ObterPorIdAsync(id) is { } c ? new CondicaoPagamentoListDto { Id = c.Id, CondicaoPagamento = c.CondicaoPagamento, MetodoPagamentoId = c.MetodoPagamentoId, NumeroParcelas = c.NumeroParcelas, EntradaMinimaPercentual = c.EntradaMinimaPercentual, DescontoPercentual = c.DescontoPercentual, AcrescimoPercentual = c.AcrescimoPercentual, MultaPercentual = c.MultaPercentual, TaxaJurosPercentual = c.TaxaJurosPercentual } : null);
+        foreach (var item in _dto.Itens)
+            await _produtos.IncluirSeAusenteAsync(item.ProdutoId, p => p.Id, async id => await ProdutoService.ObterPorIdAsync(id) is { } p ? new ProdutoListDto { Id = p.Id, Produto = p.Produto } : null);
         foreach (var item in _dto.Itens)
         {
-            var produtoMatch = _produtos.FirstOrDefault(p => p.Produto == item.NomeProduto);
+            var produtoMatch = _produtos.FirstOrDefault(p => item.ProdutoId > 0 ? p.Id == item.ProdutoId : p.Produto == item.NomeProduto);
             _produtosSelecionados[item] = produtoMatch;
             _custoPorItem[item] = 0;
             _dataCompraPorItem[item] = null;
             if (produtoMatch != null)
             {
                 var prodDto = await ProdutoService.ObterPorIdAsync(produtoMatch.Id);
-                _variacoesPorItem[item] = prodDto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+                _variacoesPorItem[item] = prodDto?.Variacoes.Where(v => v.Ativo || v.IdOriginal == item.ProdutoVariacaoId).ToList() ?? new();
                 var varSelecionada = _variacoesPorItem[item]
                     .FirstOrDefault(v => v.IdOriginal == item.ProdutoVariacaoId);
                 if (varSelecionada != null)

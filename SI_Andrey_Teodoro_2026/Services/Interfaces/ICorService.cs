@@ -6,4 +6,5 @@ public interface ICorService
     Task<PaginacaoDto<CorListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<IEnumerable<CorListDto>> ObterTodosAtivosAsync();
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(CorDto dto);
+    Task<int> ObterProximoIdAsync();
 }

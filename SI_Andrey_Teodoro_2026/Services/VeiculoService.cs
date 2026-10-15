@@ -29,10 +29,16 @@ public class VeiculoService : BaseService<VeiculoDto, VeiculoListDto>, IVeiculoS
             NomeAtualizadoPor = v.NomeAtualizadoPor
         };
     }
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(VeiculoDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Placa = new string(dto.Placa.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
             dto.Uf = dto.Uf.Trim().ToUpperInvariant();
 

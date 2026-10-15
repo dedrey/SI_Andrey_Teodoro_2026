@@ -108,19 +108,18 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
     public async Task<int> InserirAsync(EmitenteDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO emitentes
                 (id, nome_razaosocial, apelido_nomefantasia, cnpj, inscricao_estadual, inscricao_municipal,
                  regime_tributario, cidade_id, endereco, numero, complemento, bairro,
                  telefone, email, ativo)
               VALUES
-                (@ProximoId, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual, @InscricaoMunicipal,
+                (@Id, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual, @InscricaoMunicipal,
                  @RegimeTributario, @CidadeId, @Endereco, @Numero, @Complemento, @Bairro,
                  @Telefone, @Email, @Ativo)",
             new
             {
-                ProximoId = proximoId,
+                dto.Id,
                 NomeRazaoSocial = dto.NomeRazaoSocial,
                 ApelidoNomeFantasia = dto.ApelidoNomeFantasia,
                 dto.Cnpj,
@@ -135,8 +134,8 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 dto.Telefone,
                 dto.Email,
                 dto.Ativo
-            });
-        return proximoId;
+            }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(EmitenteDto dto)
@@ -144,8 +143,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE emitentes
-              SET id                   = @Id,
-                  nome_razaosocial     = @NomeRazaoSocial,
+              SET nome_razaosocial     = @NomeRazaoSocial,
                   apelido_nomefantasia = @ApelidoNomeFantasia,
                   cnpj                 = @Cnpj,
                   inscricao_estadual   = @InscricaoEstadual,
@@ -162,7 +160,6 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
               WHERE id = @IdOriginal",
             new
             {
-                dto.Id,
                 dto.IdOriginal,
                 NomeRazaoSocial = dto.NomeRazaoSocial,
                 ApelidoNomeFantasia = dto.ApelidoNomeFantasia,

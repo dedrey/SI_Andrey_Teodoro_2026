@@ -14,7 +14,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12">
+                <MudItem xs="12" sm="3">
+                    <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
+                </MudItem>
+                <MudItem xs="12" sm="9">
                     <MudTextField Value="@_dto.NomeMarca"
                                   ValueChanged="@((string v) => _dto.NomeMarca = v)"
                                   Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense"
@@ -65,7 +71,7 @@
     private MudForm _form = null!;
     private bool _formValido, _salvando;
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         _readOnly = SomenteLeitura;
         if (DtoEdicao is not null)
@@ -78,8 +84,8 @@
                 AtualizadoEm = DtoEdicao.AtualizadoEm,
                 NomeAtualizadoPor = DtoEdicao.NomeAtualizadoPor
             };
+        if (_dto.IdOriginal == 0) _dto.Id = await MarcaService.ObterProximoIdAsync();
         _snapshot = DialogServiceExtensions.Snapshot(_dto);
-        return base.OnInitializedAsync();
     }
 
     private async Task Salvar()

@@ -10,4 +10,5 @@ public interface IPaisService
     Task<int> ObterIdBrasilAsync();
     Task<(bool sucesso, string mensagem, int id)> SalvarAsync(PaisDto dto);
     Task<(bool sucesso, string mensagem)> AlterarStatusAsync(int id, bool ativar);
+    Task<int> ObterProximoIdAsync();
 }

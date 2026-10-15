@@ -15,4 +15,6 @@ public interface IPaisRepository
     Task<bool> ExisteSiglaAsync(string sigla, int? idOriginalIgnorar = null);
     Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null);
     Task<bool> ExisteDdiAsync(string ddi, int? idOriginalIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

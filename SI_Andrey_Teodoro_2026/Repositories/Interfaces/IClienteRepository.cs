@@ -13,4 +13,6 @@ public interface IClienteRepository
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteDocumentoAsync(string cpfCnpj, int? idOriginalIgnorar = null);
     Task<decimal> ObterSaldoDevidoAsync(int clienteId);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

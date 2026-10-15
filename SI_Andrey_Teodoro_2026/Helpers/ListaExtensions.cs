@@ -10,4 +10,10 @@ public static class ListaExtensions
         lista.Add(item);
         return item;
     }
+
+    public static async Task IncluirSeAusenteAsync<TItem>(this List<TItem> lista, int? id, Func<TItem, int> chave, Func<int, Task<TItem?>> obter) where TItem : class
+    {
+        if (id is not > 0 || lista.Any(i => chave(i) == id)) return;
+        if (await obter(id.Value) is TItem item) lista.Add(item);
+    }
 }

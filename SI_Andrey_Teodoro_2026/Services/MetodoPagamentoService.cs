@@ -26,10 +26,16 @@ public class MetodoPagamentoService : BaseService<MetodoPagamentoDto, MetodoPaga
             NomeAtualizadoPor = m.NomeAtualizadoPor
         };
     }
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(MetodoPagamentoDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.Codigo = dto.Codigo.Trim().ToUpperInvariant();
             dto.MetodoPagamento = dto.MetodoPagamento.Trim().ToUpperInvariant();
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;

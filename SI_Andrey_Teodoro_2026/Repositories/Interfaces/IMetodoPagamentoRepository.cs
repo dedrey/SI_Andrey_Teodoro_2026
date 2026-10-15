@@ -13,4 +13,6 @@ public interface IMetodoPagamentoRepository
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteCodigoAsync(string codigo, int? idOriginalIgnorar = null);
     Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

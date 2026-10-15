@@ -139,19 +139,18 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
     public async Task<int> InserirAsync(CondicaoPagamentoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO condicoes_pagamentos
                 (id, condicao_pagamento, metodo_pagamento_id, numero_parcelas,
                  entrada_minima_percentual, desconto_percentual, acrescimo_percentual,
                  multa_percentual, taxa_juros_percentual, ativo)
               VALUES
-                (@ProximoId, @CondicaoPagamento, @MetodoPagamentoId, @NumeroParcelas,
+                (@Id, @CondicaoPagamento, @MetodoPagamentoId, @NumeroParcelas,
                  @EntradaMinimaPercentual, @DescontoPercentual, @AcrescimoPercentual,
                  @MultaPercentual, @TaxaJurosPercentual, @Ativo)",
             new
             {
-                ProximoId = proximoId,
+                dto.Id,
                 dto.CondicaoPagamento,
                 dto.MetodoPagamentoId,
                 dto.NumeroParcelas,
@@ -161,10 +160,10 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                 dto.MultaPercentual,
                 dto.TaxaJurosPercentual,
                 dto.Ativo
-            });
+            }));
         if (dto.Parcelas.Count > 0)
-            await SalvarParcelasAsync(proximoId, dto.Parcelas);
-        return proximoId;
+            await SalvarParcelasAsync(dto.Id, dto.Parcelas);
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(CondicaoPagamentoDto dto)

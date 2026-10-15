@@ -86,12 +86,11 @@ public class EstadoRepository : BaseRepository, IEstadoRepository
     public async Task<int> InserirAsync(EstadoDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO estados (id, pais_id, estado, uf, ativo)
-              VALUES (@ProximoId, @PaisId, @NomeEstado, @Uf, @Ativo)",
-            new { ProximoId = proximoId, dto.PaisId, dto.NomeEstado, dto.Uf, dto.Ativo });
-        return proximoId;
+              VALUES (@Id, @PaisId, @NomeEstado, @Uf, @Ativo)",
+            new { dto.Id, dto.PaisId, dto.NomeEstado, dto.Uf, dto.Ativo }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(EstadoDto dto)
@@ -99,8 +98,7 @@ public class EstadoRepository : BaseRepository, IEstadoRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE estados
-              SET id            = @Id,
-                  pais_id       = @PaisId,
+              SET pais_id       = @PaisId,
                   estado        = @NomeEstado,
                   uf            = @Uf,
                   atualizado_em = NOW()

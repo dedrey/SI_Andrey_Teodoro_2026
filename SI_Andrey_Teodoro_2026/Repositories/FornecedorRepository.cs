@@ -101,17 +101,16 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
     public async Task<int> InserirAsync(FornecedorDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO fornecedores
                 (id, razaosocial, tipo_pessoa, nomefantasia, cpf_cnpj, cidade_id,
                  endereco, numero, complemento, bairro, cep, telefone, email, condicao_pagamento_id, ativo)
               VALUES
-                (@ProximoId, @RazaoSocial, @TipoPessoa, @NomeFantasia, @CpfCnpj, @CidadeId,
+                (@Id, @RazaoSocial, @TipoPessoa, @NomeFantasia, @CpfCnpj, @CidadeId,
                  @Endereco, @Numero, @Complemento, @Bairro, @Cep, @Telefone, @Email, @CondicaoPagamentoId, @Ativo)",
             new
             {
-                ProximoId = proximoId,
+                dto.Id,
                 RazaoSocial = dto.RazaoSocial,
                 dto.TipoPessoa,
                 NomeFantasia = dto.NomeFantasia,
@@ -126,8 +125,8 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                 dto.Email,
                 dto.CondicaoPagamentoId,
                 dto.Ativo
-            });
-        return proximoId;
+            }));
+        return dto.Id;
     }
 
     public async Task AtualizarAsync(FornecedorDto dto)
@@ -135,8 +134,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE fornecedores
-              SET id           = @Id,
-                  razaosocial  = @RazaoSocial,
+              SET razaosocial  = @RazaoSocial,
                   tipo_pessoa  = @TipoPessoa,
                   nomefantasia = @NomeFantasia,
                   cpf_cnpj     = @CpfCnpj,
@@ -153,7 +151,6 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
               WHERE id = @IdOriginal",
             new
             {
-                dto.Id,
                 dto.IdOriginal,
                 RazaoSocial = dto.RazaoSocial,
                 dto.TipoPessoa,

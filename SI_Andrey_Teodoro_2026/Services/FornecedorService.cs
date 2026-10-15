@@ -47,10 +47,16 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
         };
     }
 
+    public Task<int> ObterProximoIdAsync()
+        => _repo.ObterProximoIdAsync();
+
     public async Task<(bool sucesso, string mensagem, int id)> SalvarAsync(FornecedorDto dto)
     {
         try
         {
+            var erroId = await ValidarIdAsync(dto.Id, dto.IdOriginal, _repo.ExisteIdAsync);
+            if (erroId != null) return (false, erroId, 0);
+
             dto.RazaoSocial = dto.RazaoSocial.Trim().ToUpperInvariant();
             dto.NomeFantasia = dto.NomeFantasia?.Trim().ToUpperInvariant();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;

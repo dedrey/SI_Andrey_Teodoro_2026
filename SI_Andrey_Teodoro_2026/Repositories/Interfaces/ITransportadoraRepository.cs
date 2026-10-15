@@ -12,4 +12,6 @@ public interface ITransportadoraRepository
     Task AtualizarAsync(TransportadoraDto dto);
     Task AlterarStatusAsync(int id, bool ativo);
     Task<bool> ExisteCnpjAsync(string cnpj, int? idOriginalIgnorar = null);
+    Task<int> ObterProximoIdAsync();
+    Task<bool> ExisteIdAsync(int id);
 }

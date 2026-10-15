@@ -69,19 +69,17 @@ public class CategoriaRepository : BaseRepository, ICategoriaRepository
     public async Task<int> InserirAsync(CategoriaDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            "INSERT INTO categorias (id, categoria, ativo) VALUES (@ProximoId, @NomeCategoria, @Ativo)",
-            new { ProximoId = proximoId, dto.NomeCategoria, dto.Ativo });
-        return proximoId;
+        await InserirComIdAsync(() => conn.ExecuteAsync(
+            "INSERT INTO categorias (id, categoria, ativo) VALUES (@Id, @NomeCategoria, @Ativo)",
+            new { dto.Id, dto.NomeCategoria, dto.Ativo }));
+        return dto.Id;
     }
     public async Task AtualizarAsync(CategoriaDto dto)
     {
         using var conn = _factory.CreateConnection();
         await conn.ExecuteAsync(
             @"UPDATE categorias
-              SET id            = @Id,
-                  categoria     = @NomeCategoria,
+              SET categoria     = @NomeCategoria,
                   atualizado_em = NOW()
               WHERE id = @IdOriginal", dto);
     }
