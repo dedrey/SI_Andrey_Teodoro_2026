@@ -12,6 +12,7 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
     public TransportadoraService(ITransportadoraRepository repo) => _repo = repo;
 
     protected override string NomeEntidade => "Transportadora";
+    protected override bool Feminino => true;
 
     public Task<PaginacaoDto<TransportadoraListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
@@ -61,7 +62,9 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim().ToUpperInvariant();
             dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
             dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
-            dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
+            dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(dto.Complemento))
+                return (false, "Complemento é obrigatório.", 0);
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
             dto.Cep = dto.Cep.Trim();
             if (string.IsNullOrWhiteSpace(dto.Cep))

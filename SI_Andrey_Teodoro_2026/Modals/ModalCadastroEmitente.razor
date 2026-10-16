@@ -19,8 +19,8 @@
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Badge" Titulo="Identificação" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="2">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => { _dto.Id = v; Alterou(1); })"
-                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
-                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
@@ -92,7 +92,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@(_dto.Complemento ?? "")" ValueChanged="@((string v) => { _dto.Complemento = v; Alterou(2); })"
-                                  Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                                  Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
 
                 <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato" AoMudar="StateHasChanged" />
@@ -263,6 +263,7 @@
         2 when string.IsNullOrWhiteSpace(_dto.Endereco) => "Informe o endereço.",
         2 when string.IsNullOrWhiteSpace(_dto.Numero) => "Informe o número.",
         2 when string.IsNullOrWhiteSpace(_dto.Bairro) => "Informe o bairro.",
+        2 when string.IsNullOrWhiteSpace(_dto.Complemento) => "Informe o complemento.",
         3 when ValidarTelefone(_dto.Telefone) is string erro => $"Telefone: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
         _ => null

@@ -39,7 +39,12 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var param = new DialogParameters<ModalCadastroProduto> { { x => x.DtoEdicao, dto }, { x => x.SomenteLeitura, true } };
         var dialog = await DialogService.ShowAsync<ModalCadastroProduto>("Detalhes do Produto", param, opts);
-        if ((await dialog.Result) is { Canceled: false }) { _variacoesCache.Remove(id); await CarregarDados(); }
+        if ((await dialog.Result) is { Canceled: false })
+        {
+            _variacoesCache.Remove(id);
+            await CarregarDados();
+            if (_expandidos.Contains(id)) await CarregarVariacoes(id);
+        }
     }
 
     private async Task ToggleExpansao(int produtoId)
@@ -47,12 +52,15 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
         if (_expandidos.Contains(produtoId)) { _expandidos.Remove(produtoId); return; }
         _expandidos.Add(produtoId);
         if (!_variacoesCache.ContainsKey(produtoId))
-        {
-            _variacoesCache[produtoId] = null; StateHasChanged();
-            var dto = await ProdutoService.ObterPorIdAsync(produtoId);
-            _variacoesCache[produtoId] = dto?.Variacoes.Where(v => !v.Removida).ToList();
-            StateHasChanged();
-        }
+            await CarregarVariacoes(produtoId);
+    }
+
+    private async Task CarregarVariacoes(int produtoId)
+    {
+        _variacoesCache[produtoId] = null; StateHasChanged();
+        var dto = await ProdutoService.ObterPorIdAsync(produtoId);
+        _variacoesCache[produtoId] = dto?.Variacoes.Where(v => !v.Removida).ToList() ?? new();
+        StateHasChanged();
     }
 
 

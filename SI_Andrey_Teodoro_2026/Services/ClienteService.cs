@@ -76,7 +76,9 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
             dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
-            dto.Complemento = dto.Complemento.Trim().ToUpperInvariant();
+            dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(dto.Complemento))
+                return (false, "Complemento é obrigatório.", 0);
             dto.Cep = dto.Cep.Trim();
             if (!dto.Estrangeiro && string.IsNullOrWhiteSpace(dto.Cep))
                 return (false, "CEP é obrigatório.", 0);
@@ -90,6 +92,14 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
                 return (false, "Celular é obrigatório para Pessoa Jurídica.", 0);
             if (dto.TipoPessoa == "PF")
                 dto.Celular = null;
+            if (dto.TipoPessoa == "PJ")
+                dto.Sexo = "NAO_INFORMAR";
+
+            var erroTelefone = ValidarTelefone(dto.Telefone, dto.Estrangeiro);
+            if (erroTelefone != null)
+                return (false, $"{(dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")}: {erroTelefone}.", 0);
+            if (dto.Celular != null && ValidarTelefone(dto.Celular, dto.Estrangeiro) is string erroCelular)
+                return (false, $"Celular: {erroCelular}.", 0);
 
             if (dto.IdOriginal > 0)
             {
@@ -143,6 +153,9 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
         }
         catch (Exception ex) { return ErroStatus(ex); }
     }
+
+    private static string? ValidarTelefone(string? telefone, bool estrangeiro)
+        => estrangeiro ? DocumentoHelper.ValidarTelefoneEstrangeiro(telefone) : DocumentoHelper.ValidarTelefoneBrasileiro(telefone);
 
     private static string LimparDigitos(string v)
         => new string(v.Where(char.IsDigit).ToArray());

@@ -49,6 +49,32 @@ public static class DocumentoHelper
         _ => "CEP incompleto."
     };
 
+    public static string? ValidarCodigoBarras(string? codigo)
+    {
+        var c = (codigo ?? "").Trim();
+        if (c.Length == 0) return null;
+        return System.Text.RegularExpressions.Regex.IsMatch(c, @"^[0-9]{8,14}$") ? null : "Somente dígitos, de 8 a 14";
+    }
+
+    public const string RegexTelefoneEstrangeiroParcial = @"^[0-9 +\-()]{0,15}$";
+
+    public static string? ValidarTelefoneEstrangeiro(string? telefone)
+    {
+        var t = (telefone ?? "").Trim();
+        if (t.Length == 0) return "Obrigatório";
+        if (t.Length > 15) return "Máx 15 caracteres";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(t, @"^[0-9 +\-()]+$")) return "Use apenas dígitos, espaços, +, - e parênteses";
+        return SomenteDigitos(t).Length == 0 ? "Informe os dígitos" : null;
+    }
+
+    public static string? ValidarTelefoneBrasileiro(string? telefone) => SomenteDigitos(telefone).Length switch
+    {
+        0 => "Obrigatório",
+        10 or 11 => null,
+        < 10 => "Incompleto",
+        _ => "Máx 11 dígitos"
+    };
+
     private static bool Digito(string d, int[] pesos, int posicao)
     {
         var soma = pesos.Select((p, i) => (d[i] - '0') * p).Sum();

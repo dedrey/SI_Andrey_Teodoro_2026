@@ -200,18 +200,11 @@
     {
         if (Novo == null || _abrindoNovo) return;
         _abrindoNovo = true;
-        var opcoes = MudDialog.Options;
         TItem? item = null;
-        try
-        {
-            await MudDialog.SetOptionsAsync(opcoes with { CloseOnEscapeKey = false });
-            item = await Novo();
-        }
+        try { item = await Novo(); }
         catch (Exception ex) { Snackbar.Add($"Erro ao cadastrar: {ex.Message}", Severity.Error); }
         if (item != null && !MultiSelecao) { MudDialog.Close(DialogResult.Ok(item)); return; }
         _abrindoNovo = false;
-        try { await MudDialog.SetOptionsAsync(opcoes); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao restaurar a pesquisa: {ex.Message}", Severity.Error); }
         if (item != null && ObterId != null)
         {
             _marcados[ObterId(item)] = item;

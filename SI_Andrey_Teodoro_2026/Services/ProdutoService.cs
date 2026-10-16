@@ -1,4 +1,5 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -64,6 +65,8 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             dto.Produto = dto.Produto.Trim().ToUpperInvariant();
             dto.Descricao = dto.Descricao?.Trim().ToUpperInvariant();
             dto.CodigoBarras = string.IsNullOrWhiteSpace(dto.CodigoBarras) ? null : dto.CodigoBarras.Trim();
+            if (DocumentoHelper.ValidarCodigoBarras(dto.CodigoBarras) != null)
+                return (false, "Código de barras deve conter somente dígitos, de 8 a 14 caracteres.", 0);
 
             if (dto.Produto.Length < 2) return (false, "Informe o nome do produto (mínimo 2 caracteres).", 0);
             if (dto.CategoriaId == 0) return (false, "Selecione uma categoria.", 0);

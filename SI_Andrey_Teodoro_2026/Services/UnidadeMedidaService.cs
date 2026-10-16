@@ -7,6 +7,7 @@ public class UnidadeMedidaService : BaseService<UnidadeMedidaDto, UnidadeMedidaL
     private readonly IUnidadeMedidaRepository _repo;
     public UnidadeMedidaService(IUnidadeMedidaRepository repo) => _repo = repo;
     protected override string NomeEntidade => "Unidade de medida";
+    protected override bool Feminino => true;
     public Task<PaginacaoDto<UnidadeMedidaListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
     public Task<IEnumerable<UnidadeMedidaListDto>> ObterTodosAtivosAsync()
@@ -43,6 +44,9 @@ public class UnidadeMedidaService : BaseService<UnidadeMedidaDto, UnidadeMedidaL
 
             if (await _repo.ExisteSiglaAsync(dto.Sigla, ignorar))
                 return (false, $"Já existe uma unidade de medida com a sigla '{dto.Sigla}'.", 0);
+
+            if (await _repo.ExisteDescricaoAsync(dto.Descricao, ignorar))
+                return (false, $"Já existe uma unidade de medida com a descrição '{dto.Descricao}'.", 0);
 
             if (dto.IdOriginal == 0)
             {

@@ -18,8 +18,8 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="2">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
-                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
-                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
@@ -29,7 +29,7 @@
                                          ValueChanged="@((TransportadoraListDto? t) => { _transportadoraSelecionada = t; _dto.TransportadoraId = t?.Id ?? 0; })"
                                          SearchFunc="PesquisarTransportadora"
                                          ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Obrigatório"
                                          Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
                         <MudTooltip Text="Pesquisar transportadora">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
@@ -50,7 +50,7 @@
                                          Value="@_dto.Uf" ValueChanged="@((string? v) => _dto.Uf = v ?? "")"
                                          SearchFunc="PesquisarUf"
                                          ToStringFunc="@(u => u ?? "")"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Obrigatório"
                                          Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(_readOnly || !Edicao && !PlacaOk)" HelperText="@AjudaUf" />
                         <MudTooltip Text="Pesquisar estado">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
@@ -164,8 +164,8 @@
 
     private async Task Salvar()
     {
-        if (_dto.TransportadoraId == 0) { Snackbar.Add("Selecione uma transportadora.", Severity.Warning); return; }
         await _form.Validate();
+        if (_dto.TransportadoraId == 0) { Snackbar.Add("Selecione uma transportadora.", Severity.Warning); return; }
         if (!_formValido) return;
         _salvando = true;
         var (sucesso, mensagem, id) = await VeiculoService.SalvarAsync(_dto);

@@ -67,6 +67,8 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
             dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(dto.Complemento))
+                return (false, "Complemento é obrigatório.", 0);
             dto.Cep = dto.Cep.Trim();
             if (string.IsNullOrWhiteSpace(dto.Cep))
                 return (false, "CEP é obrigatório.", 0);

@@ -6,6 +6,7 @@ namespace SI_Andrey_Teodoro_2026.Services;
 public abstract class BaseService<TDto, TListDto>
 {
     protected abstract string NomeEntidade { get; }
+    protected virtual bool Feminino => false;
 
     protected (bool sucesso, string mensagem) Erro(Exception ex)
         => ex is IdDuplicadoException
@@ -27,5 +28,5 @@ public abstract class BaseService<TDto, TListDto>
         => (false, $"Erro ao alterar status: {ex.Message}");
 
     protected (bool sucesso, string mensagem) SucessoStatus(bool ativar)
-        => (true, $"{NomeEntidade} {(ativar ? "ativado" : "desativado")} com sucesso!");
+        => (true, $"{NomeEntidade} {(ativar ? "ativad" : "desativad")}{(Feminino ? "a" : "o")} com sucesso!");
 }

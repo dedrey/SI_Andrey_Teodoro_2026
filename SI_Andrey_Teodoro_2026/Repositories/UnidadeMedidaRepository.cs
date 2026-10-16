@@ -102,4 +102,12 @@ public class UnidadeMedidaRepository : BaseRepository, IUnidadeMedidaRepository
             : "SELECT COUNT(*) FROM unidades_medida WHERE unidade_medida = @sigla";
         return await conn.ExecuteScalarAsync<int>(sql, new { sigla, idOriginalIgnorar }) > 0;
     }
+    public async Task<bool> ExisteDescricaoAsync(string descricao, int? idOriginalIgnorar = null)
+    {
+        using var conn = _factory.CreateConnection();
+        var sql = idOriginalIgnorar.HasValue
+            ? "SELECT COUNT(*) FROM unidades_medida WHERE descricao = @descricao AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM unidades_medida WHERE descricao = @descricao";
+        return await conn.ExecuteScalarAsync<int>(sql, new { descricao, idOriginalIgnorar }) > 0;
+    }
 }

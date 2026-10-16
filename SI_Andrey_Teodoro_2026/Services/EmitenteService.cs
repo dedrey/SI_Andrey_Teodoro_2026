@@ -67,6 +67,8 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();
             dto.Numero = dto.Numero?.Trim().ToUpperInvariant() ?? string.Empty;
             dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(dto.Complemento))
+                return (false, "Complemento é obrigatório.", 0);
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);

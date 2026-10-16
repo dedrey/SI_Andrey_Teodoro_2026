@@ -14,15 +14,15 @@
             <MudGrid Spacing="2">
                 <MudItem xs="3">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
-                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
-                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)" />
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)" />
                 </MudItem>
                 <MudItem xs="6">
                     <MudTextField Value="@_dto.Nome" ValueChanged="@((string v) => _dto.Nome = v.Trim().ToUpper())"
                                   Label="Tamanho" Placeholder="Ex: M, GG, 42"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="10" FullWidth="true"
-                                  Immediate="true" Autofocus="true" />
+                                  Immediate="true" />
                 </MudItem>
                 <MudItem xs="3">
                     <MudNumericField @bind-Value="_dto.Ordem" Label="Ordem"

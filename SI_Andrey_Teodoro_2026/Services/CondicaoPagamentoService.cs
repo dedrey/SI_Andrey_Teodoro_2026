@@ -12,6 +12,7 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
     public CondicaoPagamentoService(ICondicaoPagamentoRepository repo) => _repo = repo;
 
     protected override string NomeEntidade => "Condição de pagamento";
+    protected override bool Feminino => true;
 
     public Task<PaginacaoDto<CondicaoPagamentoListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);

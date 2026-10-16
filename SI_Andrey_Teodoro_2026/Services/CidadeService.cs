@@ -11,6 +11,7 @@ public class CidadeService : BaseService<CidadeDto, CidadeListDto>, ICidadeServi
     public CidadeService(ICidadeRepository repo) => _repo = repo;
 
     protected override string NomeEntidade => "Cidade";
+    protected override bool Feminino => true;
 
     public Task<PaginacaoDto<CidadeListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);

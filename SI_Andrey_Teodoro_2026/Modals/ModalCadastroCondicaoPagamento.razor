@@ -16,8 +16,8 @@
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.RequestQuote" Titulo="Condição" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="2">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => { _dto.Id = v; Alterou(1); })"
-                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
-                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
@@ -243,14 +243,7 @@
         if (valor == _dto.NumeroParcelas) return;
         Alterou(1);
         _dto.NumeroParcelas = valor;
-        while (_dto.Parcelas.Count < valor)
-        {
-            var n = _dto.Parcelas.Count + 1;
-            _dto.Parcelas.Add(new CondicaoPagamentoParcelaDto
-            { NumeroParcela = n, DiasVencimento = 30 * n });
-        }
-        while (_dto.Parcelas.Count > valor)
-            _dto.Parcelas.RemoveAt(_dto.Parcelas.Count - 1);
+        GerarParcelas();
     }
 
     private void GerarParcelas()
@@ -259,9 +252,7 @@
             .Select(n => new CondicaoPagamentoParcelaDto
             {
                 NumeroParcela = n,
-                DiasVencimento = _dto.NumeroParcelas == 1
-                    ? 0
-                    : (DateTime.Today.AddMonths(n) - DateTime.Today).Days
+                DiasVencimento = _dto.NumeroParcelas == 1 ? 0 : 30 * n
             })
             .ToList();
     }

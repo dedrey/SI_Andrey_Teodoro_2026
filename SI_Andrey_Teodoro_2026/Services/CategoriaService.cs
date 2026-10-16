@@ -9,6 +9,7 @@ public class CategoriaService : BaseService<CategoriaDto, CategoriaListDto>, ICa
     public CategoriaService(ICategoriaRepository repo) => _repo = repo;
 
     protected override string NomeEntidade => "Categoria";
+    protected override bool Feminino => true;
 
     public Task<PaginacaoDto<CategoriaListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);

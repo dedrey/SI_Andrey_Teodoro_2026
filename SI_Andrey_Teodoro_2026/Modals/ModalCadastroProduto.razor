@@ -26,8 +26,8 @@
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.Inventory2" Titulo="Dados do Produto" AoMudar="StateHasChanged" />
                 <MudItem xs="3" sm="2" md="1">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
-                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
-                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
                 </MudItem>
                 <MudItem xs="9" sm="10" md="11">
@@ -92,8 +92,8 @@
                 </MudItem>
                 <MudItem xs="12" sm="4" md="3">
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
-                                  Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !CabecalhoOk)"
+                                  Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@_mascaraCodigoBarras"
+                                  MaxLength="14" FullWidth="true" Immediate="true" Validation="@((string v) => DocumentoHelper.ValidarCodigoBarras(v))" Disabled="@(Bloqueado(1) || !Edicao && !CabecalhoOk)"
                                   HelperText="@(Edicao || CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
                 </MudItem>
                 @if (Edicao)
@@ -334,6 +334,7 @@
         1 when _dto.CategoriaId <= 0 => "Selecione a categoria.",
         1 when _dto.MarcaId <= 0 => "Selecione a marca.",
         1 when _dto.UnidadeMedidaId <= 0 => "Selecione a unidade.",
+        1 when DocumentoHelper.ValidarCodigoBarras(_dto.CodigoBarras) is string erro => $"Código de barras: {erro}.",
         _ => null
     };
     private bool ComMovimento(ProdutoVariacaoDto v) => v.IdOriginal > 0 && _variacoesComMovimento.Contains(v.IdOriginal);
@@ -342,6 +343,7 @@
     private int OrdemTamanho(ProdutoVariacaoDto v) => _tamanhos.FirstOrDefault(t => t.Id == v.TamanhoId)?.Ordem ?? int.MaxValue;
     private static string? ValidarNome(string? v) =>
         string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null;
+    private readonly IMask _mascaraCodigoBarras = new RegexMask(@"^[0-9]{0,14}$");
 
 
     protected override void OnAfterRender(bool firstRender)

@@ -102,7 +102,7 @@ public static class DialogServiceExtensions
 
         var dialog = await dialogService.ShowAsync<ModalPesquisa<TItem>>(
             titulo, param,
-            new DialogOptions { CloseOnEscapeKey = true, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true });
+            new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true, DefaultFocus = DefaultFocus.None });
 
         return await dialog.Result;
     }

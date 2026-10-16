@@ -7,6 +7,7 @@ public class MarcaService : BaseService<MarcaDto, MarcaListDto>, IMarcaService
     private readonly IMarcaRepository _repo;
     public MarcaService(IMarcaRepository repo) => _repo = repo;
     protected override string NomeEntidade => "Marca";
+    protected override bool Feminino => true;
     public Task<PaginacaoDto<MarcaListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
         => _repo.ObterTodosAsync(filtro);
     public Task<IEnumerable<MarcaListDto>> ObterTodosAtivosAsync()

@@ -18,8 +18,8 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="2">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
-                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" Min="1" HideSpinButtons="true" FullWidth="true"
-                                     Validation="@((int v) => v <= 0 ? "ID deve ser maior que zero" : null)"
+                                     Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
+                                     Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
@@ -200,9 +200,9 @@
 
     private async Task Salvar()
     {
+        await _form.Validate();
         if (_dto.PaisId == 0) { _paisNaoSelecionado = true; Snackbar.Add("Selecione um País.", Severity.Warning); return; }
         if (_dto.EstadoId == 0) { _estadoNaoSelecionado = true; Snackbar.Add("Selecione um Estado.", Severity.Warning); return; }
-        await _form.Validate();
         if (!_formValido) return;
         _salvando = true;
         var (sucesso, mensagem, id) = await CidadeService.SalvarAsync(_dto);
