@@ -101,9 +101,15 @@ public class ContaReceberService : IContaReceberService
             await _repo.RegistrarBaixaAsync(contaReceberId, dataRecebimento, valorRecebido, comprovanteArquivo, observacao);
 
             var saldoRestante = conta.ValorSaldo - valorRecebido;
-            var mensagem = saldoRestante <= 0
-                ? "Recebimento registrado! Conta totalmente paga."
-                : $"Recebimento parcial registrado! Saldo restante: R$ {saldoRestante:N2}.";
+            if (saldoRestante > 0)
+                return (true, $"Recebimento parcial registrado! Saldo restante: R$ {saldoRestante:N2}.");
+            if (!conta.VendaId.HasValue)
+                return (true, "Recebimento registrado! Conta totalmente recebida.");
+
+            var contasDaVenda = await _repo.ObterContasDaVendaAsync(conta.VendaId.Value);
+            var mensagem = contasDaVenda.Any(c => c.Status == "ABERTA")
+                ? "Recebimento registrado! Parcela quitada."
+                : $"Recebimento registrado! Parcela quitada. Venda #{conta.VendaId} totalmente recebida.";
 
             return (true, mensagem);
         }

@@ -1,6 +1,6 @@
 ﻿@inject IContaPagarService ContaPagarService
 @inject ISnackbar Snackbar
-@inject IWebHostEnvironment Env
+@inject SI_Andrey_Teodoro_2026.Services.ComprovanteStorage ComprovanteStorage
 
 <MudDialog>
     <TitleContent>
@@ -28,13 +28,13 @@
                 Comprovante de Pagamento (opcional)
             </MudText>
 
-            @if (_nomeArquivoSelecionado != null)
+            @if (_arquivo != null)
             {
                 <div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
                     <div class="d-flex align-center gap-2">
                         <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Success" Size="Size.Small" />
-                        <MudText Typo="Typo.body2">@_nomeArquivoSelecionado</MudText>
-                        <MudText Typo="Typo.caption" Style="color:#888;">(@ArquivoHelper.FormatarTamanho(_tamanhoArquivo))</MudText>
+                        <MudText Typo="Typo.body2">@_arquivo.NomeOriginal</MudText>
+                        <MudText Typo="Typo.caption" Style="color:#888;">(@ArquivoHelper.FormatarTamanho(_arquivo.Tamanho))</MudText>
                     </div>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="RemoverArquivo" />
                 </div>
@@ -80,15 +80,10 @@
     private MudForm? _form;
     private bool _salvando, _carregandoArquivo;
     private DateTime? _dataPagamento = DateTime.Today;
-    private byte[]? _conteudoArquivo;
-    private string? _nomeArquivoSelecionado;
-    private string? _extensaoArquivo;
-    private long _tamanhoArquivo;
+    private ComprovanteArquivo? _arquivo;
     private string? _erroArquivo;
 
     private DateTime? _dataEmissaoCompra;
-
-    private const long TamanhoMaximoBytes = 5 * 1024 * 1024;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,66 +101,25 @@
         var arquivo = e.File;
         if (arquivo == null) return;
 
-        var ext = Path.GetExtension(arquivo.Name).ToLowerInvariant();
-        if (ext != ".pdf" && ext != ".jpg" && ext != ".jpeg" && ext != ".png")
-        {
-            _erroArquivo = "Apenas arquivos PDF, JPG ou PNG são aceitos.";
-            return;
-        }
-        if (arquivo.Size > TamanhoMaximoBytes)
-        {
-            _erroArquivo = "Arquivo muito grande (máximo 5 MB).";
-            return;
-        }
+        _erroArquivo = ComprovanteStorage.Validar(arquivo);
+        if (_erroArquivo != null) return;
 
         _carregandoArquivo = true;
         StateHasChanged();
 
-        try
-        {
-            using var stream = arquivo.OpenReadStream(TamanhoMaximoBytes);
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-            _conteudoArquivo = ms.ToArray();
-            _nomeArquivoSelecionado = arquivo.Name;
-            _extensaoArquivo = ext;
-            _tamanhoArquivo = arquivo.Size;
-        }
-        catch (Exception ex)
-        {
-            _erroArquivo = $"Erro ao ler o arquivo: {ex.Message}";
-            _conteudoArquivo = null;
-            _nomeArquivoSelecionado = null;
-        }
-        finally
-        {
-            _carregandoArquivo = false;
-            StateHasChanged();
-        }
+        (_arquivo, _erroArquivo) = await ComprovanteStorage.LerAsync(arquivo);
+        _carregandoArquivo = false;
+        StateHasChanged();
     }
 
     private void RemoverArquivo()
     {
-        _conteudoArquivo = null;
-        _nomeArquivoSelecionado = null;
-        _extensaoArquivo = null;
+        _arquivo = null;
         _erroArquivo = null;
     }
 
     private async Task<string?> SalvarArquivoAsync()
-    {
-        if (_conteudoArquivo == null) return null;
-
-        var pastaDestino = Path.Combine(Env.WebRootPath, "uploads", "comprovantes");
-        Directory.CreateDirectory(pastaDestino);
-
-        var nomeArquivo = $"conta_{ContaId}_{DateTime.Now:yyyyMMddHHmmss}{_extensaoArquivo}";
-        var caminhoCompleto = Path.Combine(pastaDestino, nomeArquivo);
-
-        await File.WriteAllBytesAsync(caminhoCompleto, _conteudoArquivo);
-
-        return $"/uploads/comprovantes/{nomeArquivo}";
-    }
+        => _arquivo == null ? null : await ComprovanteStorage.SalvarAsync(_arquivo, "conta", ContaId);
 
     private async Task Confirmar()
     {

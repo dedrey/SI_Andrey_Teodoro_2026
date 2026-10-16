@@ -244,15 +244,15 @@ public class CompraRepository : BaseRepository, ICompraRepository
                       INNER JOIN compras c ON c.id = ci.compra_id
                       WHERE ci.produto_variacao_id = @variacaoId
                         AND c.status_compra = 'LANCADO'
-                      ORDER BY c.data_emissao DESC, c.id DESC
+                      ORDER BY c.data_chegada DESC, c.id DESC
                       LIMIT 1), 0),
                   data_ultima_compra = (
-                      SELECT c.data_emissao
+                      SELECT c.data_chegada
                       FROM compras_itens ci
                       INNER JOIN compras c ON c.id = ci.compra_id
                       WHERE ci.produto_variacao_id = @variacaoId
                         AND c.status_compra = 'LANCADO'
-                      ORDER BY c.data_emissao DESC, c.id DESC
+                      ORDER BY c.data_chegada DESC, c.id DESC
                       LIMIT 1)
               WHERE id = @variacaoId",
             new { variacaoId }, tx);

@@ -13,6 +13,7 @@ public interface IMovimentacaoEstoqueRepository
 
     Task<int> InserirAsync(string tipoMovimentacao, string? observacao, int? compraId, IDbTransaction tx,
         int? vendaId = null);
-    Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx);
+    Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx,
+        string? sentido = null);
     Task<bool> AtualizarEstoqueAsync(int variacaoId, int delta, IDbTransaction tx);
 }

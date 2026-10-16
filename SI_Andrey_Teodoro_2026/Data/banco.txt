@@ -416,6 +416,7 @@ CREATE TABLE movimentacoes_estoque_itens (
   movimentacao_id     INT           NOT NULL,
   produto_variacao_id INT           NOT NULL,
   quantidade          INT           NOT NULL,
+  sentido             ENUM('E','S') NULL,
   valor_unitario      DECIMAL(14,4) NOT NULL DEFAULT 0,
   criado_em           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_movest_itens_mov      FOREIGN KEY (movimentacao_id)     REFERENCES movimentacoes_estoque(id) ON DELETE NO ACTION,

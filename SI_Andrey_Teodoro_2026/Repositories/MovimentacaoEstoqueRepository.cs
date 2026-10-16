@@ -50,7 +50,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
                       m.compra_id          AS CompraId,
                       m.venda_id           AS VendaId,
                       COUNT(i.id)          AS TotalItens,
-                      COALESCE(SUM(i.quantidade), 0)                   AS TotalQuantidade,
+                      COALESCE(SUM(CASE WHEN i.sentido = 'S' THEN -i.quantidade ELSE i.quantidade END), 0) AS TotalQuantidade,
                       COALESCE(SUM(i.quantidade * i.valor_unitario), 0) AS ValorTotal,
                       m.criado_em          AS CriadoEm,
                       u.nome               AS NomeCriadoPor
@@ -88,7 +88,7 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             @"SELECT i.id, i.movimentacao_id AS MovimentacaoId,
                      i.produto_variacao_id AS ProdutoVariacaoId,
                      p.produto AS NomeProduto, pv.cor AS Cor, pv.tamanho AS Tamanho,
-                     i.quantidade, i.valor_unitario AS ValorUnitario,
+                     i.quantidade, i.sentido, i.valor_unitario AS ValorUnitario,
                      (i.quantidade * i.valor_unitario) AS ValorTotal
               FROM movimentacoes_estoque_itens i
               INNER JOIN produto_variacoes pv ON pv.id = i.produto_variacao_id
@@ -121,13 +121,14 @@ public class MovimentacaoEstoqueRepository : BaseRepository, IMovimentacaoEstoqu
             new { tipoMovimentacao, observacao, compraId, vendaId }, tx);
     }
 
-    public async Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx)
+    public async Task InserirItemAsync(int movimentacaoId, int variacaoId, int quantidade, decimal valorUnitario, IDbTransaction tx,
+        string? sentido = null)
     {
         await tx.Connection!.ExecuteAsync(
             @"INSERT INTO movimentacoes_estoque_itens
-                (movimentacao_id, produto_variacao_id, quantidade, valor_unitario)
-              VALUES (@movimentacaoId, @variacaoId, @quantidade, @valorUnitario)",
-            new { movimentacaoId, variacaoId, quantidade, valorUnitario }, tx);
+                (movimentacao_id, produto_variacao_id, quantidade, sentido, valor_unitario)
+              VALUES (@movimentacaoId, @variacaoId, @quantidade, @sentido, @valorUnitario)",
+            new { movimentacaoId, variacaoId, quantidade, sentido, valorUnitario }, tx);
     }
 
     public async Task<bool> AtualizarEstoqueAsync(int variacaoId, int delta, IDbTransaction tx)

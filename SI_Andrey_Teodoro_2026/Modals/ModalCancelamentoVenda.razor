@@ -39,14 +39,15 @@
                       FullWidth="true"
                       Immediate="true"
                       Required="true"
-                      RequiredError="Informe o motivo" />
+                      RequiredError="Informe o motivo"
+                      HelperText="@(MotivoCurto ? $"Mínimo de {TamanhoMinimoMotivo} caracteres ({_motivo.Trim().Length}/{TamanhoMinimoMotivo})." : null)" />
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Fechar" Disabled="_cancelando">Voltar</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Error"
                    StartIcon="@Icons.Material.Filled.Cancel"
                    OnClick="Confirmar"
-                   Disabled="@(_cancelando || _carregando || string.IsNullOrWhiteSpace(_motivo))"
+                   Disabled="@(_cancelando || _carregando || MotivoCurto)"
                    Style="font-weight:700;">
             @(_cancelando ? "Cancelando..." : "Confirmar Cancelamento")
         </MudButton>
@@ -60,6 +61,8 @@
 
     private string _motivo = string.Empty;
     private bool _cancelando;
+    private const int TamanhoMinimoMotivo = 15;
+    private bool MotivoCurto => _motivo.Trim().Length < TamanhoMinimoMotivo;
     private bool _carregando = true;
     private string _statusVenda = string.Empty;
     private string _nomeCliente = string.Empty;
@@ -76,7 +79,7 @@
 
     private async Task Confirmar()
     {
-        if (string.IsNullOrWhiteSpace(_motivo)) return;
+        if (MotivoCurto) return;
         _cancelando = true;
         var (sucesso, mensagem) = await VendaService.CancelarAsync(VendaId, _motivo.Trim());
         _cancelando = false;

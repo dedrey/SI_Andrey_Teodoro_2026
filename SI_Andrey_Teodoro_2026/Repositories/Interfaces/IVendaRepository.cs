@@ -16,5 +16,5 @@ public interface IVendaRepository
     Task<int> ObterEstoqueAtualAsync(int variacaoId);
     Task<(decimal PrecoCusto, DateTime? DataUltimaCompra)?> ObterCustoVariacaoAsync(int variacaoId);
     Task<int> InserirContaReceberAsync(int clienteId, int vendaId, string descricao, DateTime vencimento,
-        decimal valor, IDbTransaction tx, bool jaRecebida = false);
+        decimal valor, IDbTransaction tx, DateTime? dataRecebimento = null);
 }

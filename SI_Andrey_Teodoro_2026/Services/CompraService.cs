@@ -167,8 +167,12 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             dto.NumeroNf = dto.NumeroNf.TrimStart('0');
             if (dto.NumeroNf.Length == 0) dto.NumeroNf = "0";
 
+            if (dto.ModeloNf == "55" && dto.ChaveAcesso == null)
+                return (false, "Informe a chave de acesso (obrigatória para o modelo 55).", 0);
             if (dto.ChaveAcesso != null)
             {
+                if (dto.ChaveAcesso.Length != 44)
+                    return (false, "A chave de acesso deve ter 44 dígitos.", 0);
                 if (!ChaveNfeHelper.Validar(dto.ChaveAcesso))
                     return (false, "Chave de acesso inválida.", 0);
 
@@ -281,6 +285,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
             if (string.IsNullOrWhiteSpace(motivo))
                 return (false, "Informe o motivo do cancelamento.");
             motivo = motivo.Trim().ToUpperInvariant();
+            if (motivo.Length < 15)
+                return (false, "O motivo do cancelamento deve ter no mínimo 15 caracteres.");
             if (motivo.Length > 255)
                 return (false, "O motivo do cancelamento deve ter no máximo 255 caracteres.");
 
@@ -306,7 +312,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 if (!await _repo.AtualizarEstoqueAsync(item.ProdutoVariacaoId, -item.Quantidade, tx))
                     return (false, $"Não é possível cancelar: estoque insuficiente de " +
                                    $"{item.NomeProduto} {item.Cor}/{item.Tamanho} para estornar " +
-                                   $"{item.Quantidade} un. (parte já foi vendida).");
+                                   $"{item.Quantidade} un. (parte já saiu do estoque).");
 
                 await _movRepo.InserirItemAsync(movId, item.ProdutoVariacaoId, item.Quantidade,
                     item.CustoUnitarioEfetivo, tx);

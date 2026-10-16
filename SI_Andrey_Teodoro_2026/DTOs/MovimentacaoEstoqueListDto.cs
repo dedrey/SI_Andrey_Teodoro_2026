@@ -23,6 +23,7 @@ public class MovimentacaoEstoqueItemListDto
     public string Cor { get; set; } = string.Empty;
     public string Tamanho { get; set; } = string.Empty;
     public int Quantidade { get; set; }
+    public string? Sentido { get; set; }
     public decimal ValorUnitario { get; set; }
     public decimal ValorTotal { get; set; }
 }

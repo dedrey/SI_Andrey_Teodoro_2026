@@ -50,7 +50,8 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                 COALESCE(SUM(ub.TotalRecebido), 0)                        AS ValorRecebido,
                 MAX(ub.UltimoRecebimento)                                 AS DataUltimoRecebimento,
                 COUNT(*)                                                  AS TotalParcelas,
-                SUM(CASE WHEN cr.status = 'RECEBIDA' THEN 1 ELSE 0 END)   AS ParcelasPagas,
+                SUM(CASE WHEN cr.status = 'RECEBIDA'
+                           OR COALESCE(ub.TotalRecebido, 0) >= cr.valor_original THEN 1 ELSE 0 END) AS ParcelasPagas,
                 CASE
                     WHEN SUM(CASE WHEN cr.status <> 'CANCELADA' THEN 1 ELSE 0 END) = 0 THEN 'CANCELADA'
                     WHEN SUM(CASE WHEN cr.status = 'ABERTA' THEN 1 ELSE 0 END) = 0 THEN 'RECEBIDA'

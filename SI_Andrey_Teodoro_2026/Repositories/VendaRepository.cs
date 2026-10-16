@@ -240,9 +240,10 @@ public class VendaRepository : BaseRepository, IVendaRepository
     }
 
     public async Task<int> InserirContaReceberAsync(int clienteId, int vendaId,
-        string descricao, DateTime vencimento, decimal valor, IDbTransaction tx, bool jaRecebida = false)
+        string descricao, DateTime vencimento, decimal valor, IDbTransaction tx, DateTime? dataRecebimento = null)
     {
         var conn = tx.Connection!;
+        var jaRecebida = dataRecebimento.HasValue;
         var status = jaRecebida ? "RECEBIDA" : "ABERTA";
         var saldo = jaRecebida ? 0m : valor;
 
@@ -258,9 +259,9 @@ public class VendaRepository : BaseRepository, IVendaRepository
             await conn.ExecuteScalarAsync<int>(
                 @"INSERT INTO contas_receber_baixas
                     (conta_receber_id, data_recebimento, valor_recebido, observacao)
-                  VALUES (@contaId, @vencimento, @valor, 'PAGAMENTO INSTANTÂNEO NO ATO DA VENDA');
+                  VALUES (@contaId, @dataRecebimento, @valor, 'PAGAMENTO INSTANTÂNEO NO ATO DA VENDA');
                   SELECT LAST_INSERT_ID();",
-                new { contaId, vencimento, valor }, tx);
+                new { contaId, dataRecebimento = dataRecebimento!.Value.Date, valor }, tx);
         }
 
         return contaId;

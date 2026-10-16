@@ -291,7 +291,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                                               && condicao.EntradaMinimaPercentual == 0
                                               && diasVencimento == 0;
 
-                    await _repo.InserirContaReceberAsync(venda.ClienteId!.Value, vendaId, descricao, vencimento, valor, tx, pagamentoInstantaneo);
+                    await _repo.InserirContaReceberAsync(venda.ClienteId!.Value, vendaId, descricao, vencimento, valor, tx,
+                        pagamentoInstantaneo ? venda.CriadoEm.Date : null);
                 }
             }
 
@@ -316,6 +317,8 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
             if (string.IsNullOrWhiteSpace(motivo))
                 return (false, "Informe o motivo do cancelamento.");
             motivo = motivo.Trim().ToUpperInvariant();
+            if (motivo.Length < 15)
+                return (false, "O motivo do cancelamento deve ter no mínimo 15 caracteres.");
             if (motivo.Length > 255)
                 return (false, "O motivo do cancelamento deve ter no máximo 255 caracteres.");
 

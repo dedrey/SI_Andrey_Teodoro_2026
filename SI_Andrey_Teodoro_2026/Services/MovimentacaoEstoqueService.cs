@@ -46,6 +46,7 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                 Cor = i.Cor,
                 Tamanho = i.Tamanho,
                 Quantidade = i.Quantidade,
+                Sentido = i.Sentido,
                 ValorUnitario = i.ValorUnitario
             }).ToList()
         };
@@ -119,7 +120,8 @@ public class MovimentacaoEstoqueService : BaseService<MovimentacaoEstoqueDto, Mo
                     return (false, $"{Desc(item)}: estoque insuficiente. Disponível: {disponivel} un.", 0);
                 }
 
-                await _repo.InserirItemAsync(movId, item.ProdutoVariacaoId, Math.Abs(delta), item.ValorUnitario, tx);
+                await _repo.InserirItemAsync(movId, item.ProdutoVariacaoId, Math.Abs(delta), item.ValorUnitario, tx,
+                    dto.TipoMovimentacao == "AJUSTE" ? (delta > 0 ? "E" : "S") : null);
                 gravados++;
             }
 

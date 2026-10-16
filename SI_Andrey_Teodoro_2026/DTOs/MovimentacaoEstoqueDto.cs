@@ -18,6 +18,7 @@ public class MovimentacaoEstoqueItemDto
     public int MovimentacaoId { get; set; }
     public int ProdutoVariacaoId { get; set; }
     public int Quantidade { get; set; }
+    public string? Sentido { get; set; }
     public decimal ValorUnitario { get; set; }
     public int ProdutoId { get; set; }
     public string NomeProduto { get; set; } = string.Empty;

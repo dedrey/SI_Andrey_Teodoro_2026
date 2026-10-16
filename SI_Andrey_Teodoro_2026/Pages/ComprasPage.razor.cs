@@ -54,16 +54,10 @@ public partial class ComprasPage : BasePage<CompraListDto, CompraDto>
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var param = new DialogParameters<ModalCancelamentoCompra> { { x => x.CompraId, id } };
         var dialog = await DialogService.ShowAsync<ModalCancelamentoCompra>("Cancelar Compra", param, opts);
-        var result = await dialog.Result;
-        if (result is { Canceled: false } && result.Data is string motivo)
+        if ((await dialog.Result) is { Canceled: false })
         {
-            var (sucesso, mensagem) = await CompraService.CancelarAsync(id, motivo);
-            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-            if (sucesso)
-            {
-                _recarregarAposRender = true;
-                StateHasChanged();
-            }
+            _recarregarAposRender = true;
+            StateHasChanged();
         }
     }
 

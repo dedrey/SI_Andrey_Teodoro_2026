@@ -60,7 +60,7 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                                   INNER JOIN fornecedores      f2  ON f2.id  = c2.fornecedor_id
                                   WHERE pv2.produto_id = p.id
                                     AND c2.status_compra = 'LANCADO'
-                                  ORDER BY c2.data_emissao DESC, c2.id DESC LIMIT 1) AS NomeFornecedor,
+                                  ORDER BY c2.data_chegada DESC, c2.id DESC LIMIT 1) AS NomeFornecedor,
                                  COUNT(DISTINCT pv.id)          AS TotalVariacoes,
                                  COALESCE(SUM(e.quantidade), 0) AS TotalEstoque,
                                  p.ativo,
@@ -128,15 +128,14 @@ public class ProdutoRepository : BaseRepository, IProdutoRepository
                       INNER JOIN fornecedores          f2  ON f2.id  = c2.fornecedor_id
                       WHERE pv2.produto_id = p.id
                         AND c2.status_compra = 'LANCADO'
-                      ORDER BY c2.data_emissao DESC, c2.id DESC LIMIT 1) AS NomeFornecedor,
+                      ORDER BY c2.data_chegada DESC, c2.id DESC LIMIT 1) AS NomeFornecedor,
                      (SELECT c3.numero_nf
                       FROM compras                     c3
                       INNER JOIN compras_itens         ci3 ON ci3.compra_id = c3.id
                       INNER JOIN produto_variacoes     pv3 ON pv3.id = ci3.produto_variacao_id
                       WHERE pv3.produto_id = p.id
                         AND c3.status_compra = 'LANCADO'
-                        AND c3.numero_nf IS NOT NULL
-                      ORDER BY c3.data_emissao DESC, c3.id DESC LIMIT 1) AS NumeroNfUltimaEntrada,
+                      ORDER BY c3.data_chegada DESC, c3.id DESC LIMIT 1) AS NumeroNfUltimaEntrada,
                      p.ativo,
                      p.criado_em          AS CriadoEm,
                      p.atualizado_em      AS AtualizadoEm,
