@@ -95,7 +95,7 @@
                 <MudItem xs="12" sm="5">
                     <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
-                                  Error="@(ErroChave != null)" ErrorText="@ErroChave" HelperText="@AvisoChave"
+                                  Required="@(_dto.ModeloNf == "55")" RequiredError="Chave de acesso obrigatória para o modelo 55." HelperText="@AvisoChave"
                                   Validation="@((string v) => ValidarChave(DocumentoHelper.SomenteDigitos(v)))"
                                   Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                 </MudItem>
@@ -483,9 +483,7 @@
     private bool _importandoXml;
     private MudFileUpload<IBrowserFile>? _uploadXml;
     private string ChaveDigitos => DocumentoHelper.SomenteDigitos(_chaveTexto);
-    private string? ErroChave => ValidarChave(ChaveDigitos);
-    private string? ValidarChave(string digitos) => digitos.Length == 44 && !ChaveNfeHelper.Validar(digitos) ? "Chave de acesso inválida."
-        : _dto.ModeloNf == "55" && digitos.Length == 0 ? "Chave de acesso obrigatória para o modelo 55." : null;
+    private static string? ValidarChave(string digitos) => digitos.Length == 44 && !ChaveNfeHelper.Validar(digitos) ? "Chave de acesso inválida." : null;
     private string? AvisoChave => _avisoChave
         ?? (ChaveDigitos.Length is > 0 and < 44 ? $"{ChaveDigitos.Length}/44 dígitos" : null);
     private bool NotaValida => ModelosNf.Contains(_dto.ModeloNf)
@@ -816,6 +814,7 @@
     private async Task Salvar()
     {
         if (_indiceEmEdicao.HasValue) return;
+        if (_form != null) await _form.Validate();
         if (!_itensConfirmados)
         {
             if (await TravarItens())
