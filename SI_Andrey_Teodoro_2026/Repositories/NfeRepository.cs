@@ -78,12 +78,12 @@ public class NfeRepository : BaseRepository, INfeRepository
                      n.emitente_id AS EmitenteId,
                      e.nome_razaosocial AS NomeEmitente, e.cnpj AS CnpjEmitente,
                      CONCAT(e.endereco, IFNULL(CONCAT(', ', e.complemento), ''), ' — ', e.bairro) AS EnderecoEmitente,
-                     ce.cidade AS CidadeEmitente,
+                     CONCAT(ce.cidade, ' (', ee.uf, ')') AS CidadeEmitente,
                      e.regime_tributario AS RegimeTributarioEmitente,
                      n.cliente_id AS ClienteId,
                      c.nome_razaosocial AS NomeCliente, c.cpf_cnpj AS CpfCnpjCliente,
                      CONCAT(c.endereco, IFNULL(CONCAT(', ', c.complemento), ''), ' — ', c.bairro) AS EnderecoCliente,
-                     cc.cidade AS CidadeCliente,
+                     CONCAT(cc.cidade, ' (', ec.uf, ')') AS CidadeCliente,
                      n.venda_id AS VendaId,
                      cp.condicao_pagamento AS NomeCondicao,
                      n.transportadora_id AS TransportadoraId, t.razaosocial AS NomeTransportadora,
@@ -94,8 +94,10 @@ public class NfeRepository : BaseRepository, INfeRepository
               FROM nfes n
               INNER JOIN emitentes e ON e.id = n.emitente_id
               LEFT  JOIN cidades   ce ON ce.id = e.cidade_id
+              LEFT  JOIN estados   ee ON ee.id = ce.estado_id
               INNER JOIN clientes  c ON c.id = n.cliente_id
               LEFT  JOIN cidades   cc ON cc.id = c.cidade_id
+              LEFT  JOIN estados   ec ON ec.id = cc.estado_id
               LEFT  JOIN transportadoras t ON t.id = n.transportadora_id
               LEFT  JOIN vendas    v ON v.id = n.venda_id
               LEFT  JOIN condicoes_pagamentos cp ON cp.id = v.condicao_pagamento_id

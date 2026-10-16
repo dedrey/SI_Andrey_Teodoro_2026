@@ -3,7 +3,7 @@
         <div class="invoice-header">
             <div>
                 <div class="invoice-title">@Nfe.NomeEmitente</div>
-                <div>@Nfe.CnpjEmitente</div>
+                <div>@DocumentoHelper.FormatarDocumento(Nfe.CnpjEmitente)</div>
                 <div>@Nfe.EnderecoEmitente — @Nfe.CidadeEmitente</div>
             </div>
             <div style="text-align:right;">
@@ -15,7 +15,7 @@
 
         <div class="invoice-section">
             <div class="invoice-section-title">Destinatário</div>
-            <div>@Nfe.NomeCliente @(string.IsNullOrWhiteSpace(Nfe.CpfCnpjCliente) ? "" : $"— {Nfe.CpfCnpjCliente}")</div>
+            <div>@Nfe.NomeCliente @(string.IsNullOrWhiteSpace(Nfe.CpfCnpjCliente) ? "" : $"— {DocumentoHelper.FormatarDocumento(Nfe.CpfCnpjCliente)}")</div>
             <div>@Nfe.EnderecoCliente — @Nfe.CidadeCliente</div>
         </div>
 

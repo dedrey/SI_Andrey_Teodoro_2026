@@ -128,7 +128,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
         {
             dto.ModeloNf = (dto.ModeloNf ?? "").Trim();
             dto.NumeroNf = string.IsNullOrWhiteSpace(dto.NumeroNf) ? null : dto.NumeroNf.Trim();
-            dto.ChaveAcesso = string.IsNullOrWhiteSpace(dto.ChaveAcesso) ? null : ChaveNfeHelper.SomenteDigitos(dto.ChaveAcesso);
+            dto.ChaveAcesso = string.IsNullOrWhiteSpace(dto.ChaveAcesso) ? null : DocumentoHelper.SomenteDigitos(dto.ChaveAcesso);
 
             if (!dto.FornecedorId.HasValue)
                 return (false, "Selecione o fornecedor.", 0);
@@ -178,7 +178,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 if (serie != dto.SerieNf) divergencias.Add("série");
                 if (numero != dto.NumeroNf) divergencias.Add("número");
                 if (ano != dto.DataEmissao.Value.Year || mes != dto.DataEmissao.Value.Month) divergencias.Add("data de emissão");
-                if (cnpj != ChaveNfeHelper.SomenteDigitos(fornecedor.CpfCnpj)) divergencias.Add("CNPJ do fornecedor");
+                if (cnpj != DocumentoHelper.SomenteDigitos(fornecedor.CpfCnpj)) divergencias.Add("CNPJ do fornecedor");
                 if (divergencias.Count > 0)
                     return (false, $"A chave de acesso não confere com: {string.Join(", ", divergencias)}.", 0);
             }
@@ -384,9 +384,9 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 SerieNf = serie,
                 NumeroNf = numero.Length == 0 ? "0" : numero,
                 DataEmissao = emissao,
-                CnpjEmitente = ChaveNfeHelper.SomenteDigitos((emit?.Element(NsNfe + "CNPJ") ?? emit?.Element(NsNfe + "CPF"))?.Value),
+                CnpjEmitente = DocumentoHelper.SomenteDigitos((emit?.Element(NsNfe + "CNPJ") ?? emit?.Element(NsNfe + "CPF"))?.Value),
                 NomeEmitente = emit?.Element(NsNfe + "xNome")?.Value.Trim() ?? string.Empty,
-                CnpjTransportadora = transporta == null ? null : ChaveNfeHelper.SomenteDigitos((transporta.Element(NsNfe + "CNPJ") ?? transporta.Element(NsNfe + "CPF"))?.Value),
+                CnpjTransportadora = transporta == null ? null : DocumentoHelper.SomenteDigitos((transporta.Element(NsNfe + "CNPJ") ?? transporta.Element(NsNfe + "CPF"))?.Value),
                 NomeTransportadora = transporta?.Element(NsNfe + "xNome")?.Value.Trim(),
                 ValorFrete = Valor(tot, "vFrete"),
                 ValorSeguro = Valor(tot, "vSeg"),
@@ -396,10 +396,10 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             if (dados.CnpjEmitente.Length > 0)
                 dados.FornecedorId = (await _fornecedorRepo.ObterTodosAtivosAsync())
-                    .FirstOrDefault(f => ChaveNfeHelper.SomenteDigitos(f.CpfCnpj) == dados.CnpjEmitente)?.Id;
+                    .FirstOrDefault(f => DocumentoHelper.SomenteDigitos(f.CpfCnpj) == dados.CnpjEmitente)?.Id;
             if (!string.IsNullOrEmpty(dados.CnpjTransportadora))
                 dados.TransportadoraId = (await _transportadoraRepo.ObterTodosAtivosAsync())
-                    .FirstOrDefault(t => ChaveNfeHelper.SomenteDigitos(t.Cnpj) == dados.CnpjTransportadora)?.Id;
+                    .FirstOrDefault(t => DocumentoHelper.SomenteDigitos(t.Cnpj) == dados.CnpjTransportadora)?.Id;
 
             return (true, "XML lido com sucesso.", dados);
         }

@@ -30,7 +30,7 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             IdOriginal = t.Id,
             RazaoSocial = t.RazaoSocial,
             NomeFantasia = t.NomeFantasia,
-            Cnpj = FormatarCnpj(t.Cnpj),
+            Cnpj = DocumentoHelper.FormatarDocumento(t.Cnpj),
             InscricaoEstadual = t.InscricaoEstadual,
             NomeCidade = t.NomeCidade,
             CidadeId = t.CidadeId,
@@ -79,23 +79,23 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
                 return (false, "E-mail inválido.", 0);
 
-            var cnpjLimpo = LimparDigitos(dto.Cnpj);
+            var cnpjLimpo = DocumentoHelper.SomenteDigitos(dto.Cnpj);
 
             if (dto.IdOriginal > 0)
             {
                 var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
                 if (atual == null) return (false, "Transportadora não encontrada.", 0);
-                if (LimparDigitos(atual.Cnpj ?? "") != cnpjLimpo)
+                if (DocumentoHelper.SomenteDigitos(atual.Cnpj) != cnpjLimpo)
                     return (false, "O CNPJ não pode ser alterado após o cadastro.", 0);
             }
 
-            var erroCnpj = ValidarCnpj(cnpjLimpo);
+            var erroCnpj = DocumentoHelper.CnpjValido(cnpjLimpo) ? null : "CNPJ inválido.";
             if (erroCnpj != null) return (false, erroCnpj, 0);
             dto.Cnpj = cnpjLimpo;
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
             if (await _repo.ExisteCnpjAsync(dto.Cnpj, ignorar))
-                return (false, $"Já existe uma transportadora com o CNPJ '{FormatarCnpj(dto.Cnpj)}'.", 0);
+                return (false, $"Já existe uma transportadora com o CNPJ '{DocumentoHelper.FormatarDocumento(dto.Cnpj)}'.", 0);
 
             if (dto.IdOriginal == 0)
             {
@@ -117,29 +117,5 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             return SucessoStatus(ativar);
         }
         catch (Exception ex) { return ErroStatus(ex); }
-    }
-
-    private static string LimparDigitos(string v)
-        => new string(v.Where(char.IsDigit).ToArray());
-
-    public static string FormatarCnpj(string cnpj)
-    {
-        var d = LimparDigitos(cnpj);
-        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : cnpj;
-    }
-
-    private static string? ValidarCnpj(string cnpj)
-    {
-        if (cnpj.Length != 14 || cnpj.Distinct().Count() == 1) return "CNPJ inválido.";
-        int[] m1 = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        int[] m2 = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        return Digito(cnpj, m1, 12) && Digito(cnpj, m2, 13) ? null : "CNPJ inválido.";
-    }
-
-    private static bool Digito(string d, int[] m, int pos)
-    {
-        var s = m.Select((v, i) => (d[i] - '0') * v).Sum();
-        var r = s % 11;
-        return (d[pos] - '0') == (r < 2 ? 0 : 11 - r);
     }
 }

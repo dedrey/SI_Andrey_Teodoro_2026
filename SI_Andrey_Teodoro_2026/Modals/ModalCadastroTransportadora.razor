@@ -21,7 +21,7 @@
                                      Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_cnpjTexto" ValueChanged="@((string v) => { _cnpjTexto = MascaraCnpj(v); _dto.Cnpj = _cnpjTexto; Alterou(1); })"
+                    <MudTextField Value="@_cnpjTexto" ValueChanged="@((string v) => { _cnpjTexto = DocumentoHelper.FormatarCnpj(v, parcial: true); _dto.Cnpj = _cnpjTexto; Alterou(1); })"
                                   Label="CNPJ" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => DocumentoHelper.ValidarCnpj(v))"
@@ -49,7 +49,7 @@
                                          Value="_cidadeSelecionada"
                                          ValueChanged="OnCidadeAlterada"
                                          SearchFunc="PesquisarCidade"
-                                         ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} — {c.Uf}")"
+                                         ToStringFunc="@(c => c == null ? "" : $"{c.NomeCidade} ({c.Uf})")"
                                          Label="Cidade" Variant="Variant.Outlined" Margin="Margin.Dense"
                                          Required="true" RequiredError="Obrigatório"
                                          FullWidth="true" Clearable="true" ResetValueOnEmptyText="true"
@@ -89,10 +89,10 @@
 
                 <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = MascaraTel(v); Alterou(3); })" Label="Telefone"
+                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = TelefoneHelper.Mascara(v); Alterou(3); })" Label="Telefone"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarTelefone(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
+                                  Validation="@((string v) => TelefoneHelper.Validar(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => { _dto.Email = v; Alterou(3); })" Label="E-mail" Class="sem-maiusculas"
@@ -163,7 +163,7 @@
         _readOnly = SomenteLeitura;
         _grupos = new(() => !_readOnly && !Edicao, ErroGrupo, "a identificação", "o endereço");
         _dto = DtoEdicao ?? new TransportadoraDto();
-        _dto.Telefone = MascaraTel(_dto.Telefone);
+        _dto.Telefone = TelefoneHelper.Mascara(_dto.Telefone);
         _cnpjTexto = _dto.Cnpj ?? "";
         _cidades = (await CidadeService.ObterTodosAtivosSemPaginacaoAsync()).ToList();
         await _cidades.IncluirSeAusenteAsync(_dto.CidadeId, c => c.Id, async id => await CidadeService.ObterPorIdAsync(id) is { } c ? new CidadeListDto { Id = c.Id, NomeCidade = c.NomeCidade, EstadoId = c.EstadoId, PaisId = c.PaisId, Uf = c.Uf } : null);
@@ -237,23 +237,20 @@
         2 when string.IsNullOrWhiteSpace(_dto.Complemento) => "Informe o complemento.",
         2 when string.IsNullOrWhiteSpace(_dto.Cep) => "Informe o CEP.",
         2 when !DocumentoHelper.CepValido(_dto.Cep) => "CEP incompleto.",
-        3 when ValidarTelefone(_dto.Telefone) is string erro => $"Telefone: {erro}.",
+        3 when TelefoneHelper.Validar(_dto.Telefone) is string erro => $"Telefone: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
         _ => null
     };
-    private static string? ValidarTelefone(string? v) { var d = new string(v?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }
     private string? AjudaRazao => Edicao || CnpjOk ? null : "Informe um CNPJ válido primeiro.";
     private string? AjudaRestante => Edicao || RazaoOk ? null : AjudaRazao ?? "Informe a razão social primeiro.";
     private object DadosEditaveis() => new { _dto, _cnpjTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 
-    private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
-    private string MascaraCnpj(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 14) d = d[..14]; return d.Length switch { 0 => "", <= 2 => d, <= 5 => $"{d[..2]}.{d[2..]}", <= 8 => $"{d[..2]}.{d[2..5]}.{d[5..]}", <= 12 => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..]}", _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" }; }
 
     private string MascaraCep(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
-        var d = new string(v.Where(char.IsDigit).ToArray());
+        var d = DocumentoHelper.SomenteDigitos(v);
         if (d.Length > 8) d = d[..8];
         return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
     }

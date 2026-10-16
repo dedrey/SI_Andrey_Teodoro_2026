@@ -109,9 +109,7 @@
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="@(context.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(context.MotivoCancelamentoVenda) ? $"Motivo: {context.MotivoCancelamentoVenda}" : "")"
                             Disabled="@(context.Status != "CANCELADA" || string.IsNullOrWhiteSpace(context.MotivoCancelamentoVenda))">
-                    <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "RECEBIDA" => Color.Success, "CANCELADA" => Color.Default, _ => vencida ? Color.Error : Color.Warning })">
-                        @(context.Status switch { "RECEBIDA" => "Recebida", "CANCELADA" => "Cancelada", _ => vencida ? "Em Atraso" : "Aberta" })
-                    </MudChip>
+                    <StatusChip Tipo="TipoStatus.Conta" Status="@context.Status" Vencimento="@context.DataVencimento" />
                 </MudTooltip>
             </MudTd>
             <MudTd Style="text-align:center;">

@@ -34,7 +34,7 @@
                     <div class="d-flex align-center gap-2">
                         <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Success" Size="Size.Small" />
                         <MudText Typo="Typo.body2">@_nomeArquivoSelecionado</MudText>
-                        <MudText Typo="Typo.caption" Style="color:#888;">(@FormatarTamanho(_tamanhoArquivo))</MudText>
+                        <MudText Typo="Typo.caption" Style="color:#888;">(@ArquivoHelper.FormatarTamanho(_tamanhoArquivo))</MudText>
                     </div>
                     <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="RemoverArquivo" />
                 </div>
@@ -151,9 +151,6 @@
         _extensaoArquivo = null;
         _erroArquivo = null;
     }
-
-    private static string FormatarTamanho(long bytes)
-        => bytes < 1024 * 1024 ? $"{bytes / 1024.0:N0} KB" : $"{bytes / (1024.0 * 1024):N1} MB";
 
     private async Task<string?> SalvarArquivoAsync()
     {

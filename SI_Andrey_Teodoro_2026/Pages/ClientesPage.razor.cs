@@ -31,14 +31,6 @@ public partial class ClientesPage : BasePage<ClienteListDto, ClienteDto>
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual, ClienteService.AlterarStatusAsync, CarregarDados);
 
-    private static string FormatDoc(string? doc, string tipo)
-    {
-        if (string.IsNullOrWhiteSpace(doc)) return "—";
-        var d = new string(doc.Where(char.IsDigit).ToArray());
-        if (tipo == "PF" && d.Length == 11) return $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}";
-        if (tipo == "PJ" && d.Length == 14) return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
-        return doc;
-    }
     private async Task Visualizar(int id)
     {
         var dto = await ClienteService.ObterPorIdAsync(id);

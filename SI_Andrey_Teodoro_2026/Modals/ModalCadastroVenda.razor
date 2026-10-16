@@ -404,7 +404,7 @@
     }
     private void OnQtdAlterada(VendaItemDto item, string? v)
     {
-        var d = new string((v ?? "").Where(char.IsDigit).ToArray());
+        var d = DocumentoHelper.SomenteDigitos(v);
         item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0;
         RecalcularTotais();
     }

@@ -46,10 +46,7 @@
                             <div style="font-size:0.72rem;color:#aaa;">Venc. @conta.DataVencimento.ToString("dd/MM/yyyy")</div>
                         </div>
                         <div style="text-align:right;">
-                            <MudChip T="string" Size="Size.Small"
-                                     Color="@(conta.Status == "RECEBIDA" ? Color.Success : conta.Status == "CANCELADA" ? Color.Default : Color.Warning)">
-                                @(conta.Status == "RECEBIDA" ? "Recebida" : conta.Status == "CANCELADA" ? "Cancelada" : "Aberta")
-                            </MudChip>
+                            <StatusChip Tipo="TipoStatus.Conta" Status="@conta.Status" />
                             <div style="font-size:0.8rem;font-weight:600;margin-top:2px;">
                                 R$ @conta.ValorOriginal.ToString("N2")
                                 @if (conta.ValorRecebido > 0)
@@ -166,7 +163,7 @@
                 @if (_dto.IdOriginal != 0)
                 {
                     <MudItem xs="12" sm="4">
-                        <MudTextField Value="@FormatarStatus(_dto.Status)" Label="Status"
+                        <MudTextField Value="@StatusHelper.Texto(TipoStatus.Conta, _dto.Status)" Label="Status"
                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
                     </MudItem>
                     <MudItem xs="12" sm="4">
@@ -249,13 +246,6 @@
         await _clientes.IncluirSeAusenteAsync(_dto.ClienteId, c => c.Id, async id => await ClienteService.ObterPorIdAsync(id) is { } c ? new ClienteListDto { Id = c.Id, NomeRazaoSocial = c.NomeRazaoSocial, ApelidoNomeFantasia = c.ApelidoNomeFantasia, TipoPessoa = c.TipoPessoa, CpfCnpj = c.CpfCnpj, Estrangeiro = c.Estrangeiro, DocumentoEstrangeiro = c.DocumentoEstrangeiro, LimiteCredito = c.LimiteCredito } : null);
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
-
-    private static string FormatarStatus(string status) => status switch
-    {
-        "RECEBIDA" => "Recebida",
-        "CANCELADA" => "Cancelada",
-        _ => "Aberta"
-    };
 
     private async Task PesquisarCliente()
     {

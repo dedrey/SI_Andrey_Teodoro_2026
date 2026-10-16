@@ -59,10 +59,7 @@
             </MudTd>
             <MudTd Style="text-align:right;font-weight:700;color:#1a237e;">R$ @venda.ValorTotal.ToString("N2")</MudTd>
             <MudTd>
-                <MudChip T="string" Size="Size.Small"
-                         Color="@(venda.StatusVenda == "ABERTA" ? Color.Info : venda.StatusVenda == "FINALIZADA" ? Color.Success : Color.Error)">
-                    @venda.StatusVenda
-                </MudChip>
+                <StatusChip Tipo="TipoStatus.Venda" Status="@venda.StatusVenda" />
             </MudTd>
             <MudTd Style="font-size:0.85rem;color:#888;">@venda.CriadoEm.ToString("dd/MM/yyyy HH:mm")</MudTd>
             <MudTd Style="text-align:center;">

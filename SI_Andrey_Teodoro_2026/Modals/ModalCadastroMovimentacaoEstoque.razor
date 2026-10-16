@@ -431,13 +431,13 @@
     }
 
     private void OnQtdAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0; }
+    { var d = DocumentoHelper.SomenteDigitos(v); item.Quantidade = int.TryParse(d, out int n) && n > 0 ? n : 0; }
 
     private string GetQtdRealTexto(MovimentacaoEstoqueItemDto item)
     { if (!_qtdRealTextos.ContainsKey(item)) _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : ""; return _qtdRealTextos[item]; }
 
     private void OnQtdRealAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    { var d = new string((v ?? "").Where(char.IsDigit).ToArray()); _qtdRealTextos[item] = d; item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1; StateHasChanged(); }
+    { var d = DocumentoHelper.SomenteDigitos(v); _qtdRealTextos[item] = d; item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1; StateHasChanged(); }
 
 
     private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)

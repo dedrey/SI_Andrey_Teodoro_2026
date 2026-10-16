@@ -53,12 +53,13 @@ public class TransportadoraRepository : BaseRepository, ITransportadoraRepositor
                       t.nomefantasia      AS NomeFantasia,
                       t.cnpj,
                       t.inscricao_estadual AS InscricaoEstadual,
-                      c.cidade            AS NomeCidade,
+                      CONCAT(c.cidade, ' (', es.uf, ')') AS NomeCidade,
                       t.telefone, t.email,
                       t.ativo,
                       t.criado_em         AS CriadoEm
                FROM transportadoras t
                LEFT JOIN cidades c ON c.id = t.cidade_id
+               LEFT JOIN estados es ON es.id = c.estado_id
                {whereClause}
                ORDER BY {orderBy}
                LIMIT @Limit OFFSET @Offset", param);

@@ -22,7 +22,7 @@
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
             <MudTd><strong>@context.NomeRazaoSocial</strong>@if (!string.IsNullOrWhiteSpace(context.ApelidoNomeFantasia)){<br/><span style="color:#888;font-size:0.8rem;">@context.ApelidoNomeFantasia</span>}@if (!string.IsNullOrWhiteSpace(context.NomeCidade)){<br/><span style="color:#aaa;font-size:0.78rem;">@context.NomeCidade</span>}</MudTd>
             <MudTd Style="text-align:center;">@if (context.Estrangeiro){<MudChip T="string" Size="Size.Small" Color="Color.Warning">🌍 Estrangeiro</MudChip>}else{<MudChip T="string" Size="Size.Small" Color="@(context.TipoPessoa=="PF"?Color.Info:Color.Secondary)">@context.TipoPessoa</MudChip>}</MudTd>
-            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@(context.Estrangeiro ? (context.DocumentoEstrangeiro ?? "—") : FormatDoc(context.CpfCnpj, context.TipoPessoa))</MudChip></MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@(context.Estrangeiro ? (context.DocumentoEstrangeiro ?? "—") : (string.IsNullOrWhiteSpace(context.CpfCnpj) ? "—" : DocumentoHelper.FormatarDocumento(context.CpfCnpj)))</MudChip></MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone)?"—":context.Telefone)</MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Email)?"—":context.Email)</MudTd>
             <MudTd Style="text-align:right;">@if(context.LimiteCredito>0){<span>R$ @context.LimiteCredito.ToString("N2")</span>}else{<span style="color:#bbb;">—</span>}</MudTd>

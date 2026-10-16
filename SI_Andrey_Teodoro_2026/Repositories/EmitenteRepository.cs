@@ -41,12 +41,13 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                                   e.apelido_nomefantasia  AS ApelidoNomeFantasia,
                                   e.cnpj,
                                   e.regime_tributario     AS RegimeTributario,
-                                  c.cidade                AS NomeCidade,
+                                  CONCAT(c.cidade, ' (', es.uf, ')') AS NomeCidade,
                                   e.telefone, e.email,
                                   e.ativo,
                                   e.criado_em AS CriadoEm
                           FROM emitentes e
                           LEFT JOIN cidades c ON c.id = e.cidade_id
+                          LEFT JOIN estados es ON es.id = c.estado_id
                           {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 

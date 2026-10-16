@@ -72,9 +72,7 @@
             </MudTd>
             <MudTd Style="text-align:right;font-weight:600;">R$ @context.ValorTotal.ToString("N2")</MudTd>
             <MudTd Style="text-align:center;">
-                <MudChip T="string" Size="Size.Small" Color="@(context.StatusNfe == "EMITIDA" ? Color.Success : Color.Default)">
-                    @(context.StatusNfe == "EMITIDA" ? "Emitida" : "Cancelada")
-                </MudChip>
+                <StatusChip Tipo="TipoStatus.Nfe" Status="@context.StatusNfe" />
             </MudTd>
             <MudTd Style="text-align:center;">
                 <MudTooltip Text="Visualizar / Imprimir">

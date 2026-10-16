@@ -44,13 +44,14 @@ public class ClienteRepository : BaseRepository, IClienteRepository
                                   c.apelido_nomefantasia   AS ApelidoNomeFantasia,
                                   c.cpf_cnpj               AS CpfCnpj,
                                   c.documento_estrangeiro  AS DocumentoEstrangeiro,
-                                  ci.cidade                AS NomeCidade,
+                                  CONCAT(ci.cidade, ' (', es.uf, ')') AS NomeCidade,
                                   c.telefone, c.email,
                                   c.limite_credito         AS LimiteCredito,
                                   c.ativo,
                                   c.criado_em AS CriadoEm
                           FROM clientes c
                           LEFT JOIN cidades ci ON ci.id = c.cidade_id
+                          LEFT JOIN estados es ON es.id = ci.estado_id
                           {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 

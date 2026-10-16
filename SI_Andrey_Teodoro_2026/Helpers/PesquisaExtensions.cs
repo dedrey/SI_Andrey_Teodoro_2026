@@ -14,7 +14,7 @@ public static class PesquisaExtensions
             new("Código", f => f.Id),
             new("Razão Social", f => f.RazaoSocial),
             new("Fantasia", f => f.NomeFantasia),
-            new("CPF/CNPJ", f => f.CpfCnpj),
+            new("CPF/CNPJ", f => DocumentoHelper.FormatarDocumento(f.CpfCnpj)),
             new("Cidade", f => f.NomeCidade)
         }, Ativos, novo, x => x.Id, selecionado);
 
@@ -24,7 +24,7 @@ public static class PesquisaExtensions
             new("Código", t => t.Id),
             new("Razão Social", t => t.RazaoSocial),
             new("Fantasia", t => t.NomeFantasia),
-            new("CNPJ", t => t.Cnpj),
+            new("CNPJ", t => DocumentoHelper.FormatarDocumento(t.Cnpj)),
             new("Cidade", t => t.NomeCidade)
         }, Ativos, novo, x => x.Id, selecionado);
 
@@ -34,7 +34,7 @@ public static class PesquisaExtensions
             new("Código", c => c.Id),
             new("Cliente", c => c.NomeRazaoSocial),
             new("Apelido/Fantasia", c => c.ApelidoNomeFantasia),
-            new("CPF/CNPJ", c => c.Estrangeiro ? c.DocumentoEstrangeiro : c.CpfCnpj),
+            new("CPF/CNPJ", c => c.Estrangeiro ? c.DocumentoEstrangeiro : DocumentoHelper.FormatarDocumento(c.CpfCnpj)),
             new("Cidade", c => c.NomeCidade)
         }, Ativos, novo, x => x.Id, selecionado);
 
@@ -44,7 +44,7 @@ public static class PesquisaExtensions
             new("Código", e => e.Id),
             new("Razão Social", e => e.NomeRazaoSocial),
             new("Fantasia", e => e.ApelidoNomeFantasia),
-            new("CNPJ", e => e.Cnpj),
+            new("CNPJ", e => DocumentoHelper.FormatarDocumento(e.Cnpj)),
             new("Cidade", e => e.NomeCidade)
         }, Ativos, novo, x => x.Id, selecionado);
 

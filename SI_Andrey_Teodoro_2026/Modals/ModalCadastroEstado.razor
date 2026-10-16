@@ -41,7 +41,7 @@
                     <MudTextField Value="@_dto.NomeEstado" ValueChanged="@((string v) => _dto.NomeEstado = v)"
                                   Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarNome(v))"
+                                  Validation="@((string v) => TextoHelper.ValidarApenasLetras(v))"
                                   Disabled="@(_readOnly || !Edicao && !PaisOk)" HelperText="@(Edicao || PaisOk ? null : "Selecione o país primeiro.")" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
@@ -150,8 +150,6 @@
     private readonly IMask _mascaraUf = new RegexMask(@"^[a-zA-Z]{0,2}$");
     private bool Edicao => _dto.IdOriginal > 0;
     private bool PaisOk => _dto.PaisId > 0;
-    private bool NomeOk => PaisOk && ValidarNome(_dto.NomeEstado) == null;
-    private static string? ValidarNome(string? v) =>
-        string.IsNullOrWhiteSpace(v) ? "Obrigatório" : !System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$") ? "Apenas letras" : null;
+    private bool NomeOk => PaisOk && TextoHelper.ValidarApenasLetras(_dto.NomeEstado) == null;
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
 }

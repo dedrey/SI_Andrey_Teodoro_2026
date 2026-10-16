@@ -1,0 +1,7 @@
+<MudChip T="string" Size="Size.Small" Color="@StatusHelper.Cor(Tipo, Status, Vencimento)">@StatusHelper.Texto(Tipo, Status, Vencimento)</MudChip>
+
+@code {
+    [Parameter] public TipoStatus Tipo { get; set; }
+    [Parameter] public string? Status { get; set; }
+    [Parameter] public DateTime? Vencimento { get; set; }
+}

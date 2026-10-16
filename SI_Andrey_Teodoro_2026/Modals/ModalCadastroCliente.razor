@@ -132,20 +132,20 @@
 
                 <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato e Crédito" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="@(_dto.TipoPessoa == "PJ" ? 3 : 6)">
-                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = FormatarTel(v); Alterou(3); })"
+                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = TelefoneHelper.Formatar(v, _dto.Estrangeiro); Alterou(3); })"
                                   Label="@(_dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Mask="@(_dto.Estrangeiro ? _mascaraTelefone : null)"
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarTel(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
+                                  Validation="@((string v) => TelefoneHelper.ValidarObrigatorio(v, _dto.Estrangeiro))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
                 @if (_dto.TipoPessoa == "PJ")
                 {
                     <MudItem xs="12" sm="3">
-                        <MudTextField Value="@(_dto.Celular ?? "")" ValueChanged="@((string v) => { _dto.Celular = FormatarTel(v); Alterou(3); })"
+                        <MudTextField Value="@(_dto.Celular ?? "")" ValueChanged="@((string v) => { _dto.Celular = TelefoneHelper.Formatar(v, _dto.Estrangeiro); Alterou(3); })"
                                       Label="Celular" Variant="Variant.Outlined" Margin="Margin.Dense"
                                       Mask="@(_dto.Estrangeiro ? _mascaraCelular : null)"
                                       Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                      Validation="@((string v) => ValidarTel(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
+                                      Validation="@((string v) => TelefoneHelper.ValidarObrigatorio(v, _dto.Estrangeiro))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                     </MudItem>
                 }
                 <MudItem xs="12" sm="6">
@@ -255,8 +255,8 @@
                 Complemento = DtoEdicao.Complemento,
                 Bairro = DtoEdicao.Bairro,
                 Cep = DtoEdicao.Cep,
-                Telefone = DtoEdicao.Estrangeiro ? DtoEdicao.Telefone ?? "" : MascaraTel(DtoEdicao.Telefone ?? ""),
-                Celular = string.IsNullOrWhiteSpace(DtoEdicao.Celular) ? null : DtoEdicao.Estrangeiro ? DtoEdicao.Celular : MascaraTel(DtoEdicao.Celular),
+                Telefone = DtoEdicao.Estrangeiro ? DtoEdicao.Telefone ?? "" : TelefoneHelper.Mascara(DtoEdicao.Telefone),
+                Celular = string.IsNullOrWhiteSpace(DtoEdicao.Celular) ? null : DtoEdicao.Estrangeiro ? DtoEdicao.Celular : TelefoneHelper.Mascara(DtoEdicao.Celular),
                 Email = DtoEdicao.Email ?? "",
                 InscricaoEstadual = DtoEdicao.InscricaoEstadual,
                 InscricaoMunicipal = DtoEdicao.InscricaoMunicipal,
@@ -277,7 +277,7 @@
 
     private void OnTipoPessoaAlterado(string tipo) { if (tipo == _dto.TipoPessoa) return; Alterou(1); _dto.TipoPessoa = tipo; _docTexto = ""; _dto.CpfCnpj = ""; if (tipo == "PJ") _dto.Sexo = "NAO_INFORMAR"; if (tipo == "PF") { _dto.Celular = null; _dto.InscricaoEstadual = null; _dto.InscricaoMunicipal = null; } }
 
-    private void OnDocAlterado(string? v) { Alterou(1); if (string.IsNullOrEmpty(v)) { _docTexto = ""; _dto.CpfCnpj = ""; return; } var limpo = new string(v.Where(char.IsDigit).ToArray()); _docTexto = _dto.TipoPessoa == "PF" ? FormatarCpf(limpo) : FormatarCnpj(limpo); _dto.CpfCnpj = limpo; }
+    private void OnDocAlterado(string? v) { Alterou(1); if (string.IsNullOrEmpty(v)) { _docTexto = ""; _dto.CpfCnpj = ""; return; } var limpo = DocumentoHelper.SomenteDigitos(v); _docTexto = _dto.TipoPessoa == "PF" ? DocumentoHelper.FormatarCpf(limpo) : DocumentoHelper.FormatarCnpj(limpo); _dto.CpfCnpj = limpo; }
 
 
     private Task<IEnumerable<CidadeListDto>> PesquisarCidade(string? busca, CancellationToken ct)
@@ -346,8 +346,8 @@
         2 when string.IsNullOrWhiteSpace(_dto.Complemento) => "Informe o complemento.",
         2 when !_dto.Estrangeiro && string.IsNullOrWhiteSpace(_dto.Cep) => "Informe o CEP.",
         2 when !_dto.Estrangeiro && !DocumentoHelper.CepValido(_dto.Cep) => "CEP incompleto.",
-        3 when ValidarTel(_dto.Telefone) is string erro => $"{(_dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")}: {erro}.",
-        3 when _dto.TipoPessoa == "PJ" && ValidarTel(_dto.Celular) is string erro => $"Celular: {erro}.",
+        3 when TelefoneHelper.ValidarObrigatorio(_dto.Telefone, _dto.Estrangeiro) is string erro => $"{(_dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")}: {erro}.",
+        3 when _dto.TipoPessoa == "PJ" && TelefoneHelper.ValidarObrigatorio(_dto.Celular, _dto.Estrangeiro) is string erro => $"Celular: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
         3 when _dto.LimiteCredito < 0 => "O limite de crédito não pode ser negativo.",
         _ => null
@@ -358,17 +358,12 @@
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
 
     private string? ValidarDocumento(string? v) => DocumentoHelper.ValidarDocumento(v, _dto.TipoPessoa);
-    private string? ValidarTel(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; if (_dto.Estrangeiro) return DocumentoHelper.ValidarTelefoneEstrangeiro(v); var d = new string(v.Where(char.IsDigit).ToArray()); return d.Length switch { 10 => null, 11 => null, < 10 => "Incompleto", _ => "Máx 11 dígitos" }; }
-    private static string FormatarCpf(string d) { if (d.Length >= 11) d = d[..11]; return d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : d; }
-    private static string FormatarCnpj(string d) { if (d.Length >= 14) d = d[..14]; return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d; }
-    private readonly IMask _mascaraTelefone = new RegexMask(DocumentoHelper.RegexTelefoneEstrangeiroParcial);
-    private readonly IMask _mascaraCelular = new RegexMask(DocumentoHelper.RegexTelefoneEstrangeiroParcial);
-    private string FormatarTel(string? v) => _dto.Estrangeiro ? v ?? "" : MascaraTel(v);
-    private string MascaraTel(string? v) { if (string.IsNullOrEmpty(v)) return ""; var d = new string(v.Where(char.IsDigit).ToArray()); if (d.Length > 11) d = d[..11]; return d.Length switch { 0 => "", <= 2 => $"({d}", <= 6 => $"({d[..2]}) {d[2..]}", <= 10 => $"({d[..2]}) {d[2..6]}-{d[6..]}", _ => $"({d[..2]}) {d[2..7]}-{d[7..]}" }; }
+    private readonly IMask _mascaraTelefone = new RegexMask(TelefoneHelper.RegexEstrangeiroParcial);
+    private readonly IMask _mascaraCelular = new RegexMask(TelefoneHelper.RegexEstrangeiroParcial);
     private string MascaraCep(string? v)
     {
         if (string.IsNullOrEmpty(v)) return "";
-        var d = new string(v.Where(char.IsDigit).ToArray());
+        var d = DocumentoHelper.SomenteDigitos(v);
         if (d.Length > 8) d = d[..8];
         return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
     }

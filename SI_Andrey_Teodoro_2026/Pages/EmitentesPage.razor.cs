@@ -39,5 +39,4 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
     }
     private Task AlterarStatus(int id, string nome, bool ativoAtual)
         => ConfirmarAlteracaoStatus(id, nome, ativoAtual, EmitenteService.AlterarStatusAsync, CarregarDados);
-    private static string FormatCnpj(string s) { var d = new string(s.Where(char.IsDigit).ToArray()); return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : s; }
 }

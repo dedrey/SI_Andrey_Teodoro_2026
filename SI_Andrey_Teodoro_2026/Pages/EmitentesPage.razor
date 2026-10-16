@@ -21,7 +21,7 @@
         <RowTemplate>
             <MudTd Style="color:#888;font-size:0.85rem;">@context.Id</MudTd>
             <MudTd><strong>@context.NomeRazaoSocial</strong>@if(!string.IsNullOrWhiteSpace(context.ApelidoNomeFantasia)){<br/><span style="color:#888;font-size:0.8rem;">@context.ApelidoNomeFantasia</span>}</MudTd>
-            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@FormatCnpj(context.Cnpj)</MudChip></MudTd>
+            <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Outlined">@DocumentoHelper.FormatarDocumento(context.Cnpj)</MudChip></MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.NomeCidade)?"—":context.NomeCidade)</MudTd>
             <MudTd>@(string.IsNullOrWhiteSpace(context.Telefone)?"—":context.Telefone)</MudTd>
             <MudTd Style="text-align:center;"><MudChip T="string" Size="Size.Small" Color="@(context.RegimeTributario=="SIMPLES"?Color.Success:context.RegimeTributario=="PRESUMIDO"?Color.Warning:Color.Info)">@context.RegimeTributario</MudChip></MudTd>

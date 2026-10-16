@@ -275,9 +275,7 @@
                                             <MudTd>@context.DataVencimento.ToString("dd/MM/yyyy")</MudTd>
                                             <MudTd Style="text-align:right;white-space:nowrap;">R$ @context.ValorOriginal.ToString("N2")</MudTd>
                                             <MudTd Style="text-align:center;">
-                                                <MudChip T="string" Size="Size.Small" Color="@(context.Status switch { "PAGA" => Color.Success, "CANCELADA" => Color.Default, _ => context.DataVencimento.Date < DateTime.Today ? Color.Error : Color.Warning })">
-                                                    @(context.Status switch { "PAGA" => "Paga", "CANCELADA" => "Cancelada", _ => context.DataVencimento.Date < DateTime.Today ? "Em Atraso" : "Aberta" })
-                                                </MudChip>
+                                                <StatusChip Tipo="TipoStatus.Conta" Status="@context.Status" Vencimento="@context.DataVencimento" />
                                             </MudTd>
                                         </RowTemplate>
                                         <FooterContent>
@@ -483,7 +481,7 @@
     private decimal? _totalNotaXml;
     private bool _importandoXml;
     private MudFileUpload<IBrowserFile>? _uploadXml;
-    private string ChaveDigitos => ChaveNfeHelper.SomenteDigitos(_chaveTexto);
+    private string ChaveDigitos => DocumentoHelper.SomenteDigitos(_chaveTexto);
     private string? ErroChave => ChaveDigitos.Length == 44 && !ChaveNfeHelper.Validar(ChaveDigitos) ? "Chave de acesso inválida." : null;
     private string? AvisoChave => _avisoChave
         ?? (ChaveDigitos.Length is > 0 and < 44 ? $"{ChaveDigitos.Length}/44 dígitos" : null);
@@ -496,7 +494,7 @@
 
     private void OnChaveAlterada(string? texto)
     {
-        var chave = ChaveNfeHelper.SomenteDigitos(texto);
+        var chave = DocumentoHelper.SomenteDigitos(texto);
         if (chave.Length > 44) chave = chave[..44];
         _chaveTexto = ChaveNfeHelper.Formatar(chave);
         _dto.ChaveAcesso = chave.Length == 0 ? null : chave;
@@ -509,9 +507,9 @@
         _dto.NumeroNf = numero;
         if (_dto.FornecedorId.HasValue) return;
 
-        var fornecedor = _fornecedores.FirstOrDefault(f => ChaveNfeHelper.SomenteDigitos(f.CpfCnpj) == cnpj);
+        var fornecedor = _fornecedores.FirstOrDefault(f => DocumentoHelper.SomenteDigitos(f.CpfCnpj) == cnpj);
         if (fornecedor != null) OnFornecedorAlterado(fornecedor);
-        else _avisoChave = $"Fornecedor com CNPJ {ChaveNfeHelper.FormatarCnpj(cnpj)} não cadastrado.";
+        else _avisoChave = $"Fornecedor com CNPJ {DocumentoHelper.FormatarCnpj(cnpj)} não cadastrado.";
     }
 
     private async Task ImportarXml(IBrowserFile? arquivo)
@@ -549,14 +547,14 @@
         var fornecedor = _fornecedores.FirstOrDefault(f => f.Id == dados.FornecedorId);
         OnFornecedorAlterado(fornecedor);
         if (fornecedor == null)
-            Snackbar.Add($"Fornecedor {dados.NomeEmitente} (CNPJ {ChaveNfeHelper.FormatarCnpj(dados.CnpjEmitente)}) não cadastrado. Selecione o fornecedor.", Severity.Warning);
+            Snackbar.Add($"Fornecedor {dados.NomeEmitente} (CNPJ {DocumentoHelper.FormatarCnpj(dados.CnpjEmitente)}) não cadastrado. Selecione o fornecedor.", Severity.Warning);
 
         var transportadora = _transportadoras.FirstOrDefault(t => t.Id == dados.TransportadoraId);
         _dto.TransportadoraId = transportadora?.Id;
         if (transportadora == null)
             Snackbar.Add(string.IsNullOrEmpty(dados.CnpjTransportadora)
                 ? "O XML não informa transportadora. Selecione a transportadora."
-                : $"Transportadora {dados.NomeTransportadora} (CNPJ {ChaveNfeHelper.FormatarCnpj(dados.CnpjTransportadora)}) não cadastrada. Selecione a transportadora.",
+                : $"Transportadora {dados.NomeTransportadora} (CNPJ {DocumentoHelper.FormatarCnpj(dados.CnpjTransportadora)}) não cadastrada. Selecione a transportadora.",
                 Severity.Warning);
 
         _dto.ValorFrete = dados.ValorFrete;

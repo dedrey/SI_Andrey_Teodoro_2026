@@ -32,7 +32,7 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             NomeRazaoSocial = c.NomeRazaoSocial,
             Sexo = c.Sexo,
             ApelidoNomeFantasia = c.ApelidoNomeFantasia,
-            CpfCnpj = FormatarDocumento(c.CpfCnpj, c.TipoPessoa),
+            CpfCnpj = DocumentoHelper.FormatarDocumento(c.CpfCnpj),
             DocumentoEstrangeiro = c.DocumentoEstrangeiro,
             NomeCidade = c.NomeCidade,
             CidadeId = c.CidadeId,
@@ -95,10 +95,10 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             if (dto.TipoPessoa == "PJ")
                 dto.Sexo = "NAO_INFORMAR";
 
-            var erroTelefone = ValidarTelefone(dto.Telefone, dto.Estrangeiro);
+            var erroTelefone = TelefoneHelper.ValidarObrigatorio(dto.Telefone, dto.Estrangeiro);
             if (erroTelefone != null)
                 return (false, $"{(dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")}: {erroTelefone}.", 0);
-            if (dto.Celular != null && ValidarTelefone(dto.Celular, dto.Estrangeiro) is string erroCelular)
+            if (dto.Celular != null && TelefoneHelper.ValidarObrigatorio(dto.Celular, dto.Estrangeiro) is string erroCelular)
                 return (false, $"Celular: {erroCelular}.", 0);
 
             if (dto.IdOriginal > 0)
@@ -107,7 +107,7 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
                 if (atual == null) return (false, "Cliente não encontrado.", 0);
                 var docSalvo = !string.IsNullOrWhiteSpace(atual.CpfCnpj) || !string.IsNullOrWhiteSpace(atual.DocumentoEstrangeiro);
                 if (docSalvo && (atual.TipoPessoa != dto.TipoPessoa || atual.Estrangeiro != dto.Estrangeiro
-                    || LimparDigitos(atual.CpfCnpj ?? "") != LimparDigitos(dto.CpfCnpj ?? "")
+                    || DocumentoHelper.SomenteDigitos(atual.CpfCnpj) != DocumentoHelper.SomenteDigitos(dto.CpfCnpj)
                     || (atual.DocumentoEstrangeiro ?? "").Trim().ToUpperInvariant() != (dto.DocumentoEstrangeiro ?? "")))
                     return (false, "Tipo de pessoa, estrangeiro e documento não podem ser alterados após o cadastro.", 0);
             }
@@ -116,10 +116,10 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
 
             if (!dto.Estrangeiro && !string.IsNullOrWhiteSpace(dto.CpfCnpj))
             {
-                var docLimpo = LimparDigitos(dto.CpfCnpj);
-                string? erroDoc = dto.TipoPessoa == "PF"
-                    ? ValidarCpf(docLimpo)
-                    : ValidarCnpj(docLimpo);
+                var docLimpo = DocumentoHelper.SomenteDigitos(dto.CpfCnpj);
+                string? erroDoc = DocumentoHelper.DocumentoValido(docLimpo, dto.TipoPessoa)
+                    ? null
+                    : dto.TipoPessoa == "PF" ? "CPF inválido." : "CNPJ inválido.";
                 if (erroDoc != null) return (false, erroDoc, 0);
                 dto.CpfCnpj = docLimpo;
             }
@@ -152,45 +152,5 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             return SucessoStatus(ativar);
         }
         catch (Exception ex) { return ErroStatus(ex); }
-    }
-
-    private static string? ValidarTelefone(string? telefone, bool estrangeiro)
-        => estrangeiro ? DocumentoHelper.ValidarTelefoneEstrangeiro(telefone) : DocumentoHelper.ValidarTelefoneBrasileiro(telefone);
-
-    private static string LimparDigitos(string v)
-        => new string(v.Where(char.IsDigit).ToArray());
-
-    public static string FormatarDocumento(string? doc, string tipoPessoa)
-    {
-        if (string.IsNullOrWhiteSpace(doc)) return string.Empty;
-        var d = LimparDigitos(doc);
-        if (tipoPessoa == "PF" && d.Length == 11)
-            return $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}";
-        if (tipoPessoa == "PJ" && d.Length == 14)
-            return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
-        return doc;
-    }
-
-    private static string? ValidarCpf(string cpf)
-    {
-        if (cpf.Length != 11 || cpf.Distinct().Count() == 1) return "CPF inválido.";
-        int[] m1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-        int[] m2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-        return Digito(cpf, m1, 9) && Digito(cpf, m2, 10) ? null : "CPF inválido.";
-    }
-
-    private static string? ValidarCnpj(string cnpj)
-    {
-        if (cnpj.Length != 14 || cnpj.Distinct().Count() == 1) return "CNPJ inválido.";
-        int[] m1 = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        int[] m2 = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        return Digito(cnpj, m1, 12) && Digito(cnpj, m2, 13) ? null : "CNPJ inválido.";
-    }
-
-    private static bool Digito(string d, int[] m, int pos)
-    {
-        var s = m.Select((v, i) => (d[i] - '0') * v).Sum();
-        var r = s % 11;
-        return (d[pos] - '0') == (r < 2 ? 0 : 11 - r);
     }
 }

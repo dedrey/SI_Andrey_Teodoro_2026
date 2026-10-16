@@ -40,6 +40,39 @@ public static class DocumentoHelper
     public static string? ValidarDocumento(string? documento, string tipoPessoa) =>
         tipoPessoa == "PF" ? ValidarCpf(documento) : ValidarCnpj(documento);
 
+    public static string FormatarCpf(string? cpf)
+    {
+        var d = SomenteDigitos(cpf);
+        if (d.Length > 11) d = d[..11];
+        return d.Length == 11 ? $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}" : d;
+    }
+
+    public static string FormatarCnpj(string? cnpj, bool parcial = false)
+    {
+        var d = SomenteDigitos(cnpj);
+        if (d.Length > 14) d = d[..14];
+        if (!parcial) return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d;
+        return d.Length switch
+        {
+            <= 2 => d,
+            <= 5 => $"{d[..2]}.{d[2..]}",
+            <= 8 => $"{d[..2]}.{d[2..5]}.{d[5..]}",
+            <= 12 => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..]}",
+            _ => $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}"
+        };
+    }
+
+    public static string FormatarDocumento(string? documento)
+    {
+        if (string.IsNullOrWhiteSpace(documento)) return string.Empty;
+        return SomenteDigitos(documento).Length switch
+        {
+            11 => FormatarCpf(documento),
+            14 => FormatarCnpj(documento),
+            _ => documento
+        };
+    }
+
     public static bool CepValido(string? cep) => SomenteDigitos(cep).Length == 8;
 
     public static string? ValidarCep(string? cep) => SomenteDigitos(cep).Length switch
@@ -55,25 +88,6 @@ public static class DocumentoHelper
         if (c.Length == 0) return null;
         return System.Text.RegularExpressions.Regex.IsMatch(c, @"^[0-9]{8,14}$") ? null : "Somente dígitos, de 8 a 14";
     }
-
-    public const string RegexTelefoneEstrangeiroParcial = @"^[0-9 +\-()]{0,15}$";
-
-    public static string? ValidarTelefoneEstrangeiro(string? telefone)
-    {
-        var t = (telefone ?? "").Trim();
-        if (t.Length == 0) return "Obrigatório";
-        if (t.Length > 15) return "Máx 15 caracteres";
-        if (!System.Text.RegularExpressions.Regex.IsMatch(t, @"^[0-9 +\-()]+$")) return "Use apenas dígitos, espaços, +, - e parênteses";
-        return SomenteDigitos(t).Length == 0 ? "Informe os dígitos" : null;
-    }
-
-    public static string? ValidarTelefoneBrasileiro(string? telefone) => SomenteDigitos(telefone).Length switch
-    {
-        0 => "Obrigatório",
-        10 or 11 => null,
-        < 10 => "Incompleto",
-        _ => "Máx 11 dígitos"
-    };
 
     private static bool Digito(string d, int[] pesos, int posicao)
     {

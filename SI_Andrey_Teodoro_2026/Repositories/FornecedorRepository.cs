@@ -41,7 +41,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                                   f.nomefantasia  AS NomeFantasia,
                                   f.tipo_pessoa   AS TipoPessoa,
                                   f.cpf_cnpj      AS CpfCnpj,
-                                  c.cidade        AS NomeCidade,
+                                  CONCAT(c.cidade, ' (', es.uf, ')') AS NomeCidade,
                                   f.telefone, f.email,
                                   f.condicao_pagamento_id AS CondicaoPagamentoId,
                                   cp.condicao_pagamento   AS NomeCondicaoPagamento,
@@ -49,6 +49,7 @@ public class FornecedorRepository : BaseRepository, IFornecedorRepository
                                   f.criado_em AS CriadoEm
                           FROM fornecedores f
                           LEFT JOIN cidades c ON c.id = f.cidade_id
+                          LEFT JOIN estados es ON es.id = c.estado_id
                           LEFT JOIN condicoes_pagamentos cp ON cp.id = f.condicao_pagamento_id
                           {whereClause}
                           ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";

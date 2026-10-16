@@ -24,7 +24,7 @@
                     <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = v)"
                                   Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarNome(v, "País"))" Disabled="@_readOnly" />
+                                  Validation="@((string v) => TextoHelper.ValidarApenasLetras(v, "País obrigatório"))" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
                     <MudTextField Value="@_dto.Sigla" ValueChanged="@((string v) => _dto.Sigla = new string((v ?? "").Where(char.IsLetter).ToArray()).ToUpper())"
@@ -34,7 +34,7 @@
                                   Disabled="@(_readOnly || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o país primeiro.")" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Ddi" ValueChanged="@((string v) => _dto.Ddi = new string((v ?? "").Where(char.IsDigit).ToArray()))"
+                    <MudTextField Value="@_dto.Ddi" ValueChanged="@((string v) => _dto.Ddi = DocumentoHelper.SomenteDigitos(v))"
                                   Label="DDI" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@_mascaraDdi"
                                   Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => !int.TryParse(v, out int n) || n < 1 || n > 999 ? "DDI: 1 a 999" : null)"
@@ -44,7 +44,7 @@
                     <MudTextField Value="@_dto.Moeda" ValueChanged="@((string v) => _dto.Moeda = v)"
                                   Label="Moeda" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="30" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => ValidarNome(v, "Moeda"))"
+                                  Validation="@((string v) => TextoHelper.ValidarApenasLetras(v, "Moeda obrigatório"))"
                                   Disabled="@(_readOnly || !Edicao && !DdiOk)" HelperText="@(Edicao || DdiOk ? null : "Informe o DDI primeiro.")" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
@@ -131,9 +131,8 @@
     private readonly IMask _mascaraSigla = new RegexMask(@"^[a-zA-Z]{0,3}$");
     private readonly IMask _mascaraDdi = new RegexMask(@"^[0-9]{0,3}$");
     private bool Edicao => _dto.IdOriginal > 0;
-    private bool NomeOk => ValidarNome(_dto.NomePais, "País") == null;
+    private bool NomeOk => TextoHelper.ValidarApenasLetras(_dto.NomePais, "País obrigatório") == null;
     private bool SiglaOk => NomeOk && System.Text.RegularExpressions.Regex.IsMatch(_dto.Sigla ?? "", @"^[A-Z]{1,3}$");
     private bool DdiOk => SiglaOk && int.TryParse(_dto.Ddi, out int n) && n >= 1 && n <= 999;
-    private bool MoedaOk => DdiOk && ValidarNome(_dto.Moeda, "Moeda") == null;
-    private string? ValidarNome(string? v, string campo) { if (string.IsNullOrWhiteSpace(v)) return $"{campo} obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ\s]+$")) return "Apenas letras"; return null; }
+    private bool MoedaOk => DdiOk && TextoHelper.ValidarApenasLetras(_dto.Moeda, "Moeda obrigatório") == null;
 }

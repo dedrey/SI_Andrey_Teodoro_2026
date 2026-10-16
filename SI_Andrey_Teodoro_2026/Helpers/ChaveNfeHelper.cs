@@ -2,8 +2,6 @@ namespace SI_Andrey_Teodoro_2026.Helpers;
 
 public static class ChaveNfeHelper
 {
-    public static string SomenteDigitos(string? texto) => new((texto ?? "").Where(char.IsDigit).ToArray());
-
     public static bool Validar(string? chave)
     {
         if (chave == null || chave.Length != 44 || !chave.All(char.IsDigit)) return false;
@@ -35,14 +33,8 @@ public static class ChaveNfeHelper
 
     public static string Formatar(string? chave)
     {
-        var digitos = SomenteDigitos(chave);
+        var digitos = DocumentoHelper.SomenteDigitos(chave);
         return string.Join(" ", Enumerable.Range(0, (digitos.Length + 3) / 4)
             .Select(i => digitos.Substring(i * 4, Math.Min(4, digitos.Length - i * 4))));
-    }
-
-    public static string FormatarCnpj(string? cnpj)
-    {
-        var d = SomenteDigitos(cnpj);
-        return d.Length == 14 ? $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}" : d;
     }
 }

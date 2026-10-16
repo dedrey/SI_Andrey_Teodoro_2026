@@ -29,7 +29,7 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             RazaoSocial = f.RazaoSocial,
             TipoPessoa = f.TipoPessoa,
             NomeFantasia = f.NomeFantasia,
-            CpfCnpj = FormatarDocumento(f.CpfCnpj, f.TipoPessoa),
+            CpfCnpj = DocumentoHelper.FormatarDocumento(f.CpfCnpj),
             NomeCidade = f.NomeCidade,
             CidadeId = f.CidadeId,
             Cep = f.Cep ?? string.Empty,
@@ -86,24 +86,24 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             if (dto.TipoPessoa == "PF")
                 dto.NomeFantasia = null;
 
-            var docLimpo = LimparDigitos(dto.CpfCnpj);
+            var docLimpo = DocumentoHelper.SomenteDigitos(dto.CpfCnpj);
 
             if (dto.IdOriginal > 0)
             {
                 var atual = await _repo.ObterPorIdAsync(dto.IdOriginal);
                 if (atual == null) return (false, "Fornecedor não encontrado.", 0);
-                if (atual.TipoPessoa != dto.TipoPessoa || LimparDigitos(atual.CpfCnpj ?? "") != docLimpo)
+                if (atual.TipoPessoa != dto.TipoPessoa || DocumentoHelper.SomenteDigitos(atual.CpfCnpj) != docLimpo)
                     return (false, "Tipo de pessoa e CPF/CNPJ não podem ser alterados após o cadastro.", 0);
             }
 
-            var erroDoc = dto.TipoPessoa == "PF" ? ValidarCpf(docLimpo) : ValidarCnpj(docLimpo);
+            var erroDoc = DocumentoHelper.DocumentoValido(docLimpo, dto.TipoPessoa) ? null : dto.TipoPessoa == "PF" ? "CPF inválido." : "CNPJ inválido.";
             if (erroDoc != null) return (false, erroDoc, 0);
             dto.CpfCnpj = docLimpo;
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 
             if (await _repo.ExisteCpfCnpjAsync(dto.CpfCnpj, ignorar))
-                return (false, $"Já existe um fornecedor com o documento '{FormatarDocumento(dto.CpfCnpj, dto.TipoPessoa)}'.", 0);
+                return (false, $"Já existe um fornecedor com o documento '{DocumentoHelper.FormatarDocumento(dto.CpfCnpj)}'.", 0);
 
             if (await _repo.ExisteRazaoSocialAsync(dto.RazaoSocial, ignorar))
                 return (false, $"Já existe um fornecedor com o nome/razão social '{dto.RazaoSocial}'.", 0);
@@ -131,42 +131,5 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
             return SucessoStatus(ativar);
         }
         catch (Exception ex) { return ErroStatus(ex); }
-    }
-
-    private static string LimparDigitos(string v)
-        => new string(v.Where(char.IsDigit).ToArray());
-
-    public static string FormatarDocumento(string? doc, string tipoPessoa)
-    {
-        if (string.IsNullOrWhiteSpace(doc)) return string.Empty;
-        var d = LimparDigitos(doc);
-        if (tipoPessoa == "PF" && d.Length == 11)
-            return $"{d[..3]}.{d[3..6]}.{d[6..9]}-{d[9..]}";
-        if (tipoPessoa == "PJ" && d.Length == 14)
-            return $"{d[..2]}.{d[2..5]}.{d[5..8]}/{d[8..12]}-{d[12..]}";
-        return doc;
-    }
-
-    private static string? ValidarCpf(string cpf)
-    {
-        if (cpf.Length != 11 || cpf.Distinct().Count() == 1) return "CPF inválido.";
-        int[] m1 = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-        int[] m2 = { 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-        return Digito(cpf, m1, 9) && Digito(cpf, m2, 10) ? null : "CPF inválido.";
-    }
-
-    private static string? ValidarCnpj(string cnpj)
-    {
-        if (cnpj.Length != 14 || cnpj.Distinct().Count() == 1) return "CNPJ inválido.";
-        int[] m1 = { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        int[] m2 = { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
-        return Digito(cnpj, m1, 12) && Digito(cnpj, m2, 13) ? null : "CNPJ inválido.";
-    }
-
-    private static bool Digito(string d, int[] m, int pos)
-    {
-        var s = m.Select((v, i) => (d[i] - '0') * v).Sum();
-        var r = s % 11;
-        return (d[pos] - '0') == (r < 2 ? 0 : 11 - r);
     }
 }

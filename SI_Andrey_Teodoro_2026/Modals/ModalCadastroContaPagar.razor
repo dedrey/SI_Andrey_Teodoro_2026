@@ -107,7 +107,7 @@
                 }
 
                 <MudItem xs="12" sm="6">
-                    <MudTextField Value="@FormatarStatus(_dto.Status)" Label="Status"
+                    <MudTextField Value="@StatusHelper.Texto(TipoStatus.Conta, _dto.Status)" Label="Status"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="@_somenteLeitura" />
                 </MudItem>
             </MudGrid>
@@ -200,13 +200,6 @@
         await _fornecedores.IncluirSeAusenteAsync(_dto.FornecedorId, f => f.Id, async id => await FornecedorService.ObterPorIdAsync(id) is { } f ? new FornecedorListDto { Id = f.Id, RazaoSocial = f.RazaoSocial, NomeFantasia = f.NomeFantasia, TipoPessoa = f.TipoPessoa, CpfCnpj = f.CpfCnpj, CondicaoPagamentoId = f.CondicaoPagamentoId, NomeCondicaoPagamento = f.NomeCondicaoPagamento } : null);
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
-
-    private static string FormatarStatus(string status) => status switch
-    {
-        "PAGA" => "Paga",
-        "CANCELADA" => "Cancelada",
-        _ => "Aberta"
-    };
 
     private async Task PesquisarFornecedor()
     {
