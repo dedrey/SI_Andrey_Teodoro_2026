@@ -258,20 +258,18 @@ public class NfeRepository : BaseRepository, INfeRepository
     public async Task<int> InserirAsync(NfeDto dto, List<NfeProdutoDto> itens)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-
-        await conn.ExecuteAsync(
+        var proximoId = await conn.ExecuteScalarAsync<int>(
             @"INSERT INTO nfes
-                (id, numero, serie, data_emissao, data_saida, emitente_id, cliente_id,
+                (numero, serie, data_emissao, data_saida, emitente_id, cliente_id,
                  venda_id, transportadora_id, tipo_operacao, status_nfe,
                  valor_produtos, valor_desconto, valor_total)
               VALUES
-                (@ProximoId, @Numero, @Serie, @DataEmissao, @DataSaida, @EmitenteId, @ClienteId,
+                (@Numero, @Serie, @DataEmissao, @DataSaida, @EmitenteId, @ClienteId,
                  @VendaId, @TransportadoraId, 'SAIDA', @StatusNfe,
-                 @ValorProdutos, @ValorDesconto, @ValorTotal)",
+                 @ValorProdutos, @ValorDesconto, @ValorTotal);
+              SELECT LAST_INSERT_ID();",
             new
             {
-                ProximoId = proximoId,
                 dto.Numero,
                 dto.Serie,
                 dto.DataEmissao,

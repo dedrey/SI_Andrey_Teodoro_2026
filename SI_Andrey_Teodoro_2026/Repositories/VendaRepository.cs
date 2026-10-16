@@ -136,15 +136,14 @@ public class VendaRepository : BaseRepository, IVendaRepository
     public async Task<int> InserirAsync(VendaDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
-            @"INSERT INTO vendas (id, cliente_id, condicao_pagamento_id,
+        return await conn.ExecuteScalarAsync<int>(
+            @"INSERT INTO vendas (cliente_id, condicao_pagamento_id,
                                   valor_subtotal, desconto_percentual_aplicado, valor_desconto, valor_total, status_venda)
-              VALUES (@ProximoId, @ClienteId, @CondicaoPagamentoId,
-                      @ValorSubtotal, @DescontoPercentualAplicado, @ValorDesconto, @ValorTotal, 'ABERTA')",
+              VALUES (@ClienteId, @CondicaoPagamentoId,
+                      @ValorSubtotal, @DescontoPercentualAplicado, @ValorDesconto, @ValorTotal, 'ABERTA');
+              SELECT LAST_INSERT_ID();",
             new
             {
-                ProximoId = proximoId,
                 dto.ClienteId,
                 dto.CondicaoPagamentoId,
                 dto.ValorSubtotal,
@@ -152,7 +151,6 @@ public class VendaRepository : BaseRepository, IVendaRepository
                 dto.ValorDesconto,
                 dto.ValorTotal
             });
-        return proximoId;
     }
 
     public async Task AtualizarAsync(VendaDto dto)

@@ -120,17 +120,16 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
     public async Task<int> InserirAsync(ContaPagarDto dto)
     {
         using var conn = _factory.CreateConnection();
-        var proximoId = await ProximoIdAsync();
-        await conn.ExecuteAsync(
+        return await conn.ExecuteScalarAsync<int>(
             @"INSERT INTO contas_pagar
-                (id, fornecedor_id, compra_id, cliente_id, venda_id, descricao, data_vencimento, data_pagamento,
+                (fornecedor_id, compra_id, cliente_id, venda_id, descricao, data_vencimento, data_pagamento,
                  valor_original, valor_saldo, status)
               VALUES
-                (@ProximoId, @FornecedorId, @CompraId, @ClienteId, @VendaId, @Descricao, @DataVencimento, NULL,
-                 @ValorOriginal, @ValorOriginal, 'ABERTA')",
+                (@FornecedorId, @CompraId, @ClienteId, @VendaId, @Descricao, @DataVencimento, NULL,
+                 @ValorOriginal, @ValorOriginal, 'ABERTA');
+              SELECT LAST_INSERT_ID();",
             new
             {
-                ProximoId = proximoId,
                 dto.FornecedorId,
                 dto.CompraId,
                 dto.ClienteId,
@@ -139,7 +138,6 @@ public class ContaPagarRepository : BaseRepository, IContaPagarRepository
                 dto.DataVencimento,
                 dto.ValorOriginal
             });
-        return proximoId;
     }
 
     public async Task AtualizarAsync(ContaPagarDto dto)
