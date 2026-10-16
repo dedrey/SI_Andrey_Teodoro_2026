@@ -28,17 +28,14 @@
         <MudForm @ref="_form">
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Required="true" RequiredError="Obrigatório"
-                                   Editable="true" Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
-                                   AutoClose="true" MinDate="_dataVenda" MaxDate="DateTime.Today"
-                                   Error="@(ErroRecebimento != null)" ErrorText="@ErroRecebimento" />
+                    <CampoData @bind-Date="_dataRecebimento" PickerMonth="DateTime.Today" Label="Data de Recebimento"
+                               Required="true" AutoClose="true" MinDate="_dataVenda" MaxDate="DateTime.Today"
+                               Error="@(ErroRecebimento != null)" ErrorText="@ErroRecebimento" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudNumericField T="decimal" Value="_valorRecebidoPreview" ValueChanged="@((decimal v) => _valorRecebidoPreview = Math.Max(v, 0))"
                                      Label="Valor Recebido" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true"
-                                     Required="true" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
+                                     Required="true" RequiredError="Obrigatório" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
                                      Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true"
                                      Adornment="Adornment.Start" AdornmentText="R$"
                                   HelperText="Pode ser parcial — saldo restante fica aberto" />
@@ -137,11 +134,8 @@
     }
 
     private string? ErroRecebimento =>
-        _dataRecebimento.HasValue && _dataRecebimento.Value.Date > DateTime.Today
-            ? "A data de recebimento não pode ser maior que a data atual."
-        : _dataVenda.HasValue && _dataRecebimento.HasValue && _dataRecebimento.Value.Date < _dataVenda.Value
-            ? "A data de recebimento não pode ser anterior à data da venda."
-        : null;
+        DataHelper.ValidarNaoFutura(_dataRecebimento, "data de recebimento")
+        ?? DataHelper.ValidarNaoAnterior(_dataRecebimento, _dataVenda, "data de recebimento", "data da venda");
 
     private async Task OnArquivoSelecionado(InputFileChangeEventArgs e)
     {
@@ -218,8 +212,7 @@
         await _form!.Validate();
         if (!_form.IsValid) return;
         if (!_dataRecebimento.HasValue) { Snackbar.Add("Informe a data de recebimento.", Severity.Warning); return; }
-        if (_dataRecebimento.Value.Date > DateTime.Today) { Snackbar.Add("A data de recebimento não pode ser maior que a data atual.", Severity.Warning); return; }
-        if (_dataVenda.HasValue && _dataRecebimento.Value.Date < _dataVenda.Value) { Snackbar.Add("A data de recebimento não pode ser anterior à data da venda.", Severity.Warning); return; }
+        if (ErroRecebimento != null) { Snackbar.Add(ErroRecebimento, Severity.Warning); return; }
         if (_valorRecebidoPreview <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
         if (_valorRecebidoPreview > ValorSaldo) { Snackbar.Add($"Valor não pode ser maior que o saldo (R$ {ValorSaldo:N2}).", Severity.Warning); return; }
 

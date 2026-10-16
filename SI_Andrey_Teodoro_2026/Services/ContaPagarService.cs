@@ -1,4 +1,5 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -116,10 +117,10 @@ public class ContaPagarService : IContaPagarService
             var conta = await _repo.ObterPorIdAsync(id);
             if (conta == null) return (false, "Conta a pagar não encontrada.");
             if (conta.Status != "ABERTA") return (false, MensagemNaoAlteravel(conta.Status));
-            if (dataPagamento.Date > DateTime.Today)
-                return (false, "A data de pagamento não pode ser maior que a data atual.");
-            if (conta.CompraId.HasValue && conta.DataEmissaoCompra.HasValue && dataPagamento.Date < conta.DataEmissaoCompra.Value.Date)
-                return (false, "A data de pagamento não pode ser anterior à data de emissão da compra.");
+            var erroData = DataHelper.ValidarNaoFutura(dataPagamento, "data de pagamento")
+                ?? DataHelper.ValidarNaoAnterior(dataPagamento, conta.CompraId.HasValue ? conta.DataEmissaoCompra : null, "data de pagamento", "data de emissão da compra");
+            if (erroData != null)
+                return (false, erroData);
             await _repo.AtualizarStatusAsync(id, "PAGA", dataPagamento, comprovanteArquivo);
             return (true, "Conta marcada como paga!");
         }

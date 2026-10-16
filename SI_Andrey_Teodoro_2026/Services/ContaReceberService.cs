@@ -1,4 +1,5 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
@@ -90,10 +91,10 @@ public class ContaReceberService : IContaReceberService
                 return (false, "Conta a receber não encontrada.");
             if (conta.Status != "ABERTA")
                 return (false, "Apenas contas abertas podem receber baixas.");
-            if (dataRecebimento.Date > DateTime.Today)
-                return (false, "A data de recebimento não pode ser maior que a data atual.");
-            if (conta.VendaId.HasValue && conta.DataVenda.HasValue && dataRecebimento.Date < conta.DataVenda.Value.Date)
-                return (false, "A data de recebimento não pode ser anterior à data da venda.");
+            var erroData = DataHelper.ValidarNaoFutura(dataRecebimento, "data de recebimento")
+                ?? DataHelper.ValidarNaoAnterior(dataRecebimento, conta.VendaId.HasValue ? conta.DataVenda : null, "data de recebimento", "data da venda");
+            if (erroData != null)
+                return (false, erroData);
             if (valorRecebido > conta.ValorSaldo)
                 return (false, $"Valor recebido (R$ {valorRecebido:N2}) é maior que o saldo devido (R$ {conta.ValorSaldo:N2}).");
 

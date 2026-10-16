@@ -148,15 +148,15 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             if (!dto.DataEmissao.HasValue)
                 return (false, "Informe a data de emissão.", 0);
-            if (dto.DataEmissao.Value.Date > DateTime.Today)
-                return (false, "A data de emissão não pode ser maior que a data atual.", 0);
+            if (DataHelper.ValidarNaoFutura(dto.DataEmissao, "data de emissão") is { } erroEmissao)
+                return (false, erroEmissao, 0);
 
             if (!dto.DataChegada.HasValue)
                 return (false, "Informe a data de chegada.", 0);
-            if (dto.DataChegada.Value.Date < dto.DataEmissao.Value.Date)
-                return (false, "A data de chegada não pode ser anterior à data de emissão.", 0);
-            if (dto.DataChegada.Value.Date > DateTime.Today)
-                return (false, "A data de chegada não pode ser maior que a data atual.", 0);
+            if (DataHelper.ValidarNaoAnterior(dto.DataChegada, dto.DataEmissao, "data de chegada", "data de emissão") is { } erroAnterior)
+                return (false, erroAnterior, 0);
+            if (DataHelper.ValidarNaoFutura(dto.DataChegada, "data de chegada") is { } erroChegada)
+                return (false, erroChegada, 0);
 
             if (!ModelosNf.Contains(dto.ModeloNf))
                 return (false, "Selecione o modelo da nota fiscal.", 0);

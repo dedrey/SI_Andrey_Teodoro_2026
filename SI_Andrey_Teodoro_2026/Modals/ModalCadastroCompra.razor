@@ -100,22 +100,16 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
-                    <MudDatePicker @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao" Label="Data de Emissão"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Required="true" RequiredError="Obrigatório" Editable="true"
-                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
-                                   AutoClose="true" MaxDate="DateTime.Today"
-                                   Error="@(ErroEmissao != null)" ErrorText="@ErroEmissao"
-                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
+                    <CampoData @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao" Label="Data de Emissão"
+                               Required="true" AutoClose="true" MaxDate="DateTime.Today"
+                               Error="@(ErroEmissao != null)" ErrorText="@ErroEmissao"
+                               Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
-                    <MudDatePicker @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada" Label="Data de Chegada"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Required="true" RequiredError="Obrigatório" Editable="true"
-                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
-                                   AutoClose="true" MinDate="_dataEmissao" MaxDate="DateTime.Today"
-                                   Error="@(ErroChegada != null)" ErrorText="@ErroChegada"
-                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
+                    <CampoData @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada" Label="Data de Chegada"
+                               Required="true" AutoClose="true" MinDate="_dataEmissao" MaxDate="DateTime.Today"
+                               Error="@(ErroChegada != null)" ErrorText="@ErroChegada"
+                               Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudTextField T="string" Value="@_dto.NomeCondicaoPagamento"
@@ -469,14 +463,10 @@
         _estadoTitulo = estado;
         if (jaRenderizado) MudDialog.StateHasChanged();
     }
-    private string? ErroEmissao => _dataEmissao.HasValue && _dataEmissao.Value.Date > DateTime.Today
-        ? "A data de emissão não pode ser maior que a data atual." : null;
+    private string? ErroEmissao => DataHelper.ValidarNaoFutura(_dataEmissao, "data de emissão");
     private string? ErroChegada =>
-        _dataChegada.HasValue && _dataChegada.Value.Date > DateTime.Today
-            ? "A data de chegada não pode ser maior que a data atual."
-        : _dataEmissao.HasValue && _dataChegada.HasValue && _dataChegada.Value.Date < _dataEmissao.Value.Date
-            ? "A data de chegada não pode ser anterior à data de emissão."
-        : null;
+        DataHelper.ValidarNaoFutura(_dataChegada, "data de chegada")
+        ?? DataHelper.ValidarNaoAnterior(_dataChegada, _dataEmissao, "data de chegada", "data de emissão");
     private string? ErroCondicao => _dto.FornecedorId.HasValue && !_dto.CondicaoPagamentoId.HasValue
         ? "Fornecedor sem condição de pagamento. Atualize o cadastro do fornecedor." : null;
     private bool CabecalhoValido => _dto.FornecedorId.HasValue
@@ -835,9 +825,9 @@
         if (!_dto.TransportadoraId.HasValue) { Snackbar.Add("Selecione uma transportadora.", Severity.Warning); return; }
         if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
         if (!_dataEmissao.HasValue) { Snackbar.Add("Informe a data de emissão.", Severity.Warning); return; }
-        if (_dataEmissao.Value.Date > DateTime.Today) { Snackbar.Add("A data de emissão não pode ser maior que a data atual.", Severity.Warning); return; }
+        if (ErroEmissao != null) { Snackbar.Add(ErroEmissao, Severity.Warning); return; }
         if (!_dataChegada.HasValue) { Snackbar.Add("Informe a data de chegada.", Severity.Warning); return; }
-        if (_dataChegada.Value.Date < _dataEmissao.Value.Date) { Snackbar.Add("A data de chegada não pode ser anterior à data de emissão.", Severity.Warning); return; }
+        if (DataHelper.ValidarNaoAnterior(_dataChegada, _dataEmissao, "data de chegada", "data de emissão") is { } erroChegada) { Snackbar.Add(erroChegada, Severity.Warning); return; }
 
         _dto.DataEmissao = _dataEmissao;
         _dto.DataChegada = _dataChegada;

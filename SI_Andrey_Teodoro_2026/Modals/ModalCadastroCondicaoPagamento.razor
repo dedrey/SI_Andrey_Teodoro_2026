@@ -33,7 +33,7 @@
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _metodos.AsEnumerable() : _metodos.Where(m => m.MetodoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase) || m.Codigo.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(m => m == null ? "" : $"{m.MetodoPagamento} ({m.Codigo})")"
                                          Label="Método de Pagamento"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" FullWidth="true"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório" FullWidth="true"
                                          ResetValueOnEmptyText="true" CoerceText="false"
                                          Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o nome da condição primeiro.")"
                                          Placeholder="Digite para pesquisar..." />

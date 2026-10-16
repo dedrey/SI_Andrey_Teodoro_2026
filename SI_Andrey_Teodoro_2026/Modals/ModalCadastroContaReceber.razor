@@ -150,16 +150,13 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="6">
-                    <MudDatePicker @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                   Required="true" RequiredError="Obrigatório" Editable="true"
-                                   Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="dd/mm/aaaa"
-                                   ReadOnly="@_somenteLeitura" />
+                    <CampoData @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
+                               Required="true" ReadOnly="@_somenteLeitura" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <MudNumericField T="decimal" Value="_dto.ValorOriginal" ValueChanged="@((decimal v) => _dto.ValorOriginal = Math.Max(v, 0))"
                                      Label="Valor Original" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true"
-                                     Required="true" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
+                                     Required="true" RequiredError="Obrigatório" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
                                      Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true"
                                      Adornment="Adornment.Start" AdornmentText="R$"
                                   ReadOnly="@(_somenteLeitura || (_dto.IdOriginal != 0 && _dto.ValorRecebido > 0))"
