@@ -1,5 +1,6 @@
 ﻿@page "/contas-receber"
 @rendermode InteractiveServer
+@inherits BaseListagemPage<ContaReceberListDto>
 
 <PageTitle>Contas a Receber</PageTitle>
 <LoadingSpinner Visivel="_carregando" />
@@ -15,12 +16,10 @@
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
         <MudItem xs="12" sm="5" md="5">
-            <MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true"
-                          OnKeyUp="@(async e => { if (e.Key == "Enter") await Pesquisar(); })" FullWidth="true" />
+            <CampoPesquisa Valor="@_filtro.Busca" OnPesquisar="AplicarBusca" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" Value="_filtro.StatusFiltro" ValueChanged="@((string v) => AplicarFiltro(() => _filtro.StatusFiltro = v))" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("todos")">Todas</MudSelectItem>
                 <MudSelectItem T="string" Value="@("aberta")">Abertas</MudSelectItem>
                 <MudSelectItem T="string" Value="@("vencidas")">Vencidas</MudSelectItem>
@@ -29,14 +28,13 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
+            <MudSelect T="string" Value="_filtro.OrdenarPor" ValueChanged="@((string v) => AplicarFiltro(() => _filtro.OrdenarPor = v))" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true">
                 <MudSelectItem T="string" Value="@("vencimento")">Vencimento</MudSelectItem>
                 <MudSelectItem T="string" Value="@("valor")">Valor</MudSelectItem>
                 <MudSelectItem T="string" Value="@("id")">ID</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small" /></MudButton>
         </MudItem>
     </MudGrid>
@@ -67,8 +65,9 @@
             <MudTd>
                 @if (context.VendaId.HasValue)
                 {
-                    <MudTooltip Text="Gerada automaticamente de uma venda finalizada">
-                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.ShoppingCart">
+                    <MudTooltip Text="Gerada automaticamente de uma venda finalizada — clique para ver a venda">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.ShoppingCart"
+                                 OnClick="@(() => VisualizarVenda(context.VendaId.Value))">
                             Venda #@context.VendaId
                         </MudChip>
                     </MudTooltip>
@@ -88,11 +87,9 @@
                 }
             </MudTd>
             <MudTd Style="text-align:center;">
-                @if (context.TotalParcelas > 1)
+                @if (context.VendaId.HasValue)
                 {
-                    <MudChip T="string" Size="Size.Small" Color="@(context.ParcelasPagas == context.TotalParcelas ? Color.Success : Color.Default)" Variant="Variant.Outlined">
-                        @context.ParcelasPagas/@context.TotalParcelas pagas
-                    </MudChip>
+                    <span>@context.NumeroParcela/@context.TotalParcelas</span>
                 }
                 else
                 {
@@ -113,28 +110,45 @@
                 </MudTooltip>
             </MudTd>
             <MudTd Style="text-align:center;">
-                @if (context.VendaId.HasValue)
-                {
-                    <MudTooltip Text="Ver parcelas desta venda">
-                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => VisualizarVenda(context.VendaId.Value))" />
-                    </MudTooltip>
-                }
-                else if (context.Status == "ABERTA")
+                @if (context.Status == "ABERTA" && !context.VendaId.HasValue)
                 {
                     <MudTooltip Text="Editar">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
-                    </MudTooltip>
-                    <MudTooltip Text="Registrar recebimento">
-                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirRegistrarRecebimento(context))" />
-                    </MudTooltip>
-                    <MudTooltip Text="Cancelar">
-                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />
                     </MudTooltip>
                 }
                 else
                 {
                     <MudTooltip Text="Visualizar">
                         <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
+                    </MudTooltip>
+                }
+                @if (context.Status == "ABERTA")
+                {
+                    <MudTooltip Text="Registrar recebimento">
+                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirRegistrarRecebimento(context))" />
+                    </MudTooltip>
+                }
+                @if (context.UltimaBaixaId.HasValue)
+                {
+                    @if (!string.IsNullOrWhiteSpace(context.ComprovanteArquivo))
+                    {
+                        <MudTooltip Text="Abrir comprovante anexado">
+                            <MudIconButton Icon="@Icons.Material.Filled.AttachFile" Color="Color.Primary" Size="Size.Small"
+                                           Href="@context.ComprovanteArquivo" Target="_blank" />
+                        </MudTooltip>
+                    }
+                    else if (context.Status != "CANCELADA")
+                    {
+                        <MudTooltip Text="Anexar comprovante (opcional)">
+                            <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Default" Size="Size.Small"
+                                           OnClick="@(() => AbrirAnexarComprovante(context.UltimaBaixaId.Value))" />
+                        </MudTooltip>
+                    }
+                }
+                @if (context.Status == "ABERTA" && !context.VendaId.HasValue)
+                {
+                    <MudTooltip Text="Cancelar">
+                        <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />
                     </MudTooltip>
                 }
             </MudTd>
@@ -149,7 +163,7 @@
     @if (_resultado != null)
     {
         <div class="pa-2" style="border-top:1px solid #f0f0f0;">
-            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina" />
+            <PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" TamanhoPagina="@_filtro.TamanhoPagina" OnPaginaMudou="MudarPagina" OnTamanhoMudou="MudarTamanhoPagina" />
         </div>
     }
 </MudPaper>

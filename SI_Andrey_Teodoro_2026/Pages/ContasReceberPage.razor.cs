@@ -7,28 +7,15 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public partial class ContasReceberPage : ComponentBase
+public partial class ContasReceberPage : BaseListagemPage<ContaReceberListDto>
 {
     [Inject] private IContaReceberService ContaReceberService { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
 
-    private PaginacaoDto<ContaReceberVendaGrupoListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new() { StatusFiltro = "todos", OrdenarPor = "vencimento" };
-    private bool _carregando;
+    protected override FiltroConsultaDto CriarFiltro() => new() { StatusFiltro = "todos", OrdenarPor = "vencimento" };
 
     protected override async Task OnInitializedAsync() => await CarregarDados();
 
-    private async Task CarregarDados()
-    {
-        _carregando = true;
-        _resultado = await ContaReceberService.ObterTodosAgrupadosAsync(_filtro);
-        _carregando = false;
-    }
-
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new() { StatusFiltro = "todos", OrdenarPor = "vencimento" }; await CarregarDados(); }
-    private async Task MudarPagina(int pagina) { _filtro.Pagina = pagina; await CarregarDados(); }
+    protected override Task<PaginacaoDto<ContaReceberListDto>> BuscarDados(FiltroConsultaDto filtro) => ContaReceberService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {
@@ -44,7 +31,7 @@ public partial class ContasReceberPage : ComponentBase
         var param = new DialogParameters<ModalCadastroContaReceber> { { x => x.DtoEdicao, dto } };
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroContaReceber>(
-            dto.Status == "ABERTA" ? "Editar Conta a Receber" : "Detalhes da Conta", param, opts);
+            dto.Status == "ABERTA" && !dto.VendaId.HasValue ? "Editar Conta a Receber" : "Detalhes da Conta", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
@@ -56,7 +43,7 @@ public partial class ContasReceberPage : ComponentBase
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 
-    private async Task AbrirRegistrarRecebimento(ContaReceberVendaGrupoListDto conta)
+    private async Task AbrirRegistrarRecebimento(ContaReceberListDto conta)
     {
         var param = new DialogParameters<ModalRegistrarRecebimento>
         {
@@ -67,6 +54,14 @@ public partial class ContasReceberPage : ComponentBase
         };
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalRegistrarRecebimento>("Registrar Recebimento", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
+    }
+
+    private async Task AbrirAnexarComprovante(int baixaId)
+    {
+        var param = new DialogParameters<ModalAnexarComprovante> { { x => x.BaixaId, baixaId } };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalAnexarComprovante>("Anexar Comprovante", param, opts);
         if ((await dialog.Result) is { Canceled: false }) await CarregarDados();
     }
 

@@ -17,16 +17,12 @@ public partial class MovimentacoesEstoquePage : BasePage<MovimentacaoEstoqueList
 
     protected override async Task OnInitializedAsync()
     {
-        _filtro.StatusFiltro = "todos";
         await CarregarDados();
     }
 
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await MovimentacaoService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override FiltroConsultaDto CriarFiltro() => new() { StatusFiltro = "todos" };
+
+    protected override Task<PaginacaoDto<MovimentacaoEstoqueListDto>> BuscarDados(FiltroConsultaDto filtro) => MovimentacaoService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

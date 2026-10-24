@@ -83,6 +83,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 Tamanho = i.Tamanho,
                 Quantidade = i.Quantidade,
                 ValorUnitario = i.ValorUnitario,
+                DescontoUnitario = i.Quantidade > 0 ? Math.Round(i.ValorDesconto / i.Quantidade, 2) : 0,
                 ValorDesconto = i.ValorDesconto,
                 DescontoPercentual = i.DescontoPercentual,
                 CustoUnitarioEfetivo = i.CustoUnitarioEfetivo
@@ -127,7 +128,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
         try
         {
             dto.ModeloNf = (dto.ModeloNf ?? "").Trim();
-            dto.NumeroNf = string.IsNullOrWhiteSpace(dto.NumeroNf) ? null : dto.NumeroNf.Trim();
+            dto.NumeroNf = string.IsNullOrWhiteSpace(dto.NumeroNf) ? null : dto.NumeroNf.Trim().ToUpperInvariant();
             dto.ChaveAcesso = string.IsNullOrWhiteSpace(dto.ChaveAcesso) ? null : DocumentoHelper.SomenteDigitos(dto.ChaveAcesso);
 
             if (!dto.FornecedorId.HasValue)
@@ -162,8 +163,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, "Selecione o modelo da nota fiscal.", 0);
             if (!dto.SerieNf.HasValue || dto.SerieNf < 0 || dto.SerieNf > 999)
                 return (false, "Informe a série da nota fiscal (0 a 999).", 0);
-            if (dto.NumeroNf == null || dto.NumeroNf.Length > 9 || !dto.NumeroNf.All(char.IsDigit))
-                return (false, "Informe o número da nota fiscal (somente números, até 9 dígitos).", 0);
+            if (dto.NumeroNf == null)
+                return (false, "Informe o número da nota fiscal.", 0);
             dto.NumeroNf = dto.NumeroNf.TrimStart('0');
             if (dto.NumeroNf.Length == 0) dto.NumeroNf = "0";
 
@@ -171,20 +172,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, "Informe a chave de acesso (obrigatória para o modelo 55).", 0);
             if (dto.ChaveAcesso != null)
             {
-                if (dto.ChaveAcesso.Length != 44)
-                    return (false, "A chave de acesso deve ter 44 dígitos.", 0);
-                if (!ChaveNfeHelper.Validar(dto.ChaveAcesso))
-                    return (false, "Chave de acesso inválida.", 0);
-
-                var (cnpj, modelo, serie, numero, ano, mes) = ChaveNfeHelper.Decompor(dto.ChaveAcesso);
-                var divergencias = new List<string>();
-                if (modelo != dto.ModeloNf) divergencias.Add("modelo");
-                if (serie != dto.SerieNf) divergencias.Add("série");
-                if (numero != dto.NumeroNf) divergencias.Add("número");
-                if (ano != dto.DataEmissao.Value.Year || mes != dto.DataEmissao.Value.Month) divergencias.Add("data de emissão");
-                if (cnpj != DocumentoHelper.SomenteDigitos(fornecedor.CpfCnpj)) divergencias.Add("CNPJ do fornecedor");
-                if (divergencias.Count > 0)
-                    return (false, $"A chave de acesso não confere com: {string.Join(", ", divergencias)}.", 0);
+                if (dto.ChaveAcesso.Length > 44)
+                    return (false, "A chave de acesso deve ter no máximo 44 dígitos.", 0);
             }
 
             var compraExistente = await _repo.ObterCompraComMesmaNotaAsync(dto.FornecedorId.Value, dto.ModeloNf, dto.SerieNf.Value, dto.NumeroNf);
@@ -205,17 +194,22 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                     return (false, $"{Desc(item)}: quantidade deve ser maior que zero.", 0);
                 if (item.ValorUnitario <= 0)
                     return (false, $"{Desc(item)}: custo unitário deve ser maior que zero.", 0);
-                if (item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade)
-                    return (false, $"{Desc(item)}: desconto não pode ser maior que o valor do item.", 0);
+                if (item.DescontoUnitario < 0)
+                    return (false, $"{Desc(item)}: desconto não pode ser negativo.", 0);
+                if (item.DescontoUnitario > item.ValorUnitario)
+                    return (false, $"{Desc(item)}: desconto unitário não pode ser maior que o valor unitário.", 0);
                 if (item.DescontoPercentual < 0 || item.DescontoPercentual > 100)
                     return (false, $"{Desc(item)}: desconto deve estar entre 0% e 100%.", 0);
 
-                var bruto = item.ValorUnitario * item.Quantidade;
-                var valorPeloPercentual = Math.Round(bruto * item.DescontoPercentual / 100, 2);
-                var percentualPeloValor = bruto > 0 ? Math.Round(item.ValorDesconto / bruto * 100, 4) : 0;
-                if (Math.Abs(item.ValorDesconto - valorPeloPercentual) > 0.01m
+                var valorPeloPercentual = item.ValorUnitario * item.DescontoPercentual / 100;
+                var percentualPeloValor = item.ValorUnitario > 0 ? item.DescontoUnitario / item.ValorUnitario * 100 : 0;
+                if (Math.Abs(item.DescontoUnitario - valorPeloPercentual) > 0.01m
                     && Math.Abs(item.DescontoPercentual - percentualPeloValor) > 0.01m)
                     item.DescontoPercentual = percentualPeloValor;
+                item.DescontoPercentual = Math.Round(item.DescontoPercentual, 4);
+                var bruto = Math.Round(item.ValorUnitario * item.Quantidade, 2);
+                var totalLinha = Math.Round(item.Quantidade * (item.ValorUnitario - item.DescontoUnitario), 2);
+                item.ValorDesconto = bruto - totalLinha;
             }
 
             var duplicada = itensValidos.GroupBy(i => i.ProdutoVariacaoId).FirstOrDefault(g => g.Count() > 1);
@@ -223,9 +217,11 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, $"{Desc(duplicada.First())} foi adicionado mais de uma vez. " +
                                "Junte as quantidades em um único item.", 0);
 
-            dto.ValorSubtotal = itensValidos.Sum(i => i.ValorUnitario * i.Quantidade);
+            dto.ValorSubtotal = itensValidos.Sum(i => Math.Round(i.ValorUnitario * i.Quantidade, 2));
             dto.ValorDesconto = itensValidos.Sum(i => i.ValorDesconto);
             dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + dto.ValorFrete + dto.ValorSeguro + dto.ValorOutrosAcrescimos;
+            if (dto.ValorTotal < 0)
+                return (false, "O total da compra não pode ser negativo.", 0);
 
             RatearCusto(itensValidos, dto.ValorFrete + dto.ValorSeguro + dto.ValorOutrosAcrescimos);
 
@@ -369,7 +365,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             var chave = ((string?)inf.Attribute("Id") ?? "").Trim();
             if (chave.StartsWith("NFe")) chave = chave[3..];
-            if (!ChaveNfeHelper.Validar(chave))
+            if (chave.Length == 0 || chave.Length > 44 || !chave.All(char.IsDigit))
                 return (false, "Chave de acesso do XML inválida.", null);
 
             var modelo = ide?.Element(NsNfe + "mod")?.Value.Trim();

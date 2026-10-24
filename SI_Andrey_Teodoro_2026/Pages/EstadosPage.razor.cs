@@ -17,12 +17,7 @@ public partial class EstadosPage : BasePage<EstadoListDto, EstadoDto>
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await EstadoService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<EstadoListDto>> BuscarDados(FiltroConsultaDto filtro) => EstadoService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

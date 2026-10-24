@@ -88,28 +88,26 @@
                 <MudItem xs="6" sm="2">
                     <MudTextField T="string" @bind-Value="_dto.NumeroNf" Label="Número"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                  Mask="@(new PatternMask("000000000"))"
                                   Required="true" RequiredError="Obrigatório"
                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
                     <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
-                                  Required="@(_dto.ModeloNf == "55")" RequiredError="Chave de acesso obrigatória para o modelo 55." HelperText="@AvisoChave"
-                                  Validation="@((string v) => ValidarChave(DocumentoHelper.SomenteDigitos(v)))"
+                                  Required="@(_dto.ModeloNf == "55")" RequiredError="Obrigatório" HelperText="@AvisoChave"
                                   Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                 </MudItem>
 
                 <MudItem xs="12" sm="3">
                     <CampoData @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao" Label="Data de Emissão"
                                Required="true" AutoClose="true" MaxDate="DateTime.Today"
-                               Error="@(ErroEmissao != null)" ErrorText="@ErroEmissao"
+                               Validation="@(new Func<DateTime?, string?>(d => DataHelper.ValidarNaoFutura(d, "data de emissão")))"
                                Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="3">
                     <CampoData @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada" Label="Data de Chegada"
                                Required="true" AutoClose="true" MinDate="_dataEmissao" MaxDate="DateTime.Today"
-                               Error="@(ErroChegada != null)" ErrorText="@ErroChegada"
+                               Validation="@(new Func<DateTime?, string?>(d => DataHelper.ValidarNaoFutura(d, "data de chegada") ?? DataHelper.ValidarNaoAnterior(d, _dataEmissao, "data de chegada", "data de emissão")))"
                                Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </MudItem>
                 <MudItem xs="12" sm="6">
@@ -160,7 +158,7 @@
                         <MudTh Style="font-weight:600;text-align:right;">Quantidade</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Custo Unit. (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Desc. %</MudTh>
-                        <MudTh Style="font-weight:600;text-align:right;">Desc. R$</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Desc. Unit. R$</MudTh>
                         @if (SomenteLeitura)
                         {
                             <MudTh Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
@@ -190,12 +188,12 @@
                                              Error="@(ErroPercentual(context.DescontoPercentual) != null)" ErrorText="@ErroPercentual(context.DescontoPercentual)" />
                         </MudTd>
                         <MudTd>
-                            <MudNumericField T="decimal" Value="context.ValorDesconto" ValueChanged="@((decimal v) => OnDescontoValorAlterado(context, v))"
+                            <MudNumericField T="decimal" Value="context.DescontoUnitario" ValueChanged="@((decimal v) => OnDescontoValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
                                              Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Validation="@(new Func<decimal, string?>(v => ErroDescontoValor(context, v)))"
-                                             Error="@(ErroDescontoValor(context, context.ValorDesconto) != null)" ErrorText="@ErroDescontoValor(context, context.ValorDesconto)" />
+                                             Error="@(ErroDescontoValor(context, context.DescontoUnitario) != null)" ErrorText="@ErroDescontoValor(context, context.DescontoUnitario)" />
                         </MudTd>
                         @if (SomenteLeitura)
                         {
@@ -483,13 +481,12 @@
     private bool _importandoXml;
     private MudFileUpload<IBrowserFile>? _uploadXml;
     private string ChaveDigitos => DocumentoHelper.SomenteDigitos(_chaveTexto);
-    private static string? ValidarChave(string digitos) => digitos.Length == 44 && !ChaveNfeHelper.Validar(digitos) ? "Chave de acesso inválida." : null;
     private string? AvisoChave => _avisoChave
         ?? (ChaveDigitos.Length is > 0 and < 44 ? $"{ChaveDigitos.Length}/44 dígitos" : null);
     private bool NotaValida => ModelosNf.Contains(_dto.ModeloNf)
         && _dto.SerieNf is >= 0 and <= 999
-        && !string.IsNullOrEmpty(_dto.NumeroNf) && _dto.NumeroNf.Length <= 9 && _dto.NumeroNf.All(char.IsDigit)
-        && (ChaveDigitos.Length == 0 ? _dto.ModeloNf != "55" : ChaveNfeHelper.Validar(ChaveDigitos));
+        && !string.IsNullOrWhiteSpace(_dto.NumeroNf)
+        && (ChaveDigitos.Length > 0 || _dto.ModeloNf != "55");
     private bool DivergenciaXml => _totalNotaXml.HasValue && _itensConfirmados
         && Math.Round(_dto.ValorTotal, 2) != Math.Round(_totalNotaXml.Value, 2);
 
@@ -500,7 +497,7 @@
         _chaveTexto = ChaveNfeHelper.Formatar(chave);
         _dto.ChaveAcesso = chave.Length == 0 ? null : chave;
         _avisoChave = null;
-        if (!ChaveNfeHelper.Validar(chave)) return;
+        if (chave.Length != 44) return;
 
         var (cnpj, modelo, serie, numero, _, _) = ChaveNfeHelper.Decompor(chave);
         _dto.ModeloNf = modelo;
@@ -578,7 +575,7 @@
         if (item.Quantidade <= 0) return "Informe a quantidade de todos os itens.";
         if (item.ValorUnitario <= 0) return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: informe o custo unitário.";
         if (PercentualInvalido(item)) return "O desconto % deve ficar entre 0% e 100%.";
-        if (DescontoInvalido(item)) return "O desconto não pode ser negativo nem maior que o valor do item.";
+        if (DescontoInvalido(item)) return "O desconto unitário não pode ser negativo nem maior que o valor unitário.";
         if (_dto.Itens.Any(i => i != item && i.ProdutoVariacaoId == item.ProdutoVariacaoId)) return "Há itens com a mesma variação de produto.";
         return null;
     }
@@ -683,7 +680,6 @@
                 continue;
             }
             item.Quantidade = quantidade;
-            _ultimoDescontoPercentual[item] = true;
             SincronizarDesconto(item);
         }
         OrdenarItens();
@@ -737,35 +733,42 @@
     }
     private void OnDescontoValorAlterado(CompraItemDto item, decimal valor)
     {
-        item.ValorDesconto = valor;
+        item.DescontoUnitario = valor;
         _ultimoDescontoPercentual[item] = false;
         SincronizarDesconto(item);
         RecalcularTotais();
     }
     private void SincronizarDesconto(CompraItemDto item)
     {
-        var bruto = item.ValorUnitario * item.Quantidade;
         if (_ultimoDescontoPercentual.GetValueOrDefault(item))
-            item.ValorDesconto = Math.Round(bruto * item.DescontoPercentual / 100, 2);
+            item.DescontoUnitario = item.ValorUnitario * item.DescontoPercentual / 100;
         else
-            item.DescontoPercentual = bruto > 0 ? Math.Round(item.ValorDesconto / bruto * 100, 4) : 0;
+        {
+            item.DescontoUnitario = Math.Round(item.DescontoUnitario, 2);
+            item.DescontoPercentual = item.ValorUnitario > 0 ? Math.Round(item.DescontoUnitario / item.ValorUnitario * 100, 4) : 0;
+        }
+        item.ValorDesconto = DescontoLimitado(item);
     }
     private static bool DescontoInvalido(CompraItemDto item) =>
-        item.ValorDesconto < 0 || item.ValorDesconto > item.ValorUnitario * item.Quantidade;
+        item.DescontoUnitario < 0 || item.DescontoUnitario > item.ValorUnitario;
     private static bool PercentualInvalido(CompraItemDto item) => ErroPercentual(item.DescontoPercentual) != null;
     private static string? ErroPercentual(decimal percentual) =>
         percentual < 0 || percentual > 100 ? "Entre 0% e 100%." : null;
     private static string? ErroDescontoValor(CompraItemDto item, decimal valor) =>
         valor < 0 ? "Não pode ser negativo."
-        : valor > item.ValorUnitario * item.Quantidade ? "Maior que o valor do item."
+        : valor > item.ValorUnitario ? "Maior que o valor unitário."
         : null;
-    private static decimal DescontoLimitado(CompraItemDto item) =>
-        Math.Clamp(item.ValorDesconto, 0, Math.Max(item.ValorUnitario * item.Quantidade, 0));
-    private static decimal TotalItem(CompraItemDto item) =>
-        item.ValorUnitario * item.Quantidade - DescontoLimitado(item);
+    private static decimal BrutoItem(CompraItemDto item) =>
+        Math.Round(item.ValorUnitario * item.Quantidade, 2);
+    private decimal TotalItem(CompraItemDto item) => SomenteLeitura
+        ? item.ValorTotal
+        : Math.Round(item.Quantidade * (item.ValorUnitario - Math.Clamp(item.DescontoUnitario, 0, Math.Max(item.ValorUnitario, 0))), 2);
+    private decimal DescontoLimitado(CompraItemDto item) => SomenteLeitura
+        ? item.ValorDesconto
+        : BrutoItem(item) - TotalItem(item);
     private void RecalcularTotais()
     {
-        _dto.ValorSubtotal = _dto.Itens.Sum(i => i.ValorUnitario * i.Quantidade);
+        _dto.ValorSubtotal = _dto.Itens.Sum(BrutoItem);
         _dto.ValorDesconto = _dto.Itens.Sum(DescontoLimitado);
         _dto.ValorTotal = _dto.ValorSubtotal - _dto.ValorDesconto + _dto.ValorFrete + _dto.ValorSeguro + _dto.ValorOutrosAcrescimos;
     }

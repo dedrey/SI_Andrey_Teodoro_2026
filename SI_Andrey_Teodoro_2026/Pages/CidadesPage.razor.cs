@@ -17,12 +17,7 @@ public partial class CidadesPage : BasePage<CidadeListDto, CidadeDto>
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await CidadeService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<CidadeListDto>> BuscarDados(FiltroConsultaDto filtro) => CidadeService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

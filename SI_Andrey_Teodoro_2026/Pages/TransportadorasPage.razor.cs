@@ -18,20 +18,7 @@ public partial class TransportadorasPage : BasePage<TransportadoraListDto, Trans
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    protected override async Task CarregarDados()
-    {
-        try
-        {
-            _carregando = true;
-            _resultado = await TransportadoraService.ObterTodosAsync(_filtro);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error);
-            _resultado = new();
-        }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<TransportadoraListDto>> BuscarDados(FiltroConsultaDto filtro) => TransportadoraService.ObterTodosAsync(filtro);
     private async Task AbrirModalCadastro()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };

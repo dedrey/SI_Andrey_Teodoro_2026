@@ -17,12 +17,7 @@ public partial class VeiculosPage : BasePage<VeiculoListDto, VeiculoDto>
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await VeiculoService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<VeiculoListDto>> BuscarDados(FiltroConsultaDto filtro) => VeiculoService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

@@ -18,12 +18,7 @@ public partial class ProdutosPage : BasePage<ProdutoListDto, ProdutoDto>
     protected override async Task OnInitializedAsync()
         => await CarregarDados();
 
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await ProdutoService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<ProdutoListDto>> BuscarDados(FiltroConsultaDto filtro) => ProdutoService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

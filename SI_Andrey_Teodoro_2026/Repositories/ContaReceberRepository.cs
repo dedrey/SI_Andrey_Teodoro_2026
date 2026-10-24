@@ -13,7 +13,7 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
 
     protected override string Tabela => "contas_receber";
 
-    public async Task<PaginacaoDto<ContaReceberVendaGrupoListDto>> ObterTodosAgrupadosAsync(FiltroConsultaDto filtro)
+    public async Task<PaginacaoDto<ContaReceberListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
     {
         using var conn = _factory.CreateConnection();
         var where = new List<string>();
@@ -22,71 +22,76 @@ public class ContaReceberRepository : BaseRepository, IContaReceberRepository
                       OR c.nome_razaosocial LIKE @Busca
                       OR CAST(cr.id AS CHAR) = @BuscaExata
                       OR CAST(cr.venda_id AS CHAR) = @BuscaExata)");
-        var whereClause = where.Count > 0 ? "WHERE " + string.Join(" AND ", where) : "";
-
-        var having = filtro.StatusFiltro switch
+        where.Add(filtro.StatusFiltro switch
         {
-            "aberta" => "HAVING Status = 'ABERTA'",
-            "recebida" => "HAVING Status = 'RECEBIDA'",
-            "cancelada" => "HAVING Status = 'CANCELADA'",
-            "vencidas" => "HAVING Status = 'ABERTA' AND DataVencimento < CURDATE()",
-            _ => ""
+            "aberta" => "cr.status = 'ABERTA'",
+            "recebida" => "cr.status = 'RECEBIDA'",
+            "cancelada" => "cr.status = 'CANCELADA'",
+            "vencidas" => "cr.status = 'ABERTA' AND cr.data_vencimento < CURDATE()",
+            _ => "1=1"
+        });
+        var whereClause = "WHERE " + string.Join(" AND ", where);
+        var orderBy = filtro.OrdenarPor switch
+        {
+            "id" => "cr.id",
+            "valor" => "cr.valor_original DESC",
+            _ => "cr.data_vencimento, cr.id"
         };
 
-        var sqlBase = $@"
-            SELECT
-                COALESCE(cr.venda_id, cr.id)                              AS GroupKey,
-                cr.venda_id                                               AS VendaId,
-                MIN(cr.id)                                                AS Id,
-                MAX(c.nome_razaosocial)                                   AS NomeCliente,
-                CASE WHEN cr.venda_id IS NULL THEN MAX(cr.descricao)
-                     ELSE CONCAT('VENDA #', cr.venda_id, ' — ', COUNT(*),
-                                  IF(COUNT(*) = 1, ' PARCELA', ' PARCELAS'))
-                END                                                       AS Descricao,
-                COALESCE(MIN(CASE WHEN cr.status = 'ABERTA' THEN cr.data_vencimento END),
-                         MIN(cr.data_vencimento))                         AS DataVencimento,
-                SUM(cr.valor_original)                                    AS ValorOriginal,
-                SUM(cr.valor_saldo)                                       AS ValorSaldo,
-                COALESCE(SUM(ub.TotalRecebido), 0)                        AS ValorRecebido,
-                MAX(ub.UltimoRecebimento)                                 AS DataUltimoRecebimento,
-                COUNT(*)                                                  AS TotalParcelas,
-                SUM(CASE WHEN cr.status = 'RECEBIDA'
-                           OR COALESCE(ub.TotalRecebido, 0) >= cr.valor_original THEN 1 ELSE 0 END) AS ParcelasPagas,
-                CASE
-                    WHEN SUM(CASE WHEN cr.status <> 'CANCELADA' THEN 1 ELSE 0 END) = 0 THEN 'CANCELADA'
-                    WHEN SUM(CASE WHEN cr.status = 'ABERTA' THEN 1 ELSE 0 END) = 0 THEN 'RECEBIDA'
-                    ELSE 'ABERTA'
-                END                                                       AS Status,
-                MAX(ve.motivo_cancelamento)                               AS MotivoCancelamentoVenda
+        var sqlCount = $@"SELECT COUNT(*) FROM contas_receber cr
+                          LEFT JOIN clientes c ON c.id = cr.cliente_id
+                          {whereClause}";
+
+        var sqlData = $@"
+            SELECT cr.id,
+                   cr.venda_id              AS VendaId,
+                   c.nome_razaosocial       AS NomeCliente,
+                   cr.descricao,
+                   cr.data_vencimento       AS DataVencimento,
+                   cr.valor_original        AS ValorOriginal,
+                   cr.valor_saldo           AS ValorSaldo,
+                   (SELECT COALESCE(SUM(crb.valor_recebido), 0)
+                    FROM contas_receber_baixas crb
+                    WHERE crb.conta_receber_id = cr.id) AS ValorRecebido,
+                   (SELECT MAX(crb.data_recebimento)
+                    FROM contas_receber_baixas crb
+                    WHERE crb.conta_receber_id = cr.id) AS DataUltimoRecebimento,
+                   (SELECT crb.id
+                    FROM contas_receber_baixas crb
+                    WHERE crb.conta_receber_id = cr.id
+                    ORDER BY crb.data_recebimento DESC, crb.id DESC LIMIT 1) AS UltimaBaixaId,
+                   (SELECT crb.comprovante_arquivo
+                    FROM contas_receber_baixas crb
+                    WHERE crb.conta_receber_id = cr.id
+                    ORDER BY crb.data_recebimento DESC, crb.id DESC LIMIT 1) AS ComprovanteArquivo,
+                   (SELECT COUNT(*)
+                    FROM contas_receber x
+                    WHERE x.venda_id = cr.venda_id
+                      AND (x.data_vencimento < cr.data_vencimento
+                           OR (x.data_vencimento = cr.data_vencimento AND x.id <= cr.id))) AS NumeroParcela,
+                   (SELECT COUNT(*)
+                    FROM contas_receber x
+                    WHERE x.venda_id = cr.venda_id) AS TotalParcelas,
+                   cr.status,
+                   ve.motivo_cancelamento   AS MotivoCancelamentoVenda
             FROM contas_receber cr
             LEFT JOIN clientes c ON c.id = cr.cliente_id
             LEFT JOIN vendas  ve ON ve.id = cr.venda_id
-            LEFT JOIN (
-                SELECT conta_receber_id, MAX(data_recebimento) AS UltimoRecebimento,
-                       SUM(valor_recebido) AS TotalRecebido
-                FROM contas_receber_baixas GROUP BY conta_receber_id
-            ) ub ON ub.conta_receber_id = cr.id
             {whereClause}
-            GROUP BY COALESCE(cr.venda_id, cr.id), cr.venda_id
-            {having}";
+            ORDER BY {orderBy} LIMIT @Limit OFFSET @Offset";
 
         var param = new
         {
             Busca = $"%{filtro.Busca}%",
-            BuscaExata = filtro.Busca
+            BuscaExata = filtro.Busca,
+            Limit = filtro.TamanhoPagina,
+            Offset = (filtro.Pagina - 1) * filtro.TamanhoPagina
         };
 
-        var todos = (await conn.QueryAsync<ContaReceberVendaGrupoListDto>(sqlBase, param)).ToList();
-        var ordenados = filtro.OrdenarPor switch
-        {
-            "id" => todos.OrderBy(x => x.Id),
-            "valor" => todos.OrderByDescending(x => x.ValorOriginal),
-            _ => todos.OrderBy(x => x.DataVencimento)
-        };
-        var pagina = ordenados.Skip((filtro.Pagina - 1) * filtro.TamanhoPagina).Take(filtro.TamanhoPagina).ToList();
-
-        return new PaginacaoDto<ContaReceberVendaGrupoListDto>
-        { Itens = pagina, TotalItens = todos.Count, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
+        var total = await conn.ExecuteScalarAsync<int>(sqlCount, param);
+        var itens = await conn.QueryAsync<ContaReceberListDto>(sqlData, param);
+        return new PaginacaoDto<ContaReceberListDto>
+        { Itens = itens.ToList(), TotalItens = total, Pagina = filtro.Pagina, TamanhoPagina = filtro.TamanhoPagina };
     }
 
     public async Task<ContaReceber?> ObterPorIdAsync(int id)

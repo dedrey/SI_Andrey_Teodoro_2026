@@ -5,15 +5,92 @@ using SI_Andrey_Teodoro_2026.DTOs;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public abstract class BasePage<TListDto, TDto> : ComponentBase
-    where TDto : new()
+public abstract class BaseListagemPage<TListDto> : ComponentBase
 {
     [Inject] protected ISnackbar Snackbar { get; set; } = null!;
     [Inject] protected IDialogService DialogService { get; set; } = null!;
 
     protected PaginacaoDto<TListDto>? _resultado;
-    protected FiltroConsultaDto _filtro = new();
+    protected FiltroConsultaDto _filtro;
+    protected bool _carregando;
+    private int _consultaAtual;
 
+    protected BaseListagemPage()
+    {
+        _filtro = CriarFiltro();
+        _filtro.TamanhoPagina = TamanhoPaginaPadrao;
+    }
+
+    protected const int TamanhoPaginaPadrao = 25;
+
+    protected virtual FiltroConsultaDto CriarFiltro() => new();
+
+    protected abstract Task<PaginacaoDto<TListDto>> BuscarDados(FiltroConsultaDto filtro);
+
+    protected async Task CarregarDados()
+    {
+        var consulta = ++_consultaAtual;
+        _carregando = true;
+        try
+        {
+            var resultado = await BuscarDados(_filtro);
+            if (consulta == _consultaAtual) _resultado = resultado;
+        }
+        catch (Exception ex)
+        {
+            if (consulta != _consultaAtual) return;
+            Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error);
+            _resultado = new();
+        }
+        finally
+        {
+            if (consulta == _consultaAtual) _carregando = false;
+        }
+    }
+
+    protected Task Pesquisar()
+    {
+        _filtro.Pagina = 1;
+        return CarregarDados();
+    }
+
+    protected Task AplicarBusca(string? texto)
+    {
+        if ((texto ?? "").Trim() == (_filtro.Busca ?? "").Trim()) return Task.CompletedTask;
+        _filtro.Busca = texto;
+        return Pesquisar();
+    }
+
+    protected Task AplicarFiltro(Action alterar)
+    {
+        alterar();
+        return Pesquisar();
+    }
+
+    protected Task LimparFiltros()
+    {
+        var tamanho = _filtro.TamanhoPagina;
+        _filtro = CriarFiltro();
+        _filtro.TamanhoPagina = tamanho;
+        return CarregarDados();
+    }
+
+    protected Task MudarPagina(int pagina)
+    {
+        _filtro.Pagina = pagina;
+        return CarregarDados();
+    }
+
+    protected Task MudarTamanhoPagina(int tamanho)
+    {
+        _filtro.TamanhoPagina = tamanho;
+        return Pesquisar();
+    }
+}
+
+public abstract class BasePage<TListDto, TDto> : BaseListagemPage<TListDto>
+    where TDto : new()
+{
     protected TDto _dto = new TDto();
 
     protected override Task OnInitializedAsync()
@@ -26,29 +103,9 @@ public abstract class BasePage<TListDto, TDto> : ComponentBase
 
     protected MudForm _form = null!;
     protected bool _formValido;
-    protected bool _carregando;
     protected bool _salvando;
 
-    protected abstract Task CarregarDados();
     protected abstract string NomeEntidade { get; }
-
-    protected async Task Pesquisar()
-    {
-        _filtro.Pagina = 1;
-        await CarregarDados();
-    }
-
-    protected async Task LimparFiltros()
-    {
-        _filtro = new();
-        await CarregarDados();
-    }
-
-    protected async Task MudarPagina(int pagina)
-    {
-        _filtro.Pagina = pagina;
-        await CarregarDados();
-    }
 
     protected async Task ConfirmarAlteracaoStatus(
         int id,

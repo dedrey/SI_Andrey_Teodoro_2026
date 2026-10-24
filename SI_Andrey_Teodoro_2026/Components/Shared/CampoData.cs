@@ -26,10 +26,18 @@ public class CampoData : MudDatePicker
 
     public override Task SetParametersAsync(ParameterView parameters)
     {
-        if (parameters.TryGetValue<DateTime?>(nameof(Date), out var data) && data == _value)
+        var ignorarData = parameters.TryGetValue<DateTime?>(nameof(Date), out var data) && data == _value;
+        var manterErroValidacao = parameters.TryGetValue<bool>(nameof(Error), out var erro) && !erro && ValidationErrors.Count > 0;
+        if (ignorarData || manterErroValidacao)
         {
             var valores = parameters.ToDictionary().ToDictionary(p => p.Key, p => p.Value);
-            valores.Remove(nameof(Date));
+            if (ignorarData)
+                valores.Remove(nameof(Date));
+            if (manterErroValidacao)
+            {
+                valores.Remove(nameof(Error));
+                valores.Remove(nameof(ErrorText));
+            }
             parameters = ParameterView.FromDictionary(valores!);
         }
         return base.SetParametersAsync(parameters);
@@ -43,6 +51,8 @@ public class CampoData : MudDatePicker
             return;
         }
         Touched = true;
+        if (ValidationErrors.Count > 0)
+            await ResetValidationAsync();
         if (_value.HasValue)
         {
             _value = null;

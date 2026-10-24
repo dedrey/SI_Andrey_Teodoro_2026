@@ -9,10 +9,10 @@
 </div>
 <MudPaper Elevation="1" Class="pa-3 mb-3" Style="border-radius:8px;">
     <MudGrid Spacing="2">
-        <MudItem xs="12" sm="5" md="5"><MudTextField @bind-Value="_filtro.Busca" Label="Pesquisar..." Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" Immediate="true" OnKeyUp="@(async e => { if (e.Key=="Enter") await Pesquisar(); })" FullWidth="true"/></MudItem>
-        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.StatusFiltro" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem><MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem><MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem></MudSelect></MudItem>
-        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" @bind-Value="_filtro.OrdenarPor" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem><MudSelectItem T="string" Value="@("id")">ID</MudSelectItem><MudSelectItem T="string" Value="@("data")">Data</MudSelectItem></MudSelect></MudItem>
-        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2"><MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Pesquisar" FullWidth="true" Style="height:40px;">Pesquisar</MudButton><MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small"/></MudButton></MudItem>
+        <MudItem xs="12" sm="5" md="5"><CampoPesquisa Valor="@_filtro.Busca" OnPesquisar="AplicarBusca" /></MudItem>
+        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" Value="_filtro.StatusFiltro" ValueChanged="@((string v) => AplicarFiltro(() => _filtro.StatusFiltro = v))" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("ativos")">Ativos</MudSelectItem><MudSelectItem T="string" Value="@("inativos")">Inativos</MudSelectItem><MudSelectItem T="string" Value="@("todos")">Todos</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="6" sm="3" md="2"><MudSelect T="string" Value="_filtro.OrdenarPor" ValueChanged="@((string v) => AplicarFiltro(() => _filtro.OrdenarPor = v))" Label="Ordenar por" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"><MudSelectItem T="string" Value="@("nome")">Nome</MudSelectItem><MudSelectItem T="string" Value="@("id")">ID</MudSelectItem><MudSelectItem T="string" Value="@("data")">Data</MudSelectItem></MudSelect></MudItem>
+        <MudItem xs="12" sm="12" md="3" Class="d-flex align-end gap-2"><MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Style="height:40px;min-width:40px;"><MudIcon Icon="@Icons.Material.Filled.FilterAltOff" Size="Size.Small"/></MudButton></MudItem>
     </MudGrid>
 </MudPaper>
 <MudPaper Elevation="1" Style="border-radius:8px;overflow:hidden;">
@@ -30,6 +30,6 @@
         </RowTemplate>
         <NoRecordsContent><div class="d-flex flex-column align-center pa-6" style="color:#bbb;"><MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:2.5rem;margin-bottom:8px;"/><MudText Typo="Typo.body1">Nenhum registro encontrado.</MudText></div></NoRecordsContent>
     </MudTable>
-    @if (_resultado != null) { <div class="pa-2" style="border-top:1px solid #f0f0f0;"><PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" OnPaginaMudou="MudarPagina"/></div> }
+    @if (_resultado != null) { <div class="pa-2" style="border-top:1px solid #f0f0f0;"><PaginacaoComponent PaginaAtual="@_filtro.Pagina" TotalPaginas="@_resultado.TotalPaginas" TotalItens="@_resultado.TotalItens" TamanhoPagina="@_filtro.TamanhoPagina" OnPaginaMudou="MudarPagina" OnTamanhoMudou="MudarTamanhoPagina"/></div> }
 </MudPaper>
 @code { }

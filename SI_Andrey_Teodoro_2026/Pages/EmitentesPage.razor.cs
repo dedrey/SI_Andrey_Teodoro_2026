@@ -16,12 +16,7 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
         try { await CarregarDados(); }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await EmitenteService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<EmitenteListDto>> BuscarDados(FiltroConsultaDto filtro) => EmitenteService.ObterTodosAsync(filtro);
     private async Task AbrirModalCadastro()
     {
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };

@@ -17,12 +17,7 @@ public partial class MarcasPage : BasePage<MarcaListDto, MarcaDto>
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
     }
 
-    protected override async Task CarregarDados()
-    {
-        try { _carregando = true; _resultado = await MarcaService.ObterTodosAsync(_filtro); }
-        catch (Exception ex) { Snackbar.Add($"Erro de banco: {ex.Message}", Severity.Error); _resultado = new(); }
-        finally { _carregando = false; }
-    }
+    protected override Task<PaginacaoDto<MarcaListDto>> BuscarDados(FiltroConsultaDto filtro) => MarcaService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

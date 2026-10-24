@@ -5,7 +5,7 @@ namespace SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
 public interface IContaReceberRepository
 {
-    Task<PaginacaoDto<ContaReceberVendaGrupoListDto>> ObterTodosAgrupadosAsync(FiltroConsultaDto filtro);
+    Task<PaginacaoDto<ContaReceberListDto>> ObterTodosAsync(FiltroConsultaDto filtro);
     Task<ContaReceber?> ObterPorIdAsync(int id);
     Task<List<ContaReceberBaixaDto>> ObterBaixasAsync(int contaReceberId);
     Task<int> InserirAsync(ContaReceberDto dto);

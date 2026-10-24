@@ -214,7 +214,7 @@
     private List<ClienteListDto> _clientes = new();
     private List<ContaReceberResumoVendaDto> _contasDaVenda = new();
 
-    private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
+    private bool _somenteLeitura => DtoEdicao != null && (DtoEdicao.Status != "ABERTA" || DtoEdicao.VendaId.HasValue);
 
     protected override async Task OnInitializedAsync()
     {

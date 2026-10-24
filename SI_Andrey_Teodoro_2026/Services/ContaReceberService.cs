@@ -11,8 +11,8 @@ public class ContaReceberService : IContaReceberService
 
     public ContaReceberService(IContaReceberRepository repo) => _repo = repo;
 
-    public Task<PaginacaoDto<ContaReceberVendaGrupoListDto>> ObterTodosAgrupadosAsync(FiltroConsultaDto filtro)
-        => _repo.ObterTodosAgrupadosAsync(filtro);
+    public Task<PaginacaoDto<ContaReceberListDto>> ObterTodosAsync(FiltroConsultaDto filtro)
+        => _repo.ObterTodosAsync(filtro);
 
     public async Task<ContaReceberDto?> ObterPorIdAsync(int id)
     {

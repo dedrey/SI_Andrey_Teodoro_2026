@@ -7,28 +7,15 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public partial class NotasFiscaisPage : ComponentBase
+public partial class NotasFiscaisPage : BaseListagemPage<NfeListDto>
 {
     [Inject] private INfeService NfeService { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
 
-    private PaginacaoDto<NfeListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new() { StatusFiltro = "todos", OrdenarPor = "data" };
-    private bool _carregando;
+    protected override FiltroConsultaDto CriarFiltro() => new() { StatusFiltro = "todos", OrdenarPor = "data" };
 
     protected override async Task OnInitializedAsync() => await CarregarDados();
 
-    private async Task CarregarDados()
-    {
-        _carregando = true;
-        _resultado = await NfeService.ObterTodosAsync(_filtro);
-        _carregando = false;
-    }
-
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new() { StatusFiltro = "todos", OrdenarPor = "data" }; await CarregarDados(); }
-    private async Task MudarPagina(int pagina) { _filtro.Pagina = pagina; await CarregarDados(); }
+    protected override Task<PaginacaoDto<NfeListDto>> BuscarDados(FiltroConsultaDto filtro) => NfeService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalGeracao()
     {

@@ -7,28 +7,15 @@ using SI_Andrey_Teodoro_2026.Services.Interfaces;
 
 namespace SI_Andrey_Teodoro_2026.Pages;
 
-public partial class ContasPagarPage : ComponentBase
+public partial class ContasPagarPage : BaseListagemPage<ContaPagarListDto>
 {
     [Inject] private IContaPagarService ContaPagarService { get; set; } = null!;
-    [Inject] private IDialogService DialogService { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
 
-    private PaginacaoDto<ContaPagarListDto>? _resultado;
-    private FiltroConsultaDto _filtro = new() { StatusFiltro = "todos", OrdenarPor = "vencimento" };
-    private bool _carregando;
+    protected override FiltroConsultaDto CriarFiltro() => new() { StatusFiltro = "todos", OrdenarPor = "vencimento" };
 
     protected override async Task OnInitializedAsync() => await CarregarDados();
 
-    private async Task CarregarDados()
-    {
-        _carregando = true;
-        _resultado = await ContaPagarService.ObterTodosAsync(_filtro);
-        _carregando = false;
-    }
-
-    private async Task Pesquisar() { _filtro.Pagina = 1; await CarregarDados(); }
-    private async Task LimparFiltros() { _filtro = new() { StatusFiltro = "todos", OrdenarPor = "vencimento" }; await CarregarDados(); }
-    private async Task MudarPagina(int pagina) { _filtro.Pagina = pagina; await CarregarDados(); }
+    protected override Task<PaginacaoDto<ContaPagarListDto>> BuscarDados(FiltroConsultaDto filtro) => ContaPagarService.ObterTodosAsync(filtro);
 
     private async Task AbrirModalCadastro()
     {

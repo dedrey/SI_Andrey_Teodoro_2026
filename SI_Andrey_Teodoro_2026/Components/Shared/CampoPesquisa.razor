@@ -1,0 +1,26 @@
+<MudTextField T="string" Value="Valor" TextChanged="@((string? texto) => _texto = texto)" Label="Pesquisar..."
+              Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+              FullWidth="true" AutoFocus="AutoFocus" Class="@Class" Immediate="true"
+              DebounceInterval="400" OnDebounceIntervalElapsed="Pesquisar" OnKeyDown="TeclaPressionada" />
+
+@code {
+    [Parameter] public string? Valor { get; set; }
+    [Parameter] public EventCallback<string?> OnPesquisar { get; set; }
+    [Parameter] public bool AutoFocus { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string? _valor;
+    private string? _texto;
+
+    protected override void OnParametersSet()
+    {
+        if (Valor == _valor) return;
+        _valor = Valor;
+        _texto = Valor;
+    }
+
+    private Task Pesquisar(string? texto) => OnPesquisar.InvokeAsync(texto);
+
+    private Task TeclaPressionada(KeyboardEventArgs e) =>
+        e.Key is "Enter" or "NumpadEnter" ? Pesquisar(_texto) : Task.CompletedTask;
+}
