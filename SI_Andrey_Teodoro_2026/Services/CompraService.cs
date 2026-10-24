@@ -377,6 +377,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 || emissaoTexto == null || emissaoTexto.Length < 10
                 || !DateTime.TryParseExact(emissaoTexto[..10], "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var emissao))
                 return (false, invalido, null);
+            if (!ModelosNf.Contains(modelo))
+                return (false, $"Modelo {modelo} do XML não é aceito. Modelos válidos: {string.Join(", ", ModelosNf)}.", null);
 
             var numero = numeroTexto.TrimStart('0');
             var dados = new CompraXmlDto

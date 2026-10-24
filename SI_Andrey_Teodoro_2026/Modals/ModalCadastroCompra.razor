@@ -497,17 +497,6 @@
         _chaveTexto = ChaveNfeHelper.Formatar(chave);
         _dto.ChaveAcesso = chave.Length == 0 ? null : chave;
         _avisoChave = null;
-        if (chave.Length != 44) return;
-
-        var (cnpj, modelo, serie, numero, _, _) = ChaveNfeHelper.Decompor(chave);
-        _dto.ModeloNf = modelo;
-        _dto.SerieNf = serie;
-        _dto.NumeroNf = numero;
-        if (_dto.FornecedorId.HasValue) return;
-
-        var fornecedor = _fornecedores.FirstOrDefault(f => DocumentoHelper.SomenteDigitos(f.CpfCnpj) == cnpj);
-        if (fornecedor != null) OnFornecedorAlterado(fornecedor);
-        else _avisoChave = $"Fornecedor com CNPJ {DocumentoHelper.FormatarCnpj(cnpj)} não cadastrado.";
     }
 
     private async Task ImportarXml(IBrowserFile? arquivo)

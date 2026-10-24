@@ -20,17 +20,6 @@ public static class ChaveNfeHelper
         return resto < 2 ? 0 : 11 - resto;
     }
 
-    public static (string cnpj, string modelo, int serie, string numero, int ano, int mes) Decompor(string chave)
-    {
-        var numero = chave[25..34].TrimStart('0');
-        return (chave[6..20],
-                chave[20..22],
-                int.Parse(chave[22..25]),
-                numero.Length == 0 ? "0" : numero,
-                2000 + int.Parse(chave[2..4]),
-                int.Parse(chave[4..6]));
-    }
-
     public static string Formatar(string? chave)
     {
         var digitos = DocumentoHelper.SomenteDigitos(chave);
