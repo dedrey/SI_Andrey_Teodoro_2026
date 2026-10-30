@@ -39,6 +39,7 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             Numero = e.Numero ?? string.Empty,
             Complemento = e.Complemento,
             Bairro = e.Bairro,
+            Cep = e.Cep ?? string.Empty,
             Telefone = e.Telefone ?? string.Empty,
             Email = e.Email ?? string.Empty,
             Ativo = e.Ativo,
@@ -74,6 +75,11 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);
             dto.Bairro = dto.Bairro.Trim().ToUpperInvariant();
+            dto.Cep = CepHelper.Formatar(dto.Cep);
+            if (string.IsNullOrWhiteSpace(dto.Cep))
+                return (false, "CEP é obrigatório.", 0);
+            if (!CepHelper.Valido(dto.Cep))
+                return (false, "CEP incompleto.", 0);
 
             var cnpjLimpo = DocumentoHelper.SomenteDigitos(dto.Cnpj);
 

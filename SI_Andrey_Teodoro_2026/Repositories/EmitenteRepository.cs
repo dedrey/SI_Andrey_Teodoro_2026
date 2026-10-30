@@ -94,7 +94,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                      e.regime_tributario     AS RegimeTributario,
                      e.cidade_id             AS CidadeId,
                      c.cidade                AS NomeCidade,
-                     e.endereco, e.numero, e.complemento, e.bairro,
+                     e.endereco, e.numero, e.complemento, e.bairro, e.cep,
                      e.telefone, e.email,
                      e.ativo,
                      e.criado_em     AS CriadoEm,
@@ -112,11 +112,11 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
         await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO emitentes
                 (id, nome_razaosocial, apelido_nomefantasia, cnpj, inscricao_estadual, inscricao_municipal,
-                 regime_tributario, cidade_id, endereco, numero, complemento, bairro,
+                 regime_tributario, cidade_id, endereco, numero, complemento, bairro, cep,
                  telefone, email, ativo)
               VALUES
                 (@Id, @NomeRazaoSocial, @ApelidoNomeFantasia, @Cnpj, @InscricaoEstadual, @InscricaoMunicipal,
-                 @RegimeTributario, @CidadeId, @Endereco, @Numero, @Complemento, @Bairro,
+                 @RegimeTributario, @CidadeId, @Endereco, @Numero, @Complemento, @Bairro, @Cep,
                  @Telefone, @Email, @Ativo)",
             new
             {
@@ -132,6 +132,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 dto.Numero,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email,
                 dto.Ativo
@@ -155,6 +156,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                   numero               = @Numero,
                   complemento          = @Complemento,
                   bairro               = @Bairro,
+                  cep                  = @Cep,
                   telefone             = @Telefone,
                   email                = @Email,
                   atualizado_em        = NOW()
@@ -173,6 +175,7 @@ public class EmitenteRepository : BaseRepository, IEmitenteRepository
                 dto.Numero,
                 dto.Complemento,
                 dto.Bairro,
+                dto.Cep,
                 dto.Telefone,
                 dto.Email
             });

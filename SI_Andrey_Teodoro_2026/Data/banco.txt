@@ -223,6 +223,7 @@ CREATE TABLE emitentes (
   numero               VARCHAR(10),
   complemento          VARCHAR(50),
   bairro               VARCHAR(50),
+  cep                  VARCHAR(9)   NULL COMMENT 'CEP no formato 00000-000',
   telefone             VARCHAR(15),
   email                VARCHAR(50),
   inscricao_estadual   VARCHAR(20),

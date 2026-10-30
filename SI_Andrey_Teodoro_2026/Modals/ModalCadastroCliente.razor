@@ -122,11 +122,11 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = MascaraCep(v); Alterou(2); })"
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = CepHelper.Mascara(v); Alterou(2); })"
                                   Label="@(_dto.Estrangeiro ? "CEP (não se aplica)" : "CEP")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="@(!_dto.Estrangeiro)" RequiredError="Obrigatório"
                                   MaxLength="9" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => _dto.Estrangeiro ? null : DocumentoHelper.ValidarCep(v))"
+                                  Validation="@((string v) => _dto.Estrangeiro ? null : CepHelper.Validar(v))"
                                   Disabled="@(Bloqueado(2) || _dto.Estrangeiro)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
 
@@ -345,7 +345,7 @@
         2 when string.IsNullOrWhiteSpace(_dto.Bairro) => "Informe o bairro.",
         2 when string.IsNullOrWhiteSpace(_dto.Complemento) => "Informe o complemento.",
         2 when !_dto.Estrangeiro && string.IsNullOrWhiteSpace(_dto.Cep) => "Informe o CEP.",
-        2 when !_dto.Estrangeiro && !DocumentoHelper.CepValido(_dto.Cep) => "CEP incompleto.",
+        2 when !_dto.Estrangeiro && !CepHelper.Valido(_dto.Cep) => "CEP incompleto.",
         3 when TelefoneHelper.ValidarObrigatorio(_dto.Telefone, _dto.Estrangeiro) is string erro => $"{(_dto.TipoPessoa == "PJ" ? "Telefone" : "Celular")}: {erro}.",
         3 when _dto.TipoPessoa == "PJ" && TelefoneHelper.ValidarObrigatorio(_dto.Celular, _dto.Estrangeiro) is string erro => $"Celular: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
@@ -360,13 +360,6 @@
     private string? ValidarDocumento(string? v) => DocumentoHelper.ValidarDocumento(v, _dto.TipoPessoa);
     private readonly IMask _mascaraTelefone = new RegexMask(TelefoneHelper.RegexEstrangeiroParcial);
     private readonly IMask _mascaraCelular = new RegexMask(TelefoneHelper.RegexEstrangeiroParcial);
-    private string MascaraCep(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return "";
-        var d = DocumentoHelper.SomenteDigitos(v);
-        if (d.Length > 8) d = d[..8];
-        return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
-    }
     private static string? ValidarEmail(string? v)
     {
         if (string.IsNullOrWhiteSpace(v)) return "Obrigatório";

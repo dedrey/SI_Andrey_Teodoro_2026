@@ -4,7 +4,7 @@
             <div>
                 <div class="invoice-title">@Nfe.NomeEmitente</div>
                 <div>@DocumentoHelper.FormatarDocumento(Nfe.CnpjEmitente)</div>
-                <div>@Nfe.EnderecoEmitente — @Nfe.CidadeEmitente</div>
+                <div>@Nfe.EnderecoEmitente</div>
             </div>
             <div style="text-align:right;">
                 <div class="invoice-title">NOTA FISCAL Nº @Nfe.Numero.ToString("D6")</div>
@@ -16,7 +16,7 @@
         <div class="invoice-section">
             <div class="invoice-section-title">Destinatário</div>
             <div>@Nfe.NomeCliente @(string.IsNullOrWhiteSpace(Nfe.CpfCnpjCliente) ? "" : $"— {DocumentoHelper.FormatarDocumento(Nfe.CpfCnpjCliente)}")</div>
-            <div>@Nfe.EnderecoCliente — @Nfe.CidadeCliente</div>
+            <div>@Nfe.EnderecoCliente</div>
         </div>
 
         @if (Nfe.TransportadoraId.HasValue)
@@ -24,6 +24,10 @@
             <div class="invoice-section">
                 <div class="invoice-section-title">Transportadora</div>
                 <div>@Nfe.NomeTransportadora</div>
+                @if (!string.IsNullOrWhiteSpace(Nfe.EnderecoTransportadora))
+                {
+                    <div>@Nfe.EnderecoTransportadora</div>
+                }
             </div>
         }
 

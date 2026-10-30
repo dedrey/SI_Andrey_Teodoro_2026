@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
+using SI_Andrey_Teodoro_2026.Helpers;
 using SI_Andrey_Teodoro_2026.Models;
 using SI_Andrey_Teodoro_2026.Repositories.Interfaces;
 
@@ -77,16 +78,22 @@ public class NfeRepository : BaseRepository, INfeRepository
                      n.data_emissao AS DataEmissao, n.data_saida AS DataSaida,
                      n.emitente_id AS EmitenteId,
                      e.nome_razaosocial AS NomeEmitente, e.cnpj AS CnpjEmitente,
-                     CONCAT(e.endereco, IFNULL(CONCAT(', ', e.complemento), ''), ' — ', e.bairro) AS EnderecoEmitente,
-                     CONCAT(ce.cidade, ' (', ee.uf, ')') AS CidadeEmitente,
+                     e.endereco AS EnderecoEmitente, e.numero AS NumeroEmitente,
+                     e.complemento AS ComplementoEmitente, e.bairro AS BairroEmitente, e.cep AS CepEmitente,
+                     ce.cidade AS CidadeEmitente, ee.uf AS UfEmitente,
                      e.regime_tributario AS RegimeTributarioEmitente,
                      n.cliente_id AS ClienteId,
                      c.nome_razaosocial AS NomeCliente, c.cpf_cnpj AS CpfCnpjCliente,
-                     CONCAT(c.endereco, IFNULL(CONCAT(', ', c.complemento), ''), ' — ', c.bairro) AS EnderecoCliente,
-                     CONCAT(cc.cidade, ' (', ec.uf, ')') AS CidadeCliente,
+                     c.estrangeiro AS EstrangeiroCliente,
+                     c.endereco AS EnderecoCliente, c.numero AS NumeroCliente,
+                     c.complemento AS ComplementoCliente, c.bairro AS BairroCliente, c.cep AS CepCliente,
+                     cc.cidade AS CidadeCliente, ec.uf AS UfCliente, pc.pais AS PaisCliente,
                      n.venda_id AS VendaId,
                      cp.condicao_pagamento AS NomeCondicao,
                      n.transportadora_id AS TransportadoraId, t.razaosocial AS NomeTransportadora,
+                     t.endereco AS EnderecoTransportadora, t.numero AS NumeroTransportadora,
+                     t.complemento AS ComplementoTransportadora, t.bairro AS BairroTransportadora, t.cep AS CepTransportadora,
+                     ct.cidade AS CidadeTransportadora, et.uf AS UfTransportadora,
                      n.status_nfe AS StatusNfe,
                      n.valor_produtos AS ValorProdutos, n.valor_desconto AS ValorDesconto,
                      n.valor_total AS ValorTotal,
@@ -98,7 +105,10 @@ public class NfeRepository : BaseRepository, INfeRepository
               INNER JOIN clientes  c ON c.id = n.cliente_id
               LEFT  JOIN cidades   cc ON cc.id = c.cidade_id
               LEFT  JOIN estados   ec ON ec.id = cc.estado_id
+              LEFT  JOIN paises    pc ON pc.id = ec.pais_id
               LEFT  JOIN transportadoras t ON t.id = n.transportadora_id
+              LEFT  JOIN cidades   ct ON ct.id = t.cidade_id
+              LEFT  JOIN estados   et ON et.id = ct.estado_id
               LEFT  JOIN vendas    v ON v.id = n.venda_id
               LEFT  JOIN condicoes_pagamentos cp ON cp.id = v.condicao_pagamento_id
               WHERE n.id = @id", new { id });
@@ -130,18 +140,24 @@ public class NfeRepository : BaseRepository, INfeRepository
             EmitenteId = nfe.EmitenteId,
             NomeEmitente = nfe.NomeEmitente,
             CnpjEmitente = nfe.CnpjEmitente,
-            EnderecoEmitente = nfe.EnderecoEmitente,
-            CidadeEmitente = nfe.CidadeEmitente,
+            EnderecoEmitente = EnderecoHelper.Formatar(nfe.EnderecoEmitente, nfe.NumeroEmitente, nfe.ComplementoEmitente,
+                nfe.BairroEmitente, nfe.CidadeEmitente, nfe.UfEmitente, nfe.CepEmitente),
             RegimeTributarioEmitente = nfe.RegimeTributarioEmitente,
             ClienteId = nfe.ClienteId,
             NomeCliente = nfe.NomeCliente,
             CpfCnpjCliente = nfe.CpfCnpjCliente,
-            EnderecoCliente = nfe.EnderecoCliente,
-            CidadeCliente = nfe.CidadeCliente,
+            EnderecoCliente = nfe.EstrangeiroCliente
+                ? EnderecoHelper.FormatarEstrangeiro(nfe.EnderecoCliente, nfe.NumeroCliente, nfe.ComplementoCliente,
+                    nfe.BairroCliente, nfe.CidadeCliente, nfe.PaisCliente)
+                : EnderecoHelper.Formatar(nfe.EnderecoCliente, nfe.NumeroCliente, nfe.ComplementoCliente,
+                    nfe.BairroCliente, nfe.CidadeCliente, nfe.UfCliente, nfe.CepCliente),
             VendaId = nfe.VendaId,
             NomeCondicao = nfe.NomeCondicao,
             TransportadoraId = nfe.TransportadoraId,
             NomeTransportadora = nfe.NomeTransportadora,
+            EnderecoTransportadora = EnderecoHelper.Formatar(nfe.EnderecoTransportadora, nfe.NumeroTransportadora,
+                nfe.ComplementoTransportadora, nfe.BairroTransportadora, nfe.CidadeTransportadora,
+                nfe.UfTransportadora, nfe.CepTransportadora),
             StatusNfe = nfe.StatusNfe,
             ValorProdutos = nfe.ValorProdutos,
             ValorDesconto = nfe.ValorDesconto,

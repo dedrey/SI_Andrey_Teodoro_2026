@@ -94,6 +94,12 @@
                     <MudTextField Value="@(_dto.Complemento ?? "")" ValueChanged="@((string v) => { _dto.Complemento = v; Alterou(2); })"
                                   Label="Complemento" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = CepHelper.Mascara(v); Alterou(2); })"
+                                  Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => CepHelper.Validar(v))"
+                                  Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                </MudItem>
 
                 <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6">
@@ -189,6 +195,7 @@
                 Numero = DtoEdicao.Numero ?? "",
                 Complemento = DtoEdicao.Complemento,
                 Bairro = DtoEdicao.Bairro ?? "",
+                Cep = CepHelper.Mascara(DtoEdicao.Cep),
                 Telefone = TelefoneHelper.Mascara(DtoEdicao.Telefone),
                 Email = DtoEdicao.Email ?? "",
                 Ativo = DtoEdicao.Ativo,
@@ -264,6 +271,8 @@
         2 when string.IsNullOrWhiteSpace(_dto.Numero) => "Informe o número.",
         2 when string.IsNullOrWhiteSpace(_dto.Bairro) => "Informe o bairro.",
         2 when string.IsNullOrWhiteSpace(_dto.Complemento) => "Informe o complemento.",
+        2 when string.IsNullOrWhiteSpace(_dto.Cep) => "Informe o CEP.",
+        2 when !CepHelper.Valido(_dto.Cep) => "CEP incompleto.",
         3 when TelefoneHelper.Validar(_dto.Telefone) is string erro => $"Telefone: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
         _ => null

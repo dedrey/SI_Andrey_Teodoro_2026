@@ -73,15 +73,6 @@ public static class DocumentoHelper
         };
     }
 
-    public static bool CepValido(string? cep) => SomenteDigitos(cep).Length == 8;
-
-    public static string? ValidarCep(string? cep) => SomenteDigitos(cep).Length switch
-    {
-        0 => "Obrigatório",
-        8 => null,
-        _ => "CEP incompleto."
-    };
-
     public static string? ValidarCodigoBarras(string? codigo)
     {
         var c = (codigo ?? "").Trim();

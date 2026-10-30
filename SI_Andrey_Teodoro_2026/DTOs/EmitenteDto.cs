@@ -35,6 +35,8 @@ public class EmitenteDto
     [MinLength(2)]
     [MaxLength(50)]
     public string Bairro { get; set; } = string.Empty;
+    [Required(ErrorMessage = "CEP é obrigatório")]
+    [MaxLength(9)] public string Cep { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Telefone é obrigatório")]
     [MaxLength(15)]

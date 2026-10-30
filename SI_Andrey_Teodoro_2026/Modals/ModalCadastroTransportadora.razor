@@ -81,9 +81,9 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = MascaraCep(v); Alterou(2); })"
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = CepHelper.Mascara(v); Alterou(2); })"
                                   Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => DocumentoHelper.ValidarCep(v))"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => CepHelper.Validar(v))"
                                   Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
 
@@ -236,7 +236,7 @@
         2 when string.IsNullOrWhiteSpace(_dto.Bairro) => "Informe o bairro.",
         2 when string.IsNullOrWhiteSpace(_dto.Complemento) => "Informe o complemento.",
         2 when string.IsNullOrWhiteSpace(_dto.Cep) => "Informe o CEP.",
-        2 when !DocumentoHelper.CepValido(_dto.Cep) => "CEP incompleto.",
+        2 when !CepHelper.Valido(_dto.Cep) => "CEP incompleto.",
         3 when TelefoneHelper.Validar(_dto.Telefone) is string erro => $"Telefone: {erro}.",
         3 when ValidarEmail(_dto.Email) is string erro => $"E-mail: {erro}.",
         _ => null
@@ -245,15 +245,6 @@
     private string? AjudaRestante => Edicao || RazaoOk ? null : AjudaRazao ?? "Informe a razão social primeiro.";
     private object DadosEditaveis() => new { _dto, _cnpjTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
-
-
-    private string MascaraCep(string? v)
-    {
-        if (string.IsNullOrEmpty(v)) return "";
-        var d = DocumentoHelper.SomenteDigitos(v);
-        if (d.Length > 8) d = d[..8];
-        return d.Length <= 5 ? d : $"{d[..5]}-{d[5..]}";
-    }
 
     private static string? ValidarEmail(string? v)
     {

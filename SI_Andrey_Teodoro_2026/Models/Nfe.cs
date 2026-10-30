@@ -12,20 +12,39 @@ public class Nfe
     public string? NomeEmitente { get; set; }
     public string? CnpjEmitente { get; set; }
     public string? EnderecoEmitente { get; set; }
+    public string? NumeroEmitente { get; set; }
+    public string? ComplementoEmitente { get; set; }
+    public string? BairroEmitente { get; set; }
+    public string? CepEmitente { get; set; }
     public string? CidadeEmitente { get; set; }
+    public string? UfEmitente { get; set; }
     public string? RegimeTributarioEmitente { get; set; }
 
     public int ClienteId { get; set; }
     public string? NomeCliente { get; set; }
     public string? CpfCnpjCliente { get; set; }
+    public bool EstrangeiroCliente { get; set; }
     public string? EnderecoCliente { get; set; }
+    public string? NumeroCliente { get; set; }
+    public string? ComplementoCliente { get; set; }
+    public string? BairroCliente { get; set; }
+    public string? CepCliente { get; set; }
     public string? CidadeCliente { get; set; }
+    public string? UfCliente { get; set; }
+    public string? PaisCliente { get; set; }
 
     public int? VendaId { get; set; }
     public string? NomeCondicao { get; set; }
 
     public int? TransportadoraId { get; set; }
     public string? NomeTransportadora { get; set; }
+    public string? EnderecoTransportadora { get; set; }
+    public string? NumeroTransportadora { get; set; }
+    public string? ComplementoTransportadora { get; set; }
+    public string? BairroTransportadora { get; set; }
+    public string? CepTransportadora { get; set; }
+    public string? CidadeTransportadora { get; set; }
+    public string? UfTransportadora { get; set; }
 
     public string StatusNfe { get; set; } = "EMITIDA";
     public decimal ValorProdutos { get; set; }

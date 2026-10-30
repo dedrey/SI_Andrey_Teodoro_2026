@@ -79,10 +79,10 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
             dto.Complemento = dto.Complemento?.Trim().ToUpperInvariant() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(dto.Complemento))
                 return (false, "Complemento é obrigatório.", 0);
-            dto.Cep = dto.Cep.Trim();
+            dto.Cep = CepHelper.Formatar(dto.Cep);
             if (!dto.Estrangeiro && string.IsNullOrWhiteSpace(dto.Cep))
                 return (false, "CEP é obrigatório.", 0);
-            if (!dto.Estrangeiro && !DocumentoHelper.CepValido(dto.Cep))
+            if (!dto.Estrangeiro && !CepHelper.Valido(dto.Cep))
                 return (false, "CEP incompleto.", 0);
 
             if (!dto.CidadeId.HasValue)

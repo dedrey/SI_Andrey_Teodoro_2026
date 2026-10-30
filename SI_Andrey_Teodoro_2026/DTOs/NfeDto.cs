@@ -12,20 +12,19 @@ public class NfeDto
     public string? NomeEmitente { get; set; }
     public string? CnpjEmitente { get; set; }
     public string? EnderecoEmitente { get; set; }
-    public string? CidadeEmitente { get; set; }
     public string? RegimeTributarioEmitente { get; set; }
 
     public int ClienteId { get; set; }
     public string? NomeCliente { get; set; }
     public string? CpfCnpjCliente { get; set; }
     public string? EnderecoCliente { get; set; }
-    public string? CidadeCliente { get; set; }
 
     public int? VendaId { get; set; }
     public string? NomeCondicao { get; set; }
 
     public int? TransportadoraId { get; set; }
     public string? NomeTransportadora { get; set; }
+    public string? EnderecoTransportadora { get; set; }
 
     public string StatusNfe { get; set; } = "EMITIDA";
 
