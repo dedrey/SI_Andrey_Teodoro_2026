@@ -62,7 +62,7 @@ public class EmitenteService : BaseService<EmitenteDto, EmitenteListDto>, IEmite
             dto.InscricaoEstadual = dto.InscricaoEstadual?.Trim().ToUpperInvariant();
             dto.InscricaoMunicipal = dto.InscricaoMunicipal?.Trim().ToUpperInvariant();
             dto.Telefone = dto.Telefone?.Trim() ?? string.Empty;
-            dto.Email = dto.Email?.Trim() ?? string.Empty;
+            dto.Email = dto.Email?.Trim().ToUpperInvariant() ?? string.Empty;
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
                 return (false, "E-mail inválido.", 0);
             dto.Endereco = dto.Endereco.Trim().ToUpperInvariant();

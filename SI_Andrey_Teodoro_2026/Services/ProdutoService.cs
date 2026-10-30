@@ -109,6 +109,8 @@ public class ProdutoService : BaseService<ProdutoDto, ProdutoListDto>, IProdutoS
             {
                 if (v.CorId == 0) return (false, "Selecione a cor de uma variação.", 0);
                 if (v.TamanhoId == 0) return (false, "Selecione o tamanho de uma variação.", 0);
+                v.Cor = v.Cor.Trim().ToUpperInvariant();
+                v.Tamanho = v.Tamanho.Trim().ToUpperInvariant();
                 if (v.Preco <= 0) return (false, "Variação: preço de venda deve ser maior que zero.", 0);
 
                 if (v.PrecoCusto > 0 && v.Preco < v.PrecoCusto && !v.PermiteVendaAbaixoCusto)

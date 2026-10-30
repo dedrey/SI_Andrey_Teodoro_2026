@@ -41,10 +41,6 @@ input.mud-input-slot, textarea.mud-input-slot {
     text-transform: uppercase;
 }
 
-.sem-maiusculas input.mud-input-slot {
-    text-transform: none;
-}
-
 .input-direita input.mud-input-slot {
     text-align: right;
 }
