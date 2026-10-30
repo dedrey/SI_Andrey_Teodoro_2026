@@ -108,14 +108,10 @@
 
                 <MudItem xs="12" sm="6">
                     <MudTextField Value="@StatusHelper.Texto(TipoStatus.Conta, _dto.Status)" Label="Status"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="@_somenteLeitura" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="true" />
                 </MudItem>
             </MudGrid>
-            @if (DaCompra)
-            {
-                <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">Valor e fornecedor vêm da Compra #@_dto.CompraId.</MudText>
-            }
-            else if (DeVenda && !_somenteLeitura)
+            @if (DeVenda && !_somenteLeitura)
             {
                 <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">Valor e favorecido vêm do cancelamento da Venda #@_dto.VendaId. Só o vencimento pode ser alterado.</MudText>
             }
@@ -123,6 +119,21 @@
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Fechar">@(_somenteLeitura ? "Fechar" : "Cancelar")</MudButton>
+        @if (PodeAgir)
+        {
+            @if (Manual)
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="CancelarConta" StartIcon="@Icons.Material.Filled.Cancel">
+                    CANCELAR CONTA
+                </MudButton>
+            }
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => _readOnly = false)" StartIcon="@Icons.Material.Filled.Edit">
+                EDITAR
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="FinalizarPagamento" StartIcon="@Icons.Material.Filled.CheckCircle" Style="font-weight:700;">
+                FINALIZAR PAGAMENTO
+            </MudButton>
+        }
         @if (!_somenteLeitura)
         {
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar"
@@ -137,6 +148,7 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
     private string? _snapshot;
     [Parameter] public ContaPagarDto? DtoEdicao { get; set; }
+    [Parameter] public bool SomenteLeitura { get; set; }
 
     private MudForm? _form;
     private bool _salvando;
@@ -146,11 +158,16 @@
     private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
     private List<FornecedorListDto> _fornecedores = new();
 
-    private bool _somenteLeitura => DtoEdicao != null && DtoEdicao.Status != "ABERTA";
+    private bool _readOnly;
+    private bool? _readOnlyTitulo;
+    private bool Aberta => DtoEdicao != null && DtoEdicao.Status == "ABERTA";
+    private bool _somenteLeitura => _readOnly || (DtoEdicao != null && !Aberta);
+    private bool PodeAgir => _readOnly && Aberta;
+    private bool Manual => !DaCompra && !DeVenda;
     private bool DaCompra => _dto.CompraId.HasValue;
     private bool DeVenda => _dto.VendaId.HasValue;
     private bool Travada => DaCompra || DeVenda;
-    private DateTime? VencimentoMinimo => DeVenda && !_somenteLeitura ? _dto.CriadoEm?.Date : null;
+    private DateTime? VencimentoMinimo => _somenteLeitura ? null : DeVenda ? _dto.CriadoEm?.Date : DaCompra ? _dto.DataEmissaoCompra?.Date : null;
     private bool CanceladaComCompra => DaCompra && _dto.Status == "CANCELADA" && !string.IsNullOrWhiteSpace(_dto.MotivoCancelamentoCompra);
     private bool _semFornecedor;
     private bool FornecedorOk => Travada || _semFornecedor || _dto.FornecedorId.HasValue;
@@ -166,8 +183,17 @@
         if (valor) _dto.FornecedorId = null;
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_readOnlyTitulo == _readOnly) return;
+        var jaRenderizado = _readOnlyTitulo.HasValue;
+        _readOnlyTitulo = _readOnly;
+        if (jaRenderizado) MudDialog.StateHasChanged();
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        _readOnly = SomenteLeitura;
         _fornecedores = (await FornecedorService.ObterTodosAtivosAsync()).ToList();
 
         if (DtoEdicao is not null)
@@ -180,6 +206,7 @@
                 NomeFornecedor = DtoEdicao.NomeFornecedor,
                 CompraId = DtoEdicao.CompraId,
                 NumeroNfCompra = DtoEdicao.NumeroNfCompra,
+                DataEmissaoCompra = DtoEdicao.DataEmissaoCompra,
                 MotivoCancelamentoCompra = DtoEdicao.MotivoCancelamentoCompra,
                 ClienteId = DtoEdicao.ClienteId,
                 NomeCliente = DtoEdicao.NomeCliente,
@@ -224,11 +251,43 @@
         if (!_form.IsValid) return;
         if (_dto.ValorOriginal <= 0) { Snackbar.Add("Informe um valor maior que zero.", Severity.Warning); return; }
         if (!_dataVencimento.HasValue) { Snackbar.Add("Informe a data de vencimento.", Severity.Warning); return; }
+        if (DaCompra && _dto.DataEmissaoCompra.HasValue && _dataVencimento.Value.Date < _dto.DataEmissaoCompra.Value.Date)
+        { Snackbar.Add($"O vencimento não pode ser anterior à emissão da nota ({_dto.DataEmissaoCompra.Value:dd/MM/yyyy}).", Severity.Warning); return; }
 
         _dto.DataVencimento = _dataVencimento.Value;
         _salvando = true;
         var (sucesso, mensagem, _) = await ContaPagarService.SalvarAsync(_dto);
         _salvando = false;
+        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task FinalizarPagamento()
+    {
+        var param = new DialogParameters<ModalFinalizarPagamento>
+        {
+            { x => x.ContaId, _dto.Id },
+            { x => x.Descricao, _dto.Descricao },
+            { x => x.ValorOriginal, _dto.ValorOriginal }
+        };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalFinalizarPagamento>("Finalizar Pagamento", param, opts);
+        if ((await dialog.Result) is { Canceled: false }) MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private async Task CancelarConta()
+    {
+        var param = new DialogParameters<ConfirmDialog>
+        {
+            { x => x.Titulo, "Confirmar cancelamento" },
+            { x => x.Mensagem, "Deseja cancelar esta conta a pagar?" },
+            { x => x.TextoBotao, "Cancelar Conta" },
+            { x => x.CorBotao, Color.Error }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>("Confirmar", param,
+            new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small });
+        if ((await dialog.Result) is not { Canceled: false }) return;
+        var (sucesso, mensagem) = await ContaPagarService.CancelarAsync(_dto.Id);
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
     }

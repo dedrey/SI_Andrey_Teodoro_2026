@@ -44,3 +44,37 @@ input.mud-input-slot, textarea.mud-input-slot {
 .input-direita input.mud-input-slot {
     text-align: right;
 }
+
+.menu-resize {
+    display: block;
+    position: fixed;
+    top: var(--mud-appbar-height);
+    bottom: 0;
+    left: calc(var(--mud-drawer-width-left) - 3px);
+    width: 6px;
+    cursor: col-resize;
+    z-index: calc(var(--mud-zindex-drawer) + 1);
+}
+
+.menu-resize:hover, .menu-redimensionando .menu-resize {
+    background: rgba(92, 107, 192, 0.35);
+}
+
+.mud-drawer--closed ~ .menu-resize {
+    display: none;
+}
+
+.menu-redimensionando {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.menu-redimensionando .mud-drawer, .menu-redimensionando .mud-main-content {
+    transition: none !important;
+}
+
+@media (max-width: 959.98px) {
+    .menu-resize {
+        display: none;
+    }
+}

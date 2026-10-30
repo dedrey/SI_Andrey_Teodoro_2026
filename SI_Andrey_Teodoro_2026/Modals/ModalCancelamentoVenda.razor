@@ -28,7 +28,7 @@
         <MudText Class="mb-4" Style="color:#666;">
             @(_statusVenda == "FINALIZADA"
                 ? "O estoque será devolvido e as contas a receber da venda serão canceladas. Informe o motivo do cancelamento; ele ficará salvo para auditoria."
-                : "Informe o motivo do cancelamento. Este registro ficará salvo para auditoria.")
+                : "Informe o motivo do cancelamento.")
         </MudText>
         <MudTextField @bind-Value="_motivo"
                       Label="Motivo do cancelamento"

@@ -114,14 +114,9 @@
                     <MudTextField T="string" Value="@_dto.NomeCondicaoPagamento"
                                   Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                   ReadOnly="true" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
-                                  Error="@(ErroCondicao != null)" ErrorText="@ErroCondicao"
-                                  HelperText="Definida no cadastro do fornecedor." />
+                                  Error="@(ErroCondicao != null)" ErrorText="@ErroCondicao" />
                 </MudItem>
             </MudGrid>
-            @if (CabecalhoBloqueado && !SomenteLeitura)
-            {
-                <MudText Typo="Typo.caption" Style="color:#888;">Remova os itens para alterar os dados da nota.</MudText>
-            }
             @if (!CabecalhoValido && !SomenteLeitura)
             {
                 <MudText Typo="Typo.caption" Style="color:#888;">Preencha fornecedor, transportadora, dados da nota e datas válidas para adicionar itens.</MudText>
@@ -156,7 +151,7 @@
                         <MudTh Style="font-weight:600;">Produto</MudTh>
                         <MudTh Style="font-weight:600;">Variação</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Quantidade</MudTh>
-                        <MudTh Style="font-weight:600;text-align:right;">Custo Unit. (R$)</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;">Preço Unit. (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Desc. %</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Desc. Unit. R$</MudTh>
                         @if (SomenteLeitura)
@@ -302,9 +297,6 @@
                                             <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @_parcelas.Sum(p => p.Valor).ToString("N2")</MudTd>
                                         </FooterContent>
                                     </MudTable>
-                                    <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">
-                                        Vencimentos calculados a partir da data de emissão. Ajustes de data são feitos em Contas a Pagar.
-                                    </MudText>
                                 }
                             }
                             else
@@ -638,15 +630,16 @@
             { x => x.ItensCompra,    _dto.Itens.Where(i => i.ProdutoVariacaoId > 0).ToList() },
             { x => x.ProdutoInicial, produto }
         };
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalGradeCompra>("Grade Cor × Tamanho", param, opts);
-        if ((await dialog.Result) is not { Canceled: false, Data: ModalGradeCompra.ResultadoGrade grade }) return;
-        AplicarGrade(grade);
+        if ((await dialog.Result) is not { Canceled: false, Data: List<ModalGradeCompra.ResultadoGrade> grades }) return;
+        AplicarGrades(grades);
     }
 
-    private void AplicarGrade(ModalGradeCompra.ResultadoGrade grade)
+    private void AplicarGrades(List<ModalGradeCompra.ResultadoGrade> grades)
     {
         var novas = new HashSet<CompraItemDto>();
+        foreach (var grade in grades)
         foreach (var (variacao, quantidade) in grade.Itens)
         {
             var item = _dto.Itens.FirstOrDefault(i => i.ProdutoVariacaoId == variacao.IdOriginal);

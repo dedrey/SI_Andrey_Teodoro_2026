@@ -114,27 +114,9 @@
                 </MudTooltip>
             </MudTd>
             <MudTd Style="text-align:center;">
-                @if (context.Status == "ABERTA")
-                {
-                    <MudTooltip Text="Editar">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
-                    </MudTooltip>
-                    <MudTooltip Text="Finalizar pagamento">
-                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" OnClick="@(() => AbrirFinalizarPagamento(context))" />
-                    </MudTooltip>
-                    @if (!context.CompraId.HasValue && !context.VendaId.HasValue)
-                    {
-                        <MudTooltip Text="Cancelar">
-                            <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" Size="Size.Small" OnClick="@(() => Cancelar(context.Id))" />
-                        </MudTooltip>
-                    }
-                }
-                else
-                {
-                    <MudTooltip Text="Visualizar">
-                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => Editar(context.Id))" />
-                    </MudTooltip>
-                }
+                <MudTooltip Text="Visualizar">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Info" Size="Size.Small" OnClick="@(() => Visualizar(context.Id))" />
+                </MudTooltip>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>

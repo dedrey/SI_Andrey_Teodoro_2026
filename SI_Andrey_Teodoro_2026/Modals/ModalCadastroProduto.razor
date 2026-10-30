@@ -94,7 +94,7 @@
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
                                   Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@_mascaraCodigoBarras"
                                   MaxLength="14" FullWidth="true" Immediate="true" Validation="@((string v) => DocumentoHelper.ValidarCodigoBarras(v))" Disabled="@(Bloqueado(1) || !Edicao && !CabecalhoOk)"
-                                  HelperText="@(Edicao || CabecalhoOk ? "Um só código pra este produto (todas as variações)" : "Selecione a unidade primeiro.")" />
+                                  HelperText="@(Edicao || CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
                 </MudItem>
                 @if (Edicao)
                 {
