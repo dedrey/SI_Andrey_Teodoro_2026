@@ -33,6 +33,7 @@ public class CompraItemListDto
     public string Tamanho { get; set; } = string.Empty;
     public int Quantidade { get; set; }
     public decimal ValorUnitario { get; set; }
+    public decimal DescontoUnitario { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal DescontoPercentual { get; set; }
     public decimal ValorTotal { get; set; }

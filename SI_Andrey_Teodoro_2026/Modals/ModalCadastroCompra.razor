@@ -95,6 +95,7 @@
                     <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
                                   Required="@(_dto.ModeloNf == "55")" RequiredError="Obrigatório" HelperText="@AvisoChave"
+                                  Error="@(ErroChave != null)" ErrorText="@ErroChave"
                                   Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                 </MudItem>
 
@@ -171,20 +172,20 @@
                             <MudNumericField T="int?" @ref="_camposQuantidade[context]" Value="@(context.Quantidade > 0 ? context.Quantidade : (int?)null)"
                                              ValueChanged="@((int? q) => OnQuantidadeAlterada(context, q ?? 0))"
                                              HideSpinButtons="true" Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                             Class="input-direita mt-0" Min="0" FullWidth="true" Disabled="@LinhaBloqueada(context)"
+                                             Class="input-direita mt-0" Min="0" Max="@CompraItemDto.QuantidadeMaxima" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Error="@(context.Quantidade < 1)" ErrorText="Mínimo 1" />
                         </MudTd>
                         <MudTd>
                             <MudNumericField T="decimal" Value="context.ValorUnitario" ValueChanged="@((decimal v) => OnValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                             Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)" />
+                                             Min="0" Format="N4" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)" />
                         </MudTd>
                         <MudTd>
                             <MudNumericField T="decimal" Value="context.DescontoPercentual" ValueChanged="@((decimal v) => OnDescontoPercentualAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.End" AdornmentText="%" Class="input-direita mt-0"
-                                             Format="N2" FullWidth="true" Disabled="@LinhaBloqueada(context)"
+                                             Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Validation="@(new Func<decimal, string?>(v => ErroPercentual(v)))"
                                              Error="@(ErroPercentual(context.DescontoPercentual) != null)" ErrorText="@ErroPercentual(context.DescontoPercentual)" />
                         </MudTd>
@@ -192,7 +193,7 @@
                             <MudNumericField T="decimal" Value="context.DescontoUnitario" ValueChanged="@((decimal v) => OnDescontoValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                             Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)"
+                                             Format="N4" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)"
                                              Validation="@(new Func<decimal, string?>(v => ErroDescontoValor(context, v)))"
                                              Error="@(ErroDescontoValor(context, context.DescontoUnitario) != null)" ErrorText="@ErroDescontoValor(context, context.DescontoUnitario)" />
                         </MudTd>
@@ -327,21 +328,21 @@
                                 <MudText Typo="Typo.body2" Style="font-weight:600;color:#2e7d32;text-align:right;white-space:nowrap;">- R$ @_dto.ValorDesconto.ToString("N2")</MudText>
                                 <MudText Typo="Typo.body2">Frete</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
-                                    <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = v))"
+                                    <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = ValorHelper.Moeda(v)))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
                                                      Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.body2">Seguro</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
-                                    <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = v))"
+                                    <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = ValorHelper.Moeda(v)))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
                                                      Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
-                                    <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = v))"
+                                    <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = ValorHelper.Moeda(v)))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
                                                      Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
@@ -484,7 +485,10 @@
     private bool NotaValida => ModelosNf.Contains(_dto.ModeloNf)
         && _dto.SerieNf is >= 0 and <= 999
         && !string.IsNullOrWhiteSpace(_dto.NumeroNf)
-        && (ChaveDigitos.Length > 0 || _dto.ModeloNf != "55");
+        && (ChaveDigitos.Length == 44 || _dto.ModeloNf != "55");
+    // Modelo 55: exatamente 44 dígitos. Demais modelos: até 44 (o campo já corta no 44º).
+    private string? ErroChave => _dto.ModeloNf == "55" && ChaveDigitos.Length is > 0 and < 44
+        ? $"A chave deve ter 44 dígitos ({ChaveDigitos.Length}/44)." : null;
     private bool DivergenciaXml => _totalNotaXml.HasValue && _itensConfirmados
         && Math.Round(_dto.ValorTotal, 2) != Math.Round(_totalNotaXml.Value, 2);
 
@@ -559,10 +563,12 @@
     private string? ErroItem(CompraItemDto item)
     {
         if (item.ProdutoVariacaoId <= 0) return "Selecione o produto e a variação de todos os itens.";
-        if (item.Quantidade < 1) return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: a quantidade deve ser de pelo menos 1.";
-        if (item.ValorUnitario <= 0) return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: informe o custo unitário.";
-        if (PercentualInvalido(item)) return "O desconto % deve ficar entre 0% e 100%.";
-        if (DescontoInvalido(item)) return "O desconto unitário não pode ser negativo nem maior que o valor unitário.";
+        var desc = $"{item.NomeProduto} {item.Cor}/{item.Tamanho}";
+        if (item.Quantidade < 1) return $"{desc}: a quantidade deve ser de pelo menos 1.";
+        if (item.Quantidade > CompraItemDto.QuantidadeMaxima) return $"{desc}: a quantidade máxima é {CompraItemDto.QuantidadeMaxima:N0}.";
+        if (item.ValorUnitario <= 0) return $"{desc}: informe o custo unitário.";
+        if (PercentualInvalido(item)) return $"{desc}: o desconto % deve ficar entre 0% e 100%.";
+        if (DescontoInvalido(item)) return $"{desc}: o desconto unitário não pode ser negativo nem maior que o valor unitário.";
         if (_dto.Itens.Any(i => i != item && i.ProdutoVariacaoId == item.ProdutoVariacaoId)) return "Há itens com a mesma variação de produto.";
         return null;
     }
@@ -741,33 +747,31 @@
     }
     private void OnValorAlterado(CompraItemDto item, decimal valor)
     {
-        item.ValorUnitario = Math.Max(valor, 0);
+        item.ValorUnitario = ValorHelper.Unit(Math.Max(valor, 0));
         SincronizarDesconto(item);
         RecalcularTotais();
     }
     private void OnDescontoPercentualAlterado(CompraItemDto item, decimal percentual)
     {
-        item.DescontoPercentual = percentual;
+        item.DescontoPercentual = ValorHelper.Perc(percentual);
         _ultimoDescontoPercentual[item] = true;
         SincronizarDesconto(item);
         RecalcularTotais();
     }
     private void OnDescontoValorAlterado(CompraItemDto item, decimal valor)
     {
-        item.DescontoUnitario = valor;
+        item.DescontoUnitario = ValorHelper.Unit(valor);
         _ultimoDescontoPercentual[item] = false;
         SincronizarDesconto(item);
         RecalcularTotais();
     }
+    // O campo digitado por último é a fonte; só o outro é recalculado (nunca o digitado).
     private void SincronizarDesconto(CompraItemDto item)
     {
         if (_ultimoDescontoPercentual.GetValueOrDefault(item))
-            item.DescontoUnitario = item.ValorUnitario * item.DescontoPercentual / 100;
+            item.DescontoUnitario = ValorHelper.DescontoPorPercentual(item.ValorUnitario, item.DescontoPercentual);
         else
-        {
-            item.DescontoUnitario = Math.Round(item.DescontoUnitario, 2);
-            item.DescontoPercentual = item.ValorUnitario > 0 ? Math.Round(item.DescontoUnitario / item.ValorUnitario * 100, 4) : 0;
-        }
+            item.DescontoPercentual = ValorHelper.PercentualPorDesconto(item.ValorUnitario, item.DescontoUnitario);
         item.ValorDesconto = DescontoLimitado(item);
     }
     private static bool DescontoInvalido(CompraItemDto item) =>
@@ -780,13 +784,14 @@
         : valor > item.ValorUnitario ? "Maior que o valor unitário."
         : null;
     private static decimal BrutoItem(CompraItemDto item) =>
-        Math.Round(item.ValorUnitario * item.Quantidade, 2);
-    private decimal TotalItem(CompraItemDto item) => SomenteLeitura
-        ? item.ValorTotal
-        : Math.Round(item.Quantidade * (item.ValorUnitario - Math.Clamp(item.DescontoUnitario, 0, Math.Max(item.ValorUnitario, 0))), 2);
+        ValorHelper.BrutoLinha(item.Quantidade, item.ValorUnitario);
+    // Desconto da linha = Round(Qtde × DescUnit, 2); DescUnit inválido é limitado a [0, preço] só para os totais.
     private decimal DescontoLimitado(CompraItemDto item) => SomenteLeitura
         ? item.ValorDesconto
-        : BrutoItem(item) - TotalItem(item);
+        : ValorHelper.DescontoLinha(item.Quantidade, Math.Clamp(item.DescontoUnitario, 0, Math.Max(item.ValorUnitario, 0)));
+    private decimal TotalItem(CompraItemDto item) => SomenteLeitura
+        ? item.ValorTotal
+        : BrutoItem(item) - DescontoLimitado(item);
     private void RecalcularTotais()
     {
         _dto.ValorSubtotal = _dto.Itens.Sum(BrutoItem);

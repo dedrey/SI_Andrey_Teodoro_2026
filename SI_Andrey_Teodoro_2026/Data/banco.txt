@@ -505,7 +505,9 @@ CREATE TABLE compras_itens (
   compra_id              INT           NOT NULL,
   produto_variacao_id    INT           NOT NULL,
   quantidade             INT           NOT NULL,
-  valor_unitario         DECIMAL(14,2) NOT NULL,
+  valor_unitario         DECIMAL(14,4) NOT NULL,
+  -- Desconto por unidade (fonte da verdade); valor_desconto = ROUND(quantidade * desconto_unitario, 2)
+  desconto_unitario      DECIMAL(14,4) NOT NULL DEFAULT 0,
   valor_desconto         DECIMAL(14,2) NOT NULL DEFAULT 0,
   desconto_percentual    DECIMAL(7,4)  NOT NULL DEFAULT 0,
   valor_total            DECIMAL(14,2) NOT NULL,

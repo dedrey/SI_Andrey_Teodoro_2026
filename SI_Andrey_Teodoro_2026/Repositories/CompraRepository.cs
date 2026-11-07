@@ -150,6 +150,7 @@ public class CompraRepository : BaseRepository, ICompraRepository
                      pv.tamanho                AS Tamanho,
                      ci.quantidade,
                      ci.valor_unitario         AS ValorUnitario,
+                     ci.desconto_unitario      AS DescontoUnitario,
                      ci.valor_desconto         AS ValorDesconto,
                      ci.desconto_percentual    AS DescontoPercentual,
                      ci.valor_total            AS ValorTotal,
@@ -196,15 +197,16 @@ public class CompraRepository : BaseRepository, ICompraRepository
     {
         await tx.Connection!.ExecuteAsync(
             @"INSERT INTO compras_itens (compra_id, produto_variacao_id, quantidade,
-                                         valor_unitario, valor_desconto, desconto_percentual, valor_total, custo_unitario_efetivo)
+                                         valor_unitario, desconto_unitario, valor_desconto, desconto_percentual, valor_total, custo_unitario_efetivo)
               VALUES (@CompraId, @ProdutoVariacaoId, @Quantidade,
-                      @ValorUnitario, @ValorDesconto, @DescontoPercentual, @ValorTotalItem, @CustoUnitarioEfetivo)",
+                      @ValorUnitario, @DescontoUnitario, @ValorDesconto, @DescontoPercentual, @ValorTotalItem, @CustoUnitarioEfetivo)",
             new
             {
                 CompraId = compraId,
                 item.ProdutoVariacaoId,
                 item.Quantidade,
                 item.ValorUnitario,
+                item.DescontoUnitario,
                 item.ValorDesconto,
                 item.DescontoPercentual,
                 ValorTotalItem = item.ValorTotal,

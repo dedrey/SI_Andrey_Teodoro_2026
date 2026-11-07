@@ -83,7 +83,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 Tamanho = i.Tamanho,
                 Quantidade = i.Quantidade,
                 ValorUnitario = i.ValorUnitario,
-                DescontoUnitario = i.Quantidade > 0 ? Math.Round(i.ValorDesconto / i.Quantidade, 2) : 0,
+                DescontoUnitario = i.DescontoUnitario,
                 ValorDesconto = i.ValorDesconto,
                 DescontoPercentual = i.DescontoPercentual,
                 CustoUnitarioEfetivo = i.CustoUnitarioEfetivo
@@ -170,16 +170,18 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             if (dto.ModeloNf == "55" && dto.ChaveAcesso == null)
                 return (false, "Informe a chave de acesso (obrigatória para o modelo 55).", 0);
-            if (dto.ChaveAcesso != null)
-            {
-                if (dto.ChaveAcesso.Length > 44)
-                    return (false, "A chave de acesso deve ter no máximo 44 dígitos.", 0);
-            }
+            if (dto.ModeloNf == "55" && dto.ChaveAcesso!.Length != 44)
+                return (false, "A chave de acesso deve ter 44 dígitos.", 0);
+            if (dto.ChaveAcesso != null && dto.ChaveAcesso.Length > 44)
+                return (false, "A chave de acesso deve ter no máximo 44 dígitos.", 0);
 
             var compraExistente = await _repo.ObterCompraComMesmaNotaAsync(dto.FornecedorId.Value, dto.ModeloNf, dto.SerieNf.Value, dto.NumeroNf);
             if (compraExistente.HasValue)
                 return (false, $"Esta nota já foi lançada na Compra #{compraExistente}.", 0);
 
+            dto.ValorFrete = ValorHelper.Moeda(dto.ValorFrete);
+            dto.ValorSeguro = ValorHelper.Moeda(dto.ValorSeguro);
+            dto.ValorOutrosAcrescimos = ValorHelper.Moeda(dto.ValorOutrosAcrescimos);
             if (dto.ValorFrete < 0)
                 return (false, "O frete não pode ser negativo.", 0);
             if (dto.ValorSeguro < 0) return (false, "O seguro não pode ser negativo.", 0);
@@ -188,10 +190,16 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
 
             foreach (var item in itensValidos)
             {
+                item.ValorUnitario = ValorHelper.Unit(item.ValorUnitario);
+                item.DescontoUnitario = ValorHelper.Unit(item.DescontoUnitario);
+                item.DescontoPercentual = ValorHelper.Perc(item.DescontoPercentual);
+
                 if (item.ProdutoVariacaoId == 0)
                     return (false, "Selecione a variação de todos os itens.", 0);
                 if (item.Quantidade <= 0)
                     return (false, $"{Desc(item)}: quantidade deve ser maior que zero.", 0);
+                if (item.Quantidade > CompraItemDto.QuantidadeMaxima)
+                    return (false, $"{Desc(item)}: quantidade máxima é {CompraItemDto.QuantidadeMaxima:N0}.", 0);
                 if (item.ValorUnitario <= 0)
                     return (false, $"{Desc(item)}: custo unitário deve ser maior que zero.", 0);
                 if (item.DescontoUnitario < 0)
@@ -201,15 +209,11 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 if (item.DescontoPercentual < 0 || item.DescontoPercentual > 100)
                     return (false, $"{Desc(item)}: desconto deve estar entre 0% e 100%.", 0);
 
-                var valorPeloPercentual = item.ValorUnitario * item.DescontoPercentual / 100;
-                var percentualPeloValor = item.ValorUnitario > 0 ? item.DescontoUnitario / item.ValorUnitario * 100 : 0;
-                if (Math.Abs(item.DescontoUnitario - valorPeloPercentual) > 0.01m
-                    && Math.Abs(item.DescontoPercentual - percentualPeloValor) > 0.01m)
-                    item.DescontoPercentual = percentualPeloValor;
-                item.DescontoPercentual = Math.Round(item.DescontoPercentual, 4);
-                var bruto = Math.Round(item.ValorUnitario * item.Quantidade, 2);
-                var totalLinha = Math.Round(item.Quantidade * (item.ValorUnitario - item.DescontoUnitario), 2);
-                item.ValorDesconto = bruto - totalLinha;
+                // Desc. Unit. é a fonte da verdade. O % digitado só é mantido se gerar exatamente esse Desc. Unit.
+                if (ValorHelper.DescontoPorPercentual(item.ValorUnitario, item.DescontoPercentual) != item.DescontoUnitario)
+                    item.DescontoPercentual = ValorHelper.PercentualPorDesconto(item.ValorUnitario, item.DescontoUnitario);
+                // Não confia nos totais da tela.
+                item.ValorDesconto = ValorHelper.DescontoLinha(item.Quantidade, item.DescontoUnitario);
             }
 
             var duplicada = itensValidos.GroupBy(i => i.ProdutoVariacaoId).FirstOrDefault(g => g.Count() > 1);
@@ -217,7 +221,7 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, $"{Desc(duplicada.First())} foi adicionado mais de uma vez. " +
                                "Junte as quantidades em um único item.", 0);
 
-            dto.ValorSubtotal = itensValidos.Sum(i => Math.Round(i.ValorUnitario * i.Quantidade, 2));
+            dto.ValorSubtotal = itensValidos.Sum(i => ValorHelper.BrutoLinha(i.Quantidade, i.ValorUnitario));
             dto.ValorDesconto = itensValidos.Sum(i => i.ValorDesconto);
             dto.ValorTotal = dto.ValorSubtotal - dto.ValorDesconto + dto.ValorFrete + dto.ValorSeguro + dto.ValorOutrosAcrescimos;
             if (dto.ValorTotal < 0)
@@ -392,10 +396,10 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 NomeEmitente = emit?.Element(NsNfe + "xNome")?.Value.Trim() ?? string.Empty,
                 CnpjTransportadora = transporta == null ? null : DocumentoHelper.SomenteDigitos((transporta.Element(NsNfe + "CNPJ") ?? transporta.Element(NsNfe + "CPF"))?.Value),
                 NomeTransportadora = transporta?.Element(NsNfe + "xNome")?.Value.Trim(),
-                ValorFrete = Valor(tot, "vFrete"),
-                ValorSeguro = Valor(tot, "vSeg"),
-                ValorOutros = Valor(tot, "vOutro"),
-                ValorTotalNota = Valor(tot, "vNF")
+                ValorFrete = ValorHelper.Moeda(Valor(tot, "vFrete")),
+                ValorSeguro = ValorHelper.Moeda(Valor(tot, "vSeg")),
+                ValorOutros = ValorHelper.Moeda(Valor(tot, "vOutro")),
+                ValorTotalNota = ValorHelper.Moeda(Valor(tot, "vNF"))
             };
 
             if (dados.CnpjEmitente.Length > 0)

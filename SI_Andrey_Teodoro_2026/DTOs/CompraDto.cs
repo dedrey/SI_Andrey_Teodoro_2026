@@ -64,6 +64,8 @@ public class CompraParcelaDto
 
 public class CompraItemDto
 {
+    public const int QuantidadeMaxima = 999_999;
+
     public int Id { get; set; }
     public int CompraId { get; set; }
     public int ProdutoVariacaoId { get; set; }
@@ -72,7 +74,7 @@ public class CompraItemDto
     public decimal DescontoUnitario { get; set; }
     public decimal ValorDesconto { get; set; }
     public decimal DescontoPercentual { get; set; }
-    public decimal ValorTotal => (ValorUnitario * Quantidade) - ValorDesconto;
+    public decimal ValorTotal => Helpers.ValorHelper.BrutoLinha(Quantidade, ValorUnitario) - ValorDesconto;
 
     public decimal CustoUnitarioEfetivo { get; set; }
 
