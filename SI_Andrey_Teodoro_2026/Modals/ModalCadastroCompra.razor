@@ -167,9 +167,15 @@
                     <RowTemplate>
                         <MudTd Style="font-weight:600;">@context.NomeProduto</MudTd>
                         <MudTd>@context.Cor / @context.Tamanho</MudTd>
-                        <MudTd Style="text-align:right;">@context.Quantidade</MudTd>
                         <MudTd>
-                            <MudNumericField T="decimal" @ref="_camposCusto[context]" Value="context.ValorUnitario" ValueChanged="@((decimal v) => OnValorAlterado(context, v))"
+                            <MudNumericField T="int?" @ref="_camposQuantidade[context]" Value="@(context.Quantidade > 0 ? context.Quantidade : (int?)null)"
+                                             ValueChanged="@((int? q) => OnQuantidadeAlterada(context, q ?? 0))"
+                                             HideSpinButtons="true" Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                             Class="input-direita mt-0" Min="0" FullWidth="true" Disabled="@LinhaBloqueada(context)"
+                                             Error="@(context.Quantidade < 1)" ErrorText="Mínimo 1" />
+                        </MudTd>
+                        <MudTd>
+                            <MudNumericField T="decimal" Value="context.ValorUnitario" ValueChanged="@((decimal v) => OnValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
                                              Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)" />
@@ -202,7 +208,7 @@
                                 {
                                     <MudTooltip Text="Grade cor × tamanho">
                                         <MudIconButton Icon="@Icons.Material.Filled.GridView" Color="Color.Primary" Size="Size.Small"
-                                                       Disabled="@(ProdutoDoItem(context) == null)" OnClick="@(() => AbrirGrade(ProdutoDoItem(context)))" />
+                                                       Disabled="@(ProdutoDoItem(context) == null)" OnClick="@(() => EditarGrade(ProdutoDoItem(context)!))" />
                                     </MudTooltip>
                                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" Color="Color.Error" Size="Size.Small" OnClick="@(() => RemoverItem(context))" />
                                 }
@@ -434,10 +440,10 @@
         ? _contasPagar.Count > 0
         : _dto.CondicaoPagamentoId.HasValue && _itensConfirmados && _dto.ValorTotal > 0;
     private List<ProdutoListDto> _produtos = new();
-    private readonly Dictionary<CompraItemDto, MudNumericField<decimal>> _camposCusto = new();
+    private readonly Dictionary<CompraItemDto, MudNumericField<int?>> _camposQuantidade = new();
     private readonly System.Globalization.CultureInfo _culturaBr = new("pt-BR");
     private Dictionary<string, int> _ordemTamanhos = new();
-    private CompraItemDto? _focarCusto;
+    private CompraItemDto? _focarQuantidade;
     private readonly Dictionary<CompraItemDto, ProdutoListDto?> _produtosSelecionados = new();
     private readonly Dictionary<CompraItemDto, bool> _ultimoDescontoPercentual = new();
     private bool CabecalhoBloqueado => _dto.Itens.Any(i => !i.Removido);
@@ -553,7 +559,7 @@
     private string? ErroItem(CompraItemDto item)
     {
         if (item.ProdutoVariacaoId <= 0) return "Selecione o produto e a variação de todos os itens.";
-        if (item.Quantidade <= 0) return "Informe a quantidade de todos os itens.";
+        if (item.Quantidade < 1) return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: a quantidade deve ser de pelo menos 1.";
         if (item.ValorUnitario <= 0) return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: informe o custo unitário.";
         if (PercentualInvalido(item)) return "O desconto % deve ficar entre 0% e 100%.";
         if (DescontoInvalido(item)) return "O desconto unitário não pode ser negativo nem maior que o valor unitário.";
@@ -618,54 +624,79 @@
             _dataChegada = null;
     }
 
-    private Task AdicionarItem() => AbrirGrade(null);
+    private async Task AdicionarItem()
+    {
+        var produtos = await DialogService.PesquisarVariosProdutosAsync(ProdutoService, null, Enumerable.Empty<ProdutoListDto>(), NovoProduto);
+        if (produtos == null || produtos.Count == 0) return;
+        await AbrirGrade(produtos.Select(p => _produtos.FirstOrDefault(x => x.Id == p.Id) ?? p).ToList(), null);
+    }
+
+    private async Task<ProdutoListDto?> NovoProduto()
+    {
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ModalCadastroProduto>("Novo Produto", opts);
+        var result = await dialog.Result;
+        if (result is not { Canceled: false } || result.Data is not int id) return null;
+        _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList();
+        return _produtos.FirstOrDefault(p => p.Id == id);
+    }
 
     private ProdutoListDto? ProdutoDoItem(CompraItemDto item) => _produtosSelecionados.GetValueOrDefault(item);
 
-    private async Task AbrirGrade(ProdutoListDto? produto)
+    private bool ItemDoProduto(CompraItemDto item, int produtoId) => item.ProdutoId == produtoId || ProdutoDoItem(item)?.Id == produtoId;
+
+    private Task EditarGrade(ProdutoListDto produto) =>
+        AbrirGrade(new List<ProdutoListDto> { produto }, _dto.Itens
+            .Where(i => i.ProdutoVariacaoId > 0 && ItemDoProduto(i, produto.Id))
+            .Select(i => i.ProdutoVariacaoId).Distinct().ToList());
+
+    // variacoesMarcadas != null: edição pela linha (sincroniza as variações do produto); null: adição pela pesquisa.
+    private async Task AbrirGrade(List<ProdutoListDto> produtos, List<int>? variacoesMarcadas)
     {
         var param = new DialogParameters<ModalGradeCompra>
         {
-            { x => x.Produtos,       _produtos },
-            { x => x.ItensCompra,    _dto.Itens.Where(i => i.ProdutoVariacaoId > 0).ToList() },
-            { x => x.ProdutoInicial, produto }
+            { x => x.ProdutosIniciais,  produtos },
+            { x => x.VariacoesMarcadas, variacoesMarcadas }
         };
         var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalGradeCompra>("Grade Cor × Tamanho", param, opts);
         if ((await dialog.Result) is not { Canceled: false, Data: List<ModalGradeCompra.ResultadoGrade> grades }) return;
-        AplicarGrades(grades);
+        AplicarGrades(grades, edicao: variacoesMarcadas != null);
     }
 
-    private void AplicarGrades(List<ModalGradeCompra.ResultadoGrade> grades)
+    private void AplicarGrades(List<ModalGradeCompra.ResultadoGrade> grades, bool edicao)
     {
         var novas = new HashSet<CompraItemDto>();
         foreach (var grade in grades)
-        foreach (var (variacao, quantidade) in grade.Itens)
         {
-            var item = _dto.Itens.FirstOrDefault(i => i.ProdutoVariacaoId == variacao.IdOriginal);
-            if (item != null && quantidade <= 0) { RemoverItem(item); continue; }
-            if (quantidade <= 0) continue;
-            if (item == null)
+            var marcadas = grade.Variacoes.Select(v => v.IdOriginal).ToHashSet();
+            if (edicao)
+                foreach (var item in _dto.Itens.Where(i => ItemDoProduto(i, grade.Produto.Id) && !marcadas.Contains(i.ProdutoVariacaoId)).ToList())
+                    RemoverItem(item);
+
+            foreach (var variacao in grade.Variacoes)
             {
-                item = new CompraItemDto
+                if (_dto.Itens.Any(i => i.ProdutoVariacaoId == variacao.IdOriginal))
+                {
+                    if (!edicao) Snackbar.Add($"{grade.Produto.Produto} / {variacao.Cor} / {variacao.Tamanho} já estava na compra", Severity.Info);
+                    continue;
+                }
+                var novo = new CompraItemDto
                 {
                     ProdutoVariacaoId = variacao.IdOriginal,
                     ProdutoId = grade.Produto.Id,
                     NomeProduto = grade.Produto.Produto,
                     Cor = variacao.Cor,
                     Tamanho = variacao.Tamanho,
-                    Quantidade = quantidade
+                    Quantidade = 1
                 };
-                _dto.Itens.Add(item);
-                _produtosSelecionados[item] = grade.Produto;
-                novas.Add(item);
-                continue;
+                _dto.Itens.Add(novo);
+                _produtosSelecionados[novo] = grade.Produto;
+                novas.Add(novo);
             }
-            item.Quantidade = quantidade;
-            SincronizarDesconto(item);
         }
         OrdenarItens();
-        _focarCusto = _dto.Itens.FirstOrDefault(novas.Contains);
+        _focarQuantidade = _dto.Itens.FirstOrDefault(novas.Contains);
         RecalcularTotais();
         StateHasChanged();
     }
@@ -684,22 +715,30 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_focarCusto == null) return;
-        var item = _focarCusto;
-        _focarCusto = null;
-        if (_camposCusto.TryGetValue(item, out var campo)) await campo.FocusAsync();
+        if (_focarQuantidade == null) return;
+        var item = _focarQuantidade;
+        _focarQuantidade = null;
+        if (!_camposQuantidade.TryGetValue(item, out var campo)) return;
+        await campo.FocusAsync();
+        await campo.SelectAsync();
     }
 
     private void RemoverItem(CompraItemDto item)
     {
         _dto.Itens.Remove(item);
         _produtosSelecionados.Remove(item);
-        _camposCusto.Remove(item);
+        _camposQuantidade.Remove(item);
         _ultimoDescontoPercentual.Remove(item);
         RecalcularTotais();
         StateHasChanged();
     }
 
+    private void OnQuantidadeAlterada(CompraItemDto item, int quantidade)
+    {
+        item.Quantidade = quantidade;
+        SincronizarDesconto(item);
+        RecalcularTotais();
+    }
     private void OnValorAlterado(CompraItemDto item, decimal valor)
     {
         item.ValorUnitario = Math.Max(valor, 0);

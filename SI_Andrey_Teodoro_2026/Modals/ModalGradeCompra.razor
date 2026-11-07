@@ -7,127 +7,78 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.GridView" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">Adicionar Itens — Grade Cor × Tamanho</MudText>
+            <MudText Typo="Typo.h6">@(ModoEdicao ? "Editar Itens — Cor × Tamanho" : "Adicionar Itens — Cor × Tamanho")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
-        <MudGrid Spacing="2" Class="mb-3">
-            <MudItem xs="12">
-                <div class="d-flex align-center gap-1">
-                    <MudAutocomplete T="ProdutoListDto" Label="Produto" @ref="_campoProduto"
-                                     Value="_produtoBusca" ValueChanged="@((ProdutoListDto? p) => OnProdutoSelecionado(p))"
-                                     SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="_carregando" />
-                    <MudTooltip Text="Pesquisar produtos">
-                        <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
-                                       OnClick="PesquisarProdutoModal" Disabled="_carregando" />
-                    </MudTooltip>
-                </div>
-            </MudItem>
-        </MudGrid>
-
         @foreach (var g in _grades)
         {
             <div class="mb-4" style="border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;">
                 <div class="d-flex align-center justify-space-between mb-2">
                     <MudText Typo="Typo.subtitle2" Style="font-weight:700;">@g.Produto.Produto</MudText>
-                    <MudTooltip Text="Remover produto da lista">
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => _grades.Remove(g))" />
-                    </MudTooltip>
+                    @if (!ModoEdicao)
+                    {
+                        <MudTooltip Text="Remover produto da lista">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => _grades.Remove(g))" />
+                        </MudTooltip>
+                    }
                 </div>
                 @if (g.Variacoes.Count == 0)
                 {
                     <div class="d-flex align-center gap-2 pa-3" style="background:#fff8e1;border-radius:8px;color:#8a6d00;">
                         <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" />
-                        <MudText Typo="Typo.body2">Este produto não tem variações ativas.</MudText>
+                        <MudText Typo="Typo.body2">Este produto não tem tamanhos cadastrados (variações ativas). Cadastre ao menos um tamanho no produto ou remova-o da lista.</MudText>
                     </div>
                 }
                 else
                 {
-                    <div style="overflow-x:auto;">
-                        <MudSimpleTable Dense="true" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
-                            <thead>
-                                <tr>
-                                    <th style="font-weight:600;">Cor</th>
-                                    @foreach (var t in g.Tamanhos)
-                                    {
-                                        <th style="font-weight:600;text-align:center;">@t.Nome</th>
-                                    }
-                                    <th style="font-weight:600;text-align:center;">Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var c in g.Cores)
-                                {
-                                    <tr>
-                                        <td style="font-weight:600;white-space:nowrap;">@c.Nome</td>
-                                        @foreach (var t in g.Tamanhos)
-                                        {
-                                            var v = g.Variacao(c.Id, t.Id);
-                                            if (v == null)
-                                            {
-                                                <td style="text-align:center;color:#bbb;">–</td>
-                                            }
-                                            else
-                                            {
-                                                <td style="text-align:center;padding:4px 6px;">
-                                                    <div style="width:76px;margin:0 auto;">
-                                                        <MudNumericField T="int" Value="@g.Quantidades.GetValueOrDefault(v.IdOriginal)"
-                                                                         ValueChanged="@((int q) => g.Quantidades[v.IdOriginal] = Math.Max(q, 0))"
-                                                                         Min="0" HideSpinButtons="true" Immediate="true"
-                                                                         Variant="Variant.Outlined" Margin="Margin.Dense" Class="input-direita mt-0" />
-                                                    </div>
-                                                    <div style="font-size:0.7rem;color:#888;margin-top:2px;">Est.: @v.QuantidadeEstoque</div>
-                                                </td>
-                                            }
-                                        }
-                                        <td style="text-align:center;font-weight:600;">@g.TotalCor(c.Id)</td>
-                                    </tr>
-                                }
-                                <tr style="background:#fafafa;">
-                                    <td style="font-weight:600;">Total</td>
-                                    @foreach (var t in g.Tamanhos)
-                                    {
-                                        <td style="text-align:center;font-weight:600;">@g.TotalTamanho(t.Id)</td>
-                                    }
-                                    <td style="text-align:center;font-weight:700;">@g.TotalPecas</td>
-                                </tr>
-                            </tbody>
-                        </MudSimpleTable>
-                    </div>
+                    @foreach (var cor in g.Cores)
+                    {
+                        <div class="d-flex align-center flex-wrap gap-1 mb-2">
+                            @if (g.Cores.Count > 1)
+                            {
+                                <MudText Typo="Typo.body2" Style="font-weight:600;min-width:90px;">@cor.Nome:</MudText>
+                            }
+                            @foreach (var v in g.Variacoes.Where(v => v.CorId == cor.Id))
+                            {
+                                var marcado = g.Marcadas.Contains(v.IdOriginal);
+                                <MudChip T="int" Size="Size.Small" Color="Color.Primary"
+                                         Variant="@(marcado ? Variant.Filled : Variant.Outlined)"
+                                         Icon="@(marcado ? Icons.Material.Filled.Check : null)"
+                                         OnClick="@(() => Alternar(g, v))">@v.Tamanho</MudChip>
+                            }
+                        </div>
+                    }
+                    @if (g.Marcadas.Count == 0)
+                    {
+                        <MudText Typo="Typo.caption" Style="color:#888;">Selecione ao menos um tamanho.</MudText>
+                    }
                 }
             </div>
         }
 
         @if (_carregando)
         {
-            <div class="d-flex align-center pa-4" style="color:#999;"><MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />Carregando variações...</div>
-        }
-        @if (_grades.Count > 0)
-        {
-            <div class="d-flex justify-end">
-                <MudText Typo="Typo.body2">Total de peças: <b>@_grades.Sum(g => g.TotalPecas)</b></MudText>
-            </div>
+            <div class="d-flex align-center pa-4" style="color:#999;"><MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />Carregando tamanhos...</div>
         }
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Fechar" Style="height:40px;">Cancelar</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirmar" Disabled="@(_grades.Count == 0 || _carregando)"
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Confirmar" Disabled="@(!PodeConfirmar)"
                    StartIcon="@Icons.Material.Filled.Check" Style="height:40px;font-weight:700;">Confirmar</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
-    [Parameter] public List<ProdutoListDto> Produtos { get; set; } = new();
-    [Parameter] public List<CompraItemDto> ItensCompra { get; set; } = new();
-    [Parameter] public ProdutoListDto? ProdutoInicial { get; set; }
+    [Parameter] public List<ProdutoListDto> ProdutosIniciais { get; set; } = new();
+    // Modo edição (botão de grade na linha): variações do produto que já estão na compra.
+    [Parameter] public List<int>? VariacoesMarcadas { get; set; }
 
     public class ResultadoGrade
     {
         public ProdutoListDto Produto { get; set; } = null!;
-        public List<(ProdutoVariacaoDto Variacao, int Quantidade)> Itens { get; set; } = new();
+        public List<ProdutoVariacaoDto> Variacoes { get; set; } = new();
     }
 
     private record Eixo(int Id, string Nome);
@@ -137,19 +88,14 @@
         public ProdutoListDto Produto { get; init; } = null!;
         public List<ProdutoVariacaoDto> Variacoes { get; init; } = new();
         public List<Eixo> Cores { get; init; } = new();
-        public List<Eixo> Tamanhos { get; init; } = new();
-        public Dictionary<int, int> Quantidades { get; } = new();
-
-        public int TotalPecas => Variacoes.Sum(v => Quantidades.GetValueOrDefault(v.IdOriginal));
-        public ProdutoVariacaoDto? Variacao(int corId, int tamanhoId) => Variacoes.FirstOrDefault(v => v.CorId == corId && v.TamanhoId == tamanhoId);
-        public int TotalCor(int corId) => Variacoes.Where(v => v.CorId == corId).Sum(v => Quantidades.GetValueOrDefault(v.IdOriginal));
-        public int TotalTamanho(int tamanhoId) => Variacoes.Where(v => v.TamanhoId == tamanhoId).Sum(v => Quantidades.GetValueOrDefault(v.IdOriginal));
+        public HashSet<int> Marcadas { get; } = new();
     }
+
+    private bool ModoEdicao => VariacoesMarcadas != null;
+    private bool PodeConfirmar => !_carregando && _grades.Count > 0 && _grades.All(g => g.Marcadas.Count > 0);
 
     private string? _snapshot;
     private bool _carregando;
-    private MudAutocomplete<ProdutoListDto>? _campoProduto;
-    private ProdutoListDto? _produtoBusca;
     private readonly List<Grade> _grades = new();
     private Dictionary<int, int> _ordemTamanhos = new();
 
@@ -157,48 +103,13 @@
     {
         try { _ordemTamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToDictionary(t => t.Id, t => t.Ordem); }
         catch (Exception ex) { Snackbar.Add($"Erro ao carregar tamanhos: {ex.Message}", Severity.Error); }
-        if (ProdutoInicial != null) await AdicionarProduto(ProdutoInicial);
+        foreach (var produto in ProdutosIniciais) await AdicionarProduto(produto);
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
-    }
-
-    private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)
-    {
-        var r = string.IsNullOrWhiteSpace(busca) ? Produtos.Take(50) : Produtos.Where(p => p.Produto.Contains(busca, StringComparison.OrdinalIgnoreCase));
-        return Task.FromResult(r);
-    }
-
-    private async Task PesquisarProdutoModal()
-    {
-        var produtos = await DialogService.PesquisarVariosAsync("Pesquisar Produtos", ProdutoService.ObterTodosAsync,
-            new List<ColunaPesquisa<ProdutoListDto>>
-            {
-                new("Código", p => p.Id),
-                new("Produto", p => p.Produto),
-                new("Categoria", p => p.NomeCategoria),
-                new("Marca", p => p.NomeMarca),
-                new("Fornecedor", p => p.NomeFornecedor)
-            }, p => p.Id, null, Enumerable.Empty<ProdutoListDto>(), "ativos");
-        if (produtos == null) return;
-        foreach (var produto in produtos)
-            await AdicionarProduto(Produtos.FirstOrDefault(p => p.Id == produto.Id) ?? produto);
-    }
-
-    private async Task OnProdutoSelecionado(ProdutoListDto? produto)
-    {
-        _produtoBusca = produto;
-        if (produto == null) return;
-        await AdicionarProduto(produto);
-        _produtoBusca = null;
-        if (_campoProduto != null) await _campoProduto.ClearAsync();
     }
 
     private async Task AdicionarProduto(ProdutoListDto produto)
     {
-        if (_grades.Any(g => g.Produto.Id == produto.Id))
-        {
-            Snackbar.Add($"{produto.Produto} já está na lista.", Severity.Info);
-            return;
-        }
+        if (_grades.Any(g => g.Produto.Id == produto.Id)) return;
 
         _carregando = true;
         StateHasChanged();
@@ -206,45 +117,46 @@
         try
         {
             var dto = await ProdutoService.ObterPorIdAsync(produto.Id);
-            variacoes = dto?.Variacoes.Where(v => v.Ativo).ToList() ?? new();
+            variacoes = dto?.Variacoes.Where(v => v.Ativo)
+                .OrderBy(v => v.Cor)
+                .ThenBy(v => _ordemTamanhos.GetValueOrDefault(v.TamanhoId, int.MaxValue))
+                .ThenBy(v => v.Tamanho)
+                .ToList() ?? new();
         }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar variações: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add($"Erro ao carregar tamanhos: {ex.Message}", Severity.Error); }
         finally { _carregando = false; }
 
         var grade = new Grade
         {
             Produto = produto,
             Variacoes = variacoes,
-            Cores = variacoes.Select(v => new Eixo(v.CorId, v.Cor)).Distinct().ToList(),
-            Tamanhos = variacoes.Select(v => new Eixo(v.TamanhoId, v.Tamanho)).Distinct()
-                .OrderBy(t => _ordemTamanhos.GetValueOrDefault(t.Id, int.MaxValue)).ThenBy(t => t.Nome).ToList()
+            Cores = variacoes.Select(v => new Eixo(v.CorId, v.Cor)).Distinct().ToList()
         };
-
-        var existentes = ItensCompra
-            .Where(i => variacoes.Any(v => v.IdOriginal == i.ProdutoVariacaoId))
-            .GroupBy(i => i.ProdutoVariacaoId).Select(g => g.First()).ToList();
-        foreach (var item in existentes) grade.Quantidades[item.ProdutoVariacaoId] = item.Quantidade;
+        if (VariacoesMarcadas != null)
+            grade.Marcadas.UnionWith(variacoes.Select(v => v.IdOriginal).Where(VariacoesMarcadas.Contains));
 
         _grades.Add(grade);
     }
 
+    private static void Alternar(Grade g, ProdutoVariacaoDto v)
+    {
+        if (!g.Marcadas.Remove(v.IdOriginal)) g.Marcadas.Add(v.IdOriginal);
+    }
+
     private void Confirmar()
     {
-        if (_grades.Count == 0) { Snackbar.Add("Selecione pelo menos um produto.", Severity.Warning); return; }
-        var semQuantidade = _grades.FirstOrDefault(g => g.TotalPecas <= 0);
-        if (semQuantidade != null) { Snackbar.Add($"Informe a quantidade de pelo menos uma combinação em {semQuantidade.Produto.Produto} ou remova-o da lista.", Severity.Warning); return; }
-
+        if (!PodeConfirmar) return;
         MudDialog.Close(DialogResult.Ok(_grades.Select(g => new ResultadoGrade
         {
             Produto = g.Produto,
-            Itens = g.Variacoes.Select(v => (v, g.Quantidades.GetValueOrDefault(v.IdOriginal))).ToList()
+            Variacoes = g.Variacoes.Where(v => g.Marcadas.Contains(v.IdOriginal)).ToList()
         }).ToList()));
     }
 
     private object DadosEditaveis() => _grades.Select(g => new
     {
         ProdutoId = g.Produto.Id,
-        Quantidades = g.Quantidades.Where(q => q.Value > 0).OrderBy(q => q.Key).ToDictionary(q => q.Key, q => q.Value)
+        Marcadas = g.Marcadas.OrderBy(id => id).ToList()
     }).ToList();
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, DadosEditaveis());
 }

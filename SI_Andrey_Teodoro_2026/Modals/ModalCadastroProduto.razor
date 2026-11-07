@@ -129,16 +129,14 @@
 
             @if (!_readOnly && _dto.Variacoes.Count(v => !v.Removida) > 1)
             {
-                <div class="d-flex align-center gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Small" Style="color:#888;" />
-                    <MudText Typo="Typo.body2" Style="color:#666;white-space:nowrap;">Replicar valor de venda pra todas as variações:</MudText>
+                <div class="d-flex align-center gap-3 mb-3">
                     <MudNumericField T="decimal" Value="_replicarVenda" ValueChanged="@((decimal v) => _replicarVenda = Math.Max(v, 0))"
-                                     HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                     Label="Valor de venda" HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                      Min="0" Format="N2" Culture="@_culturaBr"
-                                     Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:160px;" Disabled="@Bloqueado(2)" />
-                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="ReplicarValorVenda" Disabled="@Bloqueado(2)">
-                        Replicar Valor de Venda
+                                     Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:200px;" Disabled="@Bloqueado(2)" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReplicarValorVenda"
+                               Style="height:40px;" Disabled="@Bloqueado(2)">
+                        Replicar para todas
                     </MudButton>
                 </div>
             }
@@ -181,11 +179,6 @@
                             Gerar combinações
                         </MudButton>
                     </div>
-                    <MudText Typo="Typo.caption" Style="color:#888;display:block;margin-top:8px;">
-                        Cria uma variação pra cada combinação marcada (pulando as que já existem), já com o preço de venda
-                        copiado da última variação preenchida — é só ajustar o que for diferente. Código de barras
-                        já vale pra todas (preenchido ali em cima).
-                    </MudText>
                 </MudExpansionPanel>
             </MudExpansionPanels>
             }
@@ -525,10 +518,10 @@
         await _form!.Validate();
         if (!_formValido) return;
         _salvando = true;
-        var (sucesso, mensagem, _) = await ProdutoService.SalvarAsync(_dto);
+        var (sucesso, mensagem, id) = await ProdutoService.SalvarAsync(_dto);
         _salvando = false;
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-        if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+        if (sucesso) MudDialog.Close(DialogResult.Ok(id));
     }
     private object DadosEditaveis() => new { _dto, _replicarVenda, _coresLote, _tamanhosLote };
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
