@@ -78,3 +78,84 @@ input.mud-input-slot, textarea.mud-input-slot {
         display: none;
     }
 }
+
+/* ===== Compras: modal de grade cor x tamanho ===== */
+.mud-dialog.grade-dialog {
+    max-height: 80vh;
+    min-width: 460px;
+    display: flex;
+    flex-direction: column;
+}
+
+.mud-dialog.grade-dialog .grade-dialog-conteudo {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.grade-blocos.grade-duas-colunas {
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    column-gap: 28px;
+}
+
+.grade-cores {
+    display: grid;
+    align-items: center;
+    justify-content: start;
+    column-gap: 4px;
+    row-gap: 2px;
+}
+
+.grade-cores .grade-cor-nome {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 6px;
+}
+
+.grade-cores .mud-chip.grade-chip {
+    margin: 0;
+    width: 100%;
+    justify-content: center;
+}
+
+/* ===== Compras: tabela "Itens da Compra" ===== */
+.mud-table.tabela-itens-compra table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.mud-table.tabela-itens-compra .mud-table-row .mud-table-cell,
+.mud-table.tabela-itens-compra .mud-table-row .mud-table-cell:last-child {
+    padding: 2px 6px;
+}
+
+.mud-table.tabela-itens-compra .mud-table-row .mud-table-cell.col-quebra {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.mud-table.tabela-itens-compra .mud-input-control {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* ===== Compras: cabeçalho do modal (largura por conteúdo) ===== */
+.cabecalho-compra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: flex-start;
+}
+
+.cabecalho-compra > .campo-largo { flex: 1 1 320px; min-width: 0; }
+.cabecalho-compra > .campo-modelo { flex: 0 0 240px; }
+.cabecalho-compra > .campo-serie { flex: 0 0 80px; }
+.cabecalho-compra > .campo-numero { flex: 0 0 120px; }
+.cabecalho-compra > .campo-chave { flex: 1 1 480px; min-width: 0; }
+.cabecalho-compra > .campo-data { flex: 0 0 165px; }
+.cabecalho-compra > .campo-condicao { flex: 1 1 260px; min-width: 0; }

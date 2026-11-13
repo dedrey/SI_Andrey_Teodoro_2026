@@ -33,8 +33,8 @@
                     <strong>Compra cancelada:</strong> @_dto.MotivoCancelamento
                 </MudAlert>
             }
-            <MudGrid Spacing="2">
-                <MudItem xs="12" sm="6">
+            <div class="cabecalho-compra">
+                <div class="campo-largo">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="FornecedorListDto"
                                          Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
@@ -49,8 +49,8 @@
                                            OnClick="PesquisarFornecedor" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                         </MudTooltip>
                     </div>
-                </MudItem>
-                <MudItem xs="12" sm="6">
+                </div>
+                <div class="campo-largo">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="TransportadoraListDto"
                                          Value="@(_transportadoras.FirstOrDefault(t => t.Id == _dto.TransportadoraId))"
@@ -65,9 +65,9 @@
                                            OnClick="PesquisarTransportadora" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                         </MudTooltip>
                     </div>
-                </MudItem>
+                </div>
 
-                <MudItem xs="12" sm="3">
+                <div class="campo-modelo">
                     <MudSelect T="string" @bind-Value="_dto.ModeloNf" Label="Modelo"
                                Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                Required="true" RequiredError="Selecione o modelo"
@@ -77,47 +77,47 @@
                         <MudSelectItem T="string" Value="@("01")">01 - NOTA FISCAL MODELO 1/1A</MudSelectItem>
                         <MudSelectItem T="string" Value="@("04")">04 - NOTA FISCAL DE PRODUTOR</MudSelectItem>
                     </MudSelect>
-                </MudItem>
-                <MudItem xs="6" sm="2">
+                </div>
+                <div class="campo-serie">
                     <MudNumericField T="int?" @bind-Value="_dto.SerieNf" Label="Série"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      Min="0" Max="999" HideSpinButtons="true"
                                      Required="true" RequiredError="Obrigatório"
                                      Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </MudItem>
-                <MudItem xs="6" sm="2">
+                </div>
+                <div class="campo-numero">
                     <MudTextField T="string" @bind-Value="_dto.NumeroNf" Label="Número"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                   Required="true" RequiredError="Obrigatório"
                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </MudItem>
-                <MudItem xs="12" sm="5">
+                </div>
+                <div class="campo-chave">
                     <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
                                   Required="@(_dto.ModeloNf == "55")" RequiredError="Obrigatório" HelperText="@AvisoChave"
                                   Error="@(ErroChave != null)" ErrorText="@ErroChave"
                                   Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
-                </MudItem>
+                </div>
 
-                <MudItem xs="12" sm="3">
+                <div class="campo-data">
                     <CampoData @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao" Label="Data de Emissão"
                                Required="true" AutoClose="true" MaxDate="DateTime.Today"
                                Validation="@(new Func<DateTime?, string?>(d => DataHelper.ValidarNaoFutura(d, "data de emissão")))"
                                Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </MudItem>
-                <MudItem xs="12" sm="3">
+                </div>
+                <div class="campo-data">
                     <CampoData @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada" Label="Data de Chegada"
                                Required="true" AutoClose="true" MinDate="_dataEmissao" MaxDate="DateTime.Today"
                                Validation="@(new Func<DateTime?, string?>(d => DataHelper.ValidarNaoFutura(d, "data de chegada") ?? DataHelper.ValidarNaoAnterior(d, _dataEmissao, "data de chegada", "data de emissão")))"
                                Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
+                </div>
+                <div class="campo-condicao">
                     <MudTextField T="string" Value="@_dto.NomeCondicaoPagamento"
                                   Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                   ReadOnly="true" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
                                   Error="@(ErroCondicao != null)" ErrorText="@ErroCondicao" />
-                </MudItem>
-            </MudGrid>
+                </div>
+            </div>
             @if (!CabecalhoValido && !SomenteLeitura)
             {
                 <MudText Typo="Typo.caption" Style="color:#888;">Preencha fornecedor, transportadora, dados da nota e datas válidas para adicionar itens.</MudText>
@@ -147,27 +147,44 @@
             }
             else if (_dto.Itens.Count > 0)
             {
-                <MudTable Items="@_dto.Itens" Dense="true" Hover="false" Elevation="0" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                <MudTable Items="@_dto.Itens" Dense="true" Hover="false" Elevation="0" Class="tabela-itens-compra" Style="border:1px solid #f0f0f0;border-radius:8px;">
+                    <ColGroup>
+                        <col />
+                        <col />
+                        <col style="width:90px;" />
+                        <col style="width:130px;" />
+                        <col style="width:100px;" />
+                        <col style="width:130px;" />
+                        @if (SomenteLeitura)
+                        {
+                            <col style="width:110px;" />
+                        }
+                        <col style="width:110px;" />
+                        @if (!SomenteLeitura)
+                        {
+                            <col style="width:80px;" />
+                        }
+                    </ColGroup>
                     <HeaderContent>
-                        <MudTh Style="font-weight:600;">Produto</MudTh>
-                        <MudTh Style="font-weight:600;">Variação</MudTh>
+                        <MudTh Class="col-quebra" Style="font-weight:600;">Produto</MudTh>
+                        <MudTh Class="col-quebra" Style="font-weight:600;">Variação</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Quantidade</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Preço Unit. (R$)</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Desc. %</MudTh>
                         <MudTh Style="font-weight:600;text-align:right;">Desc. Unit. R$</MudTh>
                         @if (SomenteLeitura)
                         {
-                            <MudTh Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
+                            <MudTh Class="col-quebra" Style="font-weight:600;text-align:right;">Custo Efetivo</MudTh>
                         }
-                        <MudTh Style="font-weight:600;text-align:right;white-space:nowrap;min-width:120px;">Total</MudTh>
+                        <MudTh Style="font-weight:600;text-align:right;white-space:nowrap;">Total</MudTh>
                         @if (!SomenteLeitura)
                         {
                             <MudTh Style="font-weight:600;text-align:center;">Ação</MudTh>
                         }
                     </HeaderContent>
                     <RowTemplate>
-                        <MudTd Style="font-weight:600;">@context.NomeProduto</MudTd>
-                        <MudTd>@context.Cor / @context.Tamanho</MudTd>
+                        <MudTd Class="col-quebra" Style="font-weight:600;">@context.NomeProduto</MudTd>
+                        <MudTd Class="col-quebra">@context.Cor / @context.Tamanho</MudTd>
                         <MudTd>
                             <MudNumericField T="int?" @ref="_camposQuantidade[context]" Value="@(context.Quantidade > 0 ? context.Quantidade : (int?)null)"
                                              ValueChanged="@((int? q) => OnQuantidadeAlterada(context, q ?? 0))"
@@ -201,10 +218,10 @@
                         {
                             <MudTd Style="text-align:right;">R$ @context.CustoUnitarioEfetivo.ToString("N2")</MudTd>
                         }
-                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;min-width:120px;">R$ @TotalItem(context).ToString("N2")</MudTd>
+                        <MudTd Style="text-align:right;font-weight:600;white-space:nowrap;">R$ @TotalItem(context).ToString("N2")</MudTd>
                         @if (!SomenteLeitura)
                         {
-                            <MudTd Style="text-align:center;">
+                            <MudTd Style="text-align:center;white-space:nowrap;">
                                 @if (!_itensConfirmados)
                                 {
                                     <MudTooltip Text="Grade cor × tamanho">
@@ -321,7 +338,7 @@
                     </MudItem>
                     <MudItem xs="12" md="5" Class="d-flex">
                         <div class="pa-3" style="flex:1;border:1px solid #f0f0f0;border-radius:8px;background:#fafafa;">
-                            <div style="display:grid;grid-template-columns:minmax(120px,1fr) minmax(140px,180px);grid-auto-rows:44px;column-gap:16px;align-items:center;">
+                            <div style="display:grid;grid-template-columns:minmax(120px,1fr) 140px;grid-auto-rows:44px;column-gap:16px;align-items:center;">
                                 <MudText Typo="Typo.body2">Subtotal (produtos)</MudText>
                                 <MudText Typo="Typo.body2" Style="font-weight:600;text-align:right;white-space:nowrap;">R$ @_dto.ValorSubtotal.ToString("N2")</MudText>
                                 <MudText Typo="Typo.body2" Style="color:#2e7d32;">Desconto</MudText>
@@ -664,7 +681,7 @@
             { x => x.ProdutosIniciais,  produtos },
             { x => x.VariacoesMarcadas, variacoesMarcadas }
         };
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = false };
         var dialog = await DialogService.ShowAsync<ModalGradeCompra>("Grade Cor × Tamanho", param, opts);
         if ((await dialog.Result) is not { Canceled: false, Data: List<ModalGradeCompra.ResultadoGrade> grades }) return;
         AplicarGrades(grades, edicao: variacoesMarcadas != null);

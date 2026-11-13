@@ -16,13 +16,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="2">
+                <MudItem xs="12" sm="2" md="1">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
                                      Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
                                      Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
                 </MudItem>
-                <MudItem xs="12" sm="4">
+                <MudItem xs="12" sm="4" md="7">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="TransportadoraListDto" Label="Transportadora"
                                          Value="_transportadoraSelecionada"
@@ -37,14 +37,14 @@
                         </MudTooltip>
                     </div>
                 </MudItem>
-                <MudItem xs="6" sm="3">
+                <MudItem xs="6" sm="3" md="2">
                     <MudTextField Value="@_placaTexto" ValueChanged="@((string? v) => OnPlacaAlterada(v))"
                                   Label="Placa" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="7" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarPlaca(v))"
                                   Disabled="@(_readOnly || Edicao || !TransportadoraOk)" HelperText="@AjudaPlaca" />
                 </MudItem>
-                <MudItem xs="6" sm="3">
+                <MudItem xs="6" sm="3" md="2">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="string" Label="UF"
                                          Value="@_dto.Uf" ValueChanged="@((string? v) => _dto.Uf = v ?? "")"

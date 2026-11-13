@@ -14,13 +14,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="3">
+                <MudItem xs="12" sm="3" md="2">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
                                      Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
                                      Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
                 </MudItem>
-                <MudItem xs="12" sm="9">
+                <MudItem xs="12" sm="9" md="10">
                     <MudTextField Value="@_dto.NomeMarca"
                                   ValueChanged="@((string v) => _dto.NomeMarca = v)"
                                   Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense"

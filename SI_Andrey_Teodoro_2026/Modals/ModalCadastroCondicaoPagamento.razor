@@ -14,18 +14,18 @@
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
                 <TituloSecao Grupos="_grupos" Grupo="1" Icone="@Icons.Material.Filled.RequestQuote" Titulo="Condição" AoMudar="StateHasChanged" />
-                <MudItem xs="12" sm="2">
+                <MudItem xs="12" sm="2" md="1">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => { _dto.Id = v; Alterou(1); })"
                                      Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
                                      Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
                 </MudItem>
-                <MudItem xs="12" sm="4">
+                <MudItem xs="12" sm="4" md="6">
                     <MudTextField Value="@_dto.CondicaoPagamento" ValueChanged="@((string v) => { _dto.CondicaoPagamento = v; Alterou(1); })" Label="Condição de Pagamento" Immediate="true"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Disabled="@Bloqueado(1)" />
                 </MudItem>
-                <MudItem xs="12" sm="4">
+                <MudItem xs="12" sm="4" md="3">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="MetodoPagamentoListDto"
                                          Value="@(_metodos.FirstOrDefault(m => m.Id == _dto.MetodoPagamentoId))"
@@ -43,7 +43,7 @@
                         </MudTooltip>
                     </div>
                 </MudItem>
-                <MudItem xs="12" sm="2">
+                <MudItem xs="12" sm="2" md="2">
                     <MudNumericField T="int" Value="_dto.NumeroParcelas"
                                      ValueChanged="OnNumeroParcelas"
                                      Label="Nº de parcelas" Variant="Variant.Outlined"
@@ -108,11 +108,11 @@
                         <MudText Typo="Typo.caption" Style="color:#888;">@ajudaPercentuais</MudText>
                     </MudItem>
                 }
-                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.EntradaMinimaPercentual" ValueChanged="@((decimal v) => { _dto.EntradaMinimaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.DescontoPercentual" ValueChanged="@((decimal v) => { _dto.DescontoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.AcrescimoPercentual" ValueChanged="@((decimal v) => { _dto.AcrescimoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.MultaPercentual" ValueChanged="@((decimal v) => { _dto.MultaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4"><MudNumericField T="decimal" Value="_dto.TaxaJurosPercentual" ValueChanged="@((decimal v) => { _dto.TaxaJurosPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="3"><MudNumericField T="decimal" Value="_dto.EntradaMinimaPercentual" ValueChanged="@((decimal v) => { _dto.EntradaMinimaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.DescontoPercentual" ValueChanged="@((decimal v) => { _dto.DescontoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="3"><MudNumericField T="decimal" Value="_dto.AcrescimoPercentual" ValueChanged="@((decimal v) => { _dto.AcrescimoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.MultaPercentual" ValueChanged="@((decimal v) => { _dto.MultaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.TaxaJurosPercentual" ValueChanged="@((decimal v) => { _dto.TaxaJurosPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
             </MudGrid>
         </MudForm>
         @if (_dto.AtualizadoEm.HasValue)

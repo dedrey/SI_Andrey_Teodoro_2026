@@ -15,13 +15,13 @@
     <DialogContent>
         <MudForm @ref="_form" @bind-IsValid="_formValido">
             <MudGrid Spacing="2">
-                <MudItem xs="12" sm="3">
+                <MudItem xs="12" sm="3" md="2">
                     <MudNumericField T="int" Value="_dto.Id" ValueChanged="@((int v) => _dto.Id = v)"
                                      Label="ID" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" FullWidth="true"
                                      Validation="@((int v) => v <= 0 ? "O ID deve ser maior que zero." : null)"
                                      Disabled="@(_readOnly || _dto.IdOriginal > 0)" />
                 </MudItem>
-                <MudItem xs="12" sm="9">
+                <MudItem xs="12" sm="9" md="10">
                     <div class="d-flex align-center gap-1">
                         <MudSelect T="int" @bind-Value="_dto.PaisId" Label="País"
                                    Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Disabled="@_readOnly">
@@ -37,14 +37,14 @@
                         </MudTooltip>
                     </div>
                 </MudItem>
-                <MudItem xs="12" sm="9">
+                <MudItem xs="12" sm="9" md="10">
                     <MudTextField Value="@_dto.NomeEstado" ValueChanged="@((string v) => _dto.NomeEstado = v)"
                                   Label="Estado" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => TextoHelper.ValidarApenasLetras(v))"
                                   Disabled="@(_readOnly || !Edicao && !PaisOk)" HelperText="@(Edicao || PaisOk ? null : "Selecione o país primeiro.")" />
                 </MudItem>
-                <MudItem xs="12" sm="3">
+                <MudItem xs="12" sm="3" md="2">
                     <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = new string((v ?? "").Where(char.IsLetter).ToArray()).ToUpper())"
                                   Label="UF" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@_mascaraUf"
                                   Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true" Immediate="true"

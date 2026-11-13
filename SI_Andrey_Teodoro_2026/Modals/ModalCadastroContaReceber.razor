@@ -127,7 +127,7 @@
                                   ReadOnly="@_somenteLeitura"
                                   Placeholder="Ex: Venda à vista, Acerto de dívida..." />
                 </MudItem>
-                <MudItem xs="12" sm="9">
+                <MudItem xs="12" sm="9" md="6">
                     <div class="d-flex align-center gap-1">
                         <MudAutocomplete T="ClienteListDto"
                                          Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
@@ -146,11 +146,11 @@
                     </div>
                 </MudItem>
 
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="6" md="3">
                     <CampoData @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                Required="true" ReadOnly="@_somenteLeitura" />
                 </MudItem>
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="6" md="3">
                     <MudNumericField T="decimal" Value="_dto.ValorOriginal" ValueChanged="@((decimal v) => _dto.ValorOriginal = Math.Max(v, 0))"
                                      Label="Valor Original" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true"
                                      Required="true" RequiredError="Obrigatório" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"

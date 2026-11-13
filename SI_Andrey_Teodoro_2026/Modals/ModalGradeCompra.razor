@@ -3,7 +3,7 @@
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
-<MudDialog>
+<MudDialog Class="grade-dialog" ContentClass="grade-dialog-conteudo">
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.GridView" Color="Color.Primary" Class="mr-2" />
@@ -13,8 +13,8 @@
     <DialogContent>
         @foreach (var g in _grades)
         {
-            <div class="mb-4" style="border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;">
-                <div class="d-flex align-center justify-space-between mb-2">
+            <div class="mb-2" style="border:1px solid #e0e0e0;border-radius:8px;padding:6px 10px;">
+                <div class="d-flex align-center justify-space-between mb-1" style="gap:16px;">
                     <MudText Typo="Typo.subtitle2" Style="font-weight:700;">@g.Produto.Produto</MudText>
                     @if (!ModoEdicao)
                     {
@@ -32,23 +32,37 @@
                 }
                 else
                 {
-                    @foreach (var cor in g.Cores)
-                    {
-                        <div class="d-flex align-center flex-wrap gap-1 mb-2">
-                            @if (g.Cores.Count > 1)
-                            {
-                                <MudText Typo="Typo.body2" Style="font-weight:600;min-width:90px;">@cor.Nome:</MudText>
-                            }
-                            @foreach (var v in g.Variacoes.Where(v => v.CorId == cor.Id))
-                            {
-                                var marcado = g.Marcadas.Contains(v.IdOriginal);
-                                <MudChip T="int" Size="Size.Small" Color="Color.Primary"
-                                         Variant="@(marcado ? Variant.Filled : Variant.Outlined)"
-                                         Icon="@(marcado ? Icons.Material.Filled.Check : null)"
-                                         OnClick="@(() => Alternar(g, v))">@v.Tamanho</MudChip>
-                            }
-                        </div>
-                    }
+                    var tamanhos = TamanhosDa(g);
+                    var colunasTamanho = $"repeat({tamanhos.Count}, minmax(62px, max-content))";
+                    var gridLinha = g.Cores.Count > 1 ? $"120px {colunasTamanho}" : colunasTamanho;
+                    <div class="grade-blocos @(UsarDuasColunas(g, tamanhos.Count) ? "grade-duas-colunas" : "")">
+                        @foreach (var metade in DividirCores(g, tamanhos.Count))
+                        {
+                            <div class="grade-cores" style="@($"grid-template-columns:{gridLinha};")">
+                                @foreach (var cor in metade)
+                                {
+                                    @if (g.Cores.Count > 1)
+                                    {
+                                        <MudText Typo="Typo.body2" Class="grade-cor-nome" title="@cor.Nome">@cor.Nome</MudText>
+                                    }
+                                    @foreach (var t in tamanhos)
+                                    {
+                                        var v = g.Variacoes.FirstOrDefault(x => x.CorId == cor.Id && x.TamanhoId == t.Id);
+                                        if (v == null)
+                                        {
+                                            <span></span>
+                                            continue;
+                                        }
+                                        var marcado = g.Marcadas.Contains(v.IdOriginal);
+                                        <MudChip T="int" Size="Size.Small" Color="Color.Primary" Class="grade-chip"
+                                                 Variant="@(marcado ? Variant.Filled : Variant.Outlined)"
+                                                 Icon="@(marcado ? Icons.Material.Filled.Check : null)"
+                                                 OnClick="@(() => Alternar(g, v))">@v.Tamanho</MudChip>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
                     @if (g.Marcadas.Count == 0)
                     {
                         <MudText Typo="Typo.caption" Style="color:#888;">Selecione ao menos um tamanho.</MudText>
@@ -136,6 +150,23 @@
             grade.Marcadas.UnionWith(variacoes.Select(v => v.IdOriginal).Where(VariacoesMarcadas.Contains));
 
         _grades.Add(grade);
+    }
+
+    // Colunas de tamanho na ordem cadastrada: alinha os chips da mesma medida entre as cores.
+    private List<Eixo> TamanhosDa(Grade g) => g.Variacoes
+        .Select(v => new Eixo(v.TamanhoId, v.Tamanho)).Distinct()
+        .OrderBy(t => _ordemTamanhos.GetValueOrDefault(t.Id, int.MaxValue)).ThenBy(t => t.Nome)
+        .ToList();
+
+    // Muitas cores e grade estreita: divide em 2 colunas para o bloco não ficar alto.
+    private static bool UsarDuasColunas(Grade g, int qtdTamanhos) => g.Cores.Count >= 6 && qtdTamanhos <= 7;
+
+    private static IEnumerable<List<Eixo>> DividirCores(Grade g, int qtdTamanhos)
+    {
+        if (!UsarDuasColunas(g, qtdTamanhos)) { yield return g.Cores; yield break; }
+        var meio = (g.Cores.Count + 1) / 2;
+        yield return g.Cores.Take(meio).ToList();
+        yield return g.Cores.Skip(meio).ToList();
     }
 
     private static void Alternar(Grade g, ProdutoVariacaoDto v)

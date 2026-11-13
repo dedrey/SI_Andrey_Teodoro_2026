@@ -84,7 +84,7 @@
                                   ReadOnly="@_somenteLeitura" Disabled="@(_somenteLeitura || Travada || !FornecedorOk)" HelperText="@AjudaDescricao"
                                   Placeholder="Ex: Conta de luz, Compra de mercadoria, Aluguel..." />
                 </MudItem>
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="6" md="@(_dto.Status == "PAGA" && _dto.DataPagamento.HasValue ? 3 : 4)">
                     <MudNumericField T="decimal" Value="_dto.ValorOriginal" ValueChanged="@((decimal v) => _dto.ValorOriginal = Math.Max(v, 0))"
                                      Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true"
                                      Required="true" RequiredError="Obrigatório" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
@@ -92,7 +92,7 @@
                                      Adornment="Adornment.Start" AdornmentText="R$" ReadOnly="@_somenteLeitura"
                                   Disabled="@(_somenteLeitura || Travada || !DescricaoOk)" HelperText="@AjudaValor" />
                 </MudItem>
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="6" md="@(_dto.Status == "PAGA" && _dto.DataPagamento.HasValue ? 3 : 4)">
                     <CampoData @bind-Date="_dataVencimento" @bind-PickerMonth="_mesExibido" Label="Vencimento"
                                Required="@(!_somenteLeitura)" Editable="@(!_somenteLeitura)"
                                ReadOnly="@_somenteLeitura" MinDate="@VencimentoMinimo"
@@ -100,13 +100,13 @@
                 </MudItem>
                 @if (_dto.Status == "PAGA" && _dto.DataPagamento.HasValue)
                 {
-                    <MudItem xs="12" sm="6">
+                    <MudItem xs="12" sm="6" md="3">
                         <MudTextField Value="@_dto.DataPagamento.Value.ToString("dd/MM/yyyy")" Label="Data de Pagamento"
                                       Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" />
                     </MudItem>
                 }
 
-                <MudItem xs="12" sm="6">
+                <MudItem xs="12" sm="6" md="@(_dto.Status == "PAGA" && _dto.DataPagamento.HasValue ? 3 : 4)">
                     <MudTextField Value="@StatusHelper.Texto(TipoStatus.Conta, _dto.Status)" Label="Status"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="true" />
                 </MudItem>
