@@ -194,12 +194,13 @@
                                 @if (_dto.TipoMovimentacao == "AJUSTE")
                                 {
                                     <MudTextField Value="@GetQtdRealTexto(context)" ValueChanged="@((string v) => OnQtdRealAlterada(context, v))"
-                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:90px;" />
+                                                  OnBlur="@(() => _qtdRealTextos[context] = DocumentoHelper.SomenteDigitos(_qtdRealTextos[context]))"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" InputMode="InputMode.numeric" MaxLength="9" Immediate="true" Style="max-width:90px;" />
                                 }
                                 else
                                 {
                                     <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
-                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" />
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" InputMode="InputMode.numeric" MaxLength="9" Style="max-width:80px;" />
                                 }
                             </MudTd>
                             <MudTd>
@@ -438,7 +439,7 @@
     { if (!_qtdRealTextos.ContainsKey(item)) _qtdRealTextos[item] = item.QuantidadeReal >= 0 ? item.QuantidadeReal.ToString() : ""; return _qtdRealTextos[item]; }
 
     private void OnQtdRealAlterada(MovimentacaoEstoqueItemDto item, string? v)
-    { var d = DocumentoHelper.SomenteDigitos(v); _qtdRealTextos[item] = d; item.QuantidadeReal = int.TryParse(d, out int n) ? n : -1; StateHasChanged(); }
+    { _qtdRealTextos[item] = v ?? ""; item.QuantidadeReal = int.TryParse(DocumentoHelper.SomenteDigitos(v), out int n) ? n : -1; StateHasChanged(); }
 
 
     private Task<IEnumerable<ProdutoListDto>> PesquisarProduto(string? busca, CancellationToken ct)

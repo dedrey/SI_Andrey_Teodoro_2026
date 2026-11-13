@@ -2,8 +2,6 @@ namespace SI_Andrey_Teodoro_2026.Helpers;
 
 public static class TelefoneHelper
 {
-    public const string RegexEstrangeiroParcial = @"^[0-9 +\-()]{0,15}$";
-
     public static string Mascara(string? telefone)
     {
         var d = DocumentoHelper.SomenteDigitos(telefone);
@@ -18,7 +16,8 @@ public static class TelefoneHelper
         };
     }
 
-    public static string Formatar(string? telefone, bool estrangeiro) => estrangeiro ? telefone ?? "" : Mascara(telefone);
+    public static string Normalizar(string? telefone, bool estrangeiro) =>
+        estrangeiro ? TextoHelper.Filtrar(telefone, c => char.IsDigit(c) || " +-()".Contains(c), 15).Trim() : Mascara(telefone);
 
     public static string? Validar(string? telefone) => DocumentoHelper.SomenteDigitos(telefone).Length switch
     {

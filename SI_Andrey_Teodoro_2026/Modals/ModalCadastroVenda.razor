@@ -152,7 +152,7 @@
                         </MudTd>
                         <MudTd Style="text-align:center;">
                             <MudTextField Value="@context.Quantidade.ToString()" ValueChanged="@((string v) => OnQtdAlterada(context, v))"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="true" Style="max-width:80px;" Disabled="@Leitura"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" InputMode="InputMode.numeric" MaxLength="9" Style="max-width:80px;" Disabled="@Leitura"
                                           Validation="@(new Func<string, string?>(_ => ErroQuantidade(context)))"
                                           Error="@(ErroQuantidade(context) != null)" ErrorText="@ErroQuantidade(context)" />
                         </MudTd>

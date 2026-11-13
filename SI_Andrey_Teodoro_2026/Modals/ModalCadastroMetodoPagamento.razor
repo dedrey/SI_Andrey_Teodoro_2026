@@ -22,11 +22,12 @@
                 </MudItem>
                 <MudItem xs="12" sm="3" md="2">
                     <MudTextField Value="@_dto.Codigo"
-                                  ValueChanged="@((string v) => _dto.Codigo = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper())"
+                                  ValueChanged="@((string v) => _dto.Codigo = v)"
+                                  OnBlur="@(() => _dto.Codigo = TextoHelper.Filtrar(_dto.Codigo, char.IsAsciiLetterOrDigit, 4))"
                                   Label="Código" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="4" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v?.Trim() ?? "", @"^[A-Z0-9]{1,4}$") ? "Letras maiúsculas/números (máx 4)" : null)" Disabled="@_readOnly" />
+                                  Validation="@((string v) => TextoHelper.Filtrar(v, char.IsAsciiLetterOrDigit).Length == 0 ? "Letras maiúsculas/números (máx 4)" : null)" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="7" md="8">
                     <MudTextField Value="@_dto.MetodoPagamento"

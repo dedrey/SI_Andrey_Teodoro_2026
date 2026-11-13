@@ -33,8 +33,8 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="3" md="3">
-                    <MudTextField Value="@_docTexto" ValueChanged="@((string v) => OnDocAlterado(v))"
-                                  Label="@(_dto.TipoPessoa == "PF" ? "CPF*" : "CNPJ*")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                    <MudTextField Value="@_docTexto" ValueChanged="@((string v) => OnDocAlterado(v))" OnBlur="FormatarDocumentoDigitado"
+                                  InputMode="InputMode.numeric" Label="@(_dto.TipoPessoa == "PF" ? "CPF*" : "CNPJ*")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   MaxLength="@(_dto.TipoPessoa == "PF" ? 14 : 18)" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarDocumento(v))"
                                   Disabled="@(Edicao || Bloqueado(1))" HelperText="@AjudaTravado" />
@@ -91,17 +91,19 @@
                                   MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="6" md="2">
-                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = CepHelper.Mascara(v); Alterou(2); })"
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = v; Alterou(2); })"
+                                  OnBlur="@(() => _dto.Cep = CepHelper.Mascara(_dto.Cep))" InputMode="InputMode.numeric"
                                   Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => CepHelper.Validar(v))"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => CepHelper.Validar(CepHelper.Mascara(v)))"
                                   Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato e Pagamento" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6" md="3">
-                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = TelefoneHelper.Mascara(v); Alterou(3); })"
+                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = v; Alterou(3); })"
+                                  OnBlur="@(() => _dto.Telefone = TelefoneHelper.Mascara(_dto.Telefone))" InputMode="InputMode.tel"
                                   Label="Telefone" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => TelefoneHelper.Validar(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
+                                  Validation="@((string v) => TelefoneHelper.Validar(TelefoneHelper.Mascara(v)))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
                 <MudItem xs="12" sm="6" md="5">
                     <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => { _dto.Email = v; Alterou(3); })" Label="E-mail"
@@ -328,7 +330,8 @@
     private object DadosEditaveis() => new { _dto, _docTexto, Cidade = _cidadeSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
     private void OnTipoPessoaAlterado(string tipo) { if (tipo == _dto.TipoPessoa) return; Alterou(1); _dto.TipoPessoa = tipo; _docTexto = ""; _dto.CpfCnpj = ""; if (tipo == "PF") _dto.NomeFantasia = null; }
-    private void OnDocAlterado(string? v) { Alterou(1); if (string.IsNullOrEmpty(v)) { _docTexto = ""; _dto.CpfCnpj = ""; return; } var limpo = DocumentoHelper.SomenteDigitos(v); _docTexto = _dto.TipoPessoa == "PF" ? DocumentoHelper.FormatarCpf(limpo) : DocumentoHelper.FormatarCnpj(limpo); _dto.CpfCnpj = limpo; }
+    private void OnDocAlterado(string? v) { Alterou(1); _docTexto = v ?? ""; _dto.CpfCnpj = DocumentoHelper.SomenteDigitos(v); }
+    private void FormatarDocumentoDigitado() => _docTexto = _dto.TipoPessoa == "PF" ? DocumentoHelper.FormatarCpf(_dto.CpfCnpj) : DocumentoHelper.FormatarCnpj(_dto.CpfCnpj);
     private string? ValidarDocumento(string? v) => DocumentoHelper.ValidarDocumento(v, _dto.TipoPessoa);
     private static string? ValidarEmail(string? v)
     {

@@ -22,7 +22,8 @@
                 </MudItem>
                 <MudItem xs="12" sm="3" md="2">
                     <MudTextField Value="@_dto.Sigla"
-                                  ValueChanged="@((string v) => _dto.Sigla = v.Replace(" ", "").ToUpper())"
+                                  ValueChanged="@((string v) => _dto.Sigla = v)"
+                                  OnBlur="@(() => _dto.Sigla = (_dto.Sigla ?? "").Replace(" ", ""))"
                                   Label="Sigla" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório"
                                   MaxLength="6" FullWidth="true" Immediate="true"
@@ -109,5 +110,5 @@
     }
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
     private void Editar() { _readOnly = false; MudDialog.StateHasChanged(); }
-    private string? ValidarSigla(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[A-Z0-9\²\³\/]+$")) return "Apenas maiúsculas e números"; return null; }
+    private string? ValidarSigla(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Replace(" ", "").ToUpperInvariant(), @"^[A-Z0-9\²\³\/]+$")) return "Apenas maiúsculas e números"; return null; }
 }

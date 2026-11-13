@@ -92,7 +92,8 @@
                 </MudItem>
                 <MudItem xs="12" sm="4" md="3">
                     <MudTextField Value="@(_dto.CodigoBarras ?? "")" ValueChanged="@((string v) => _dto.CodigoBarras = v)"
-                                  Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@_mascaraCodigoBarras"
+                                  OnBlur="@(() => _dto.CodigoBarras = DocumentoHelper.SomenteDigitos(_dto.CodigoBarras))"
+                                  Label="Código de Barras" Variant="Variant.Outlined" Margin="Margin.Dense" InputMode="InputMode.numeric"
                                   MaxLength="14" FullWidth="true" Immediate="true" Validation="@((string v) => DocumentoHelper.ValidarCodigoBarras(v))" Disabled="@(Bloqueado(1) || !Edicao && !CabecalhoOk)"
                                   HelperText="@(Edicao || CabecalhoOk ? null : "Selecione a unidade primeiro.")" />
                 </MudItem>
@@ -336,7 +337,6 @@
     private int OrdemTamanho(ProdutoVariacaoDto v) => _tamanhos.FirstOrDefault(t => t.Id == v.TamanhoId)?.Ordem ?? int.MaxValue;
     private static string? ValidarNome(string? v) =>
         string.IsNullOrWhiteSpace(v) ? "Obrigatório" : v.Trim().Length < 2 ? "Mínimo 2 caracteres" : null;
-    private readonly IMask _mascaraCodigoBarras = new RegexMask(@"^[0-9]{0,14}$");
 
 
     protected override void OnAfterRender(bool firstRender)

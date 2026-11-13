@@ -46,10 +46,11 @@
                                   Disabled="@(_readOnly || !Edicao && !PaisOk)" HelperText="@(Edicao || PaisOk ? null : "Selecione o país primeiro.")" />
                 </MudItem>
                 <MudItem xs="12" sm="3" md="2">
-                    <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = new string((v ?? "").Where(char.IsLetter).ToArray()).ToUpper())"
-                                  Label="UF" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@_mascaraUf"
+                    <MudTextField Value="@_dto.Uf" ValueChanged="@((string v) => _dto.Uf = v)"
+                                  OnBlur="@(() => _dto.Uf = TextoHelper.Filtrar(_dto.Uf, char.IsAsciiLetter, 2))"
+                                  Label="UF" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="2" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => !System.Text.RegularExpressions.Regex.IsMatch(v ?? "", @"^[a-zA-Z]{2}$") ? "Informe 2 letras" : null)"
+                                  Validation="@((string v) => TextoHelper.Filtrar(v, char.IsAsciiLetter).Length != 2 ? "Informe 2 letras" : null)"
                                   Disabled="@(_readOnly || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o estado primeiro.")" />
                 </MudItem>
             </MudGrid>
@@ -148,7 +149,6 @@
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
         else Snackbar.Add(mensagem, Severity.Error);
     }
-    private readonly IMask _mascaraUf = new RegexMask(@"^[a-zA-Z]{0,2}$");
     private bool Edicao => _dto.IdOriginal > 0;
     private bool PaisOk => _dto.PaisId > 0;
     private bool NomeOk => PaisOk && TextoHelper.ValidarApenasLetras(_dto.NomeEstado) == null;

@@ -93,6 +93,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6" md="6">
                     <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
+                                  OnBlur="@(() => _chaveTexto = ChaveNfeHelper.Formatar(_dto.ChaveAcesso))" InputMode="InputMode.numeric"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
                                   Required="@(_dto.ModeloNf == "55")" RequiredError="Obrigatório" HelperText="@AvisoChave"
                                   Error="@(ErroChave != null)" ErrorText="@ErroChave"
@@ -514,7 +515,7 @@
     {
         var chave = DocumentoHelper.SomenteDigitos(texto);
         if (chave.Length > 44) chave = chave[..44];
-        _chaveTexto = ChaveNfeHelper.Formatar(chave);
+        _chaveTexto = texto ?? string.Empty;
         _dto.ChaveAcesso = chave.Length == 0 ? null : chave;
         _avisoChave = null;
     }

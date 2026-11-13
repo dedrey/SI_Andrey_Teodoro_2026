@@ -39,6 +39,7 @@
                 </MudItem>
                 <MudItem xs="6" sm="3" md="2">
                     <MudTextField Value="@_placaTexto" ValueChanged="@((string? v) => OnPlacaAlterada(v))"
+                                  OnBlur="@(() => _placaTexto = TextoHelper.Filtrar(_placaTexto, char.IsAsciiLetterOrDigit, 7))"
                                   Label="Placa" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="7" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarPlaca(v))"
@@ -131,7 +132,7 @@
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
-    private void OnPlacaAlterada(string? v) { if (string.IsNullOrEmpty(v)) { _placaTexto = ""; _dto.Placa = ""; return; } var l = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper(); if (l.Length > 7) l = l[..7]; _placaTexto = l; _dto.Placa = l; }
+    private void OnPlacaAlterada(string? v) { _placaTexto = v ?? ""; _dto.Placa = TextoHelper.Filtrar(v, char.IsAsciiLetterOrDigit, 7).ToUpperInvariant(); }
     private string? ValidarPlaca(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; var l = new string(v.Where(char.IsLetterOrDigit).ToArray()).ToUpper(); if (l.Length != 7) return "Placa: 7 caracteres"; var a = l[..3].All(char.IsLetter) && l[3..].All(char.IsDigit); var m = l[..3].All(char.IsLetter) && char.IsDigit(l[3]) && char.IsLetter(l[4]) && char.IsDigit(l[5]) && char.IsDigit(l[6]); return (a || m) ? null : "Formato inválido (AAA9999 ou AAA9A99)"; }
     private Task<IEnumerable<TransportadoraListDto>> PesquisarTransportadora(string? busca, CancellationToken ct) { var r = string.IsNullOrWhiteSpace(busca) ? _transportadoras.Take(50) : _transportadoras.Where(t => t.RazaoSocial.Contains(busca, StringComparison.OrdinalIgnoreCase) || (t.NomeFantasia ?? "").Contains(busca, StringComparison.OrdinalIgnoreCase)); return Task.FromResult(r); }
     private Task<IEnumerable<string>> PesquisarUf(string? busca, CancellationToken ct) { var r = string.IsNullOrWhiteSpace(busca) ? _ufs.Take(50) : _ufs.Where(u => u.Contains(busca, StringComparison.OrdinalIgnoreCase)); return Task.FromResult(r); }

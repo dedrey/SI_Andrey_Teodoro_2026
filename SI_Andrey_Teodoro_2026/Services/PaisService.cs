@@ -64,8 +64,6 @@ public class PaisService : BaseService<PaisDto, PaisListDto>, IPaisService
                 return (false, $"Já existe um país com a sigla '{dto.Sigla}'.", 0);
             if (await _repo.ExisteNomeAsync(dto.NomePais, ignorar))
                 return (false, $"Já existe um país com o nome '{dto.NomePais}'.", 0);
-            if (await _repo.ExisteDdiAsync(dto.Ddi, ignorar))
-                return (false, $"Já existe um país com o DDI '{dto.Ddi}'.", 0);
 
             if (dto.IdOriginal == 0)
             {

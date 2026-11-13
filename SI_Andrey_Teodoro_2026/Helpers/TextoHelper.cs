@@ -8,6 +8,9 @@ public static class TextoHelper
     public static string? ValidarApenasLetras(string? texto, string mensagemObrigatorio = "Obrigatório") =>
         string.IsNullOrWhiteSpace(texto) ? mensagemObrigatorio : !ApenasLetras(texto) ? "Apenas letras" : null;
 
+    public static string Filtrar(string? texto, Func<char, bool> permitido, int maximo = int.MaxValue) =>
+        new((texto ?? "").Where(permitido).Take(maximo).ToArray());
+
     public static string? ValidarTamanhos(params (string? valor, int maximo, string campo)[] campos)
     {
         foreach (var (valor, maximo, campo) in campos)

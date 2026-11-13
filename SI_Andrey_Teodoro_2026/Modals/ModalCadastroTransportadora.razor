@@ -21,7 +21,8 @@
                                      Disabled="@(_dto.IdOriginal > 0 || Bloqueado(1))" />
                 </MudItem>
                 <MudItem xs="12" sm="4" md="3">
-                    <MudTextField Value="@_cnpjTexto" ValueChanged="@((string v) => { _cnpjTexto = DocumentoHelper.FormatarCnpj(v, parcial: true); _dto.Cnpj = _cnpjTexto; Alterou(1); })"
+                    <MudTextField Value="@_cnpjTexto" ValueChanged="@((string v) => { _cnpjTexto = v; _dto.Cnpj = v; Alterou(1); })"
+                                  OnBlur="@(() => _dto.Cnpj = _cnpjTexto = DocumentoHelper.FormatarCnpj(_cnpjTexto, parcial: true))" InputMode="InputMode.numeric"
                                   Label="CNPJ" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="18" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => DocumentoHelper.ValidarCnpj(v))"
@@ -81,18 +82,20 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="50" FullWidth="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="4" md="2">
-                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = CepHelper.Mascara(v); Alterou(2); })"
+                    <MudTextField Value="@_dto.Cep" ValueChanged="@((string v) => { _dto.Cep = v; Alterou(2); })"
+                                  OnBlur="@(() => _dto.Cep = CepHelper.Mascara(_dto.Cep))" InputMode="InputMode.numeric"
                                   Label="CEP" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => CepHelper.Validar(v))"
+                                  MaxLength="9" FullWidth="true" Immediate="true" Validation="@((string v) => CepHelper.Validar(CepHelper.Mascara(v)))"
                                   Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
 
                 <TituloSecao Grupos="_grupos" Grupo="3" Icone="@Icons.Material.Filled.ContactPhone" Titulo="Contato" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6" md="3">
-                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = TelefoneHelper.Mascara(v); Alterou(3); })" Label="Telefone"
+                    <MudTextField Value="@_dto.Telefone" ValueChanged="@((string v) => { _dto.Telefone = v; Alterou(3); })"
+                                  OnBlur="@(() => _dto.Telefone = TelefoneHelper.Mascara(_dto.Telefone))" InputMode="InputMode.tel" Label="Telefone"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" RequiredError="Obrigatório" MaxLength="15" FullWidth="true" Immediate="true"
-                                  Validation="@((string v) => TelefoneHelper.Validar(v))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
+                                  Validation="@((string v) => TelefoneHelper.Validar(TelefoneHelper.Mascara(v)))" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
                 <MudItem xs="12" sm="6" md="9">
                     <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => { _dto.Email = v; Alterou(3); })" Label="E-mail"

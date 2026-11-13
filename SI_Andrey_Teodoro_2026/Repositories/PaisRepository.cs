@@ -122,13 +122,4 @@ public class PaisRepository : BaseRepository, IPaisRepository
             : "SELECT COUNT(*) FROM paises WHERE pais = @nome";
         return await conn.ExecuteScalarAsync<int>(sql, new { nome, idOriginalIgnorar }) > 0;
     }
-
-    public async Task<bool> ExisteDdiAsync(string ddi, int? idOriginalIgnorar = null)
-    {
-        using var conn = _factory.CreateConnection();
-        var sql = idOriginalIgnorar.HasValue
-            ? "SELECT COUNT(*) FROM paises WHERE ddi = @ddi AND id <> @idOriginalIgnorar"
-            : "SELECT COUNT(*) FROM paises WHERE ddi = @ddi";
-        return await conn.ExecuteScalarAsync<int>(sql, new { ddi, idOriginalIgnorar }) > 0;
-    }
 }

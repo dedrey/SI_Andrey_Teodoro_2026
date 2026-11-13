@@ -68,7 +68,8 @@
                 </MudItem>
                 <MudItem xs="4" sm="3" md="2">
                     <MudTextField Value="@_dddTexto" ValueChanged="@((string v) => OnDddAlterado(v))"
-                                  Label="DDD" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  OnBlur="@(() => _dddTexto = DocumentoHelper.SomenteDigitos(_dddTexto))"
+                                  Label="DDD" Variant="Variant.Outlined" Margin="Margin.Dense" InputMode="InputMode.numeric"
                                   Required="true" RequiredError="Obrigatório" MaxLength="3" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => { var d = DocumentoHelper.SomenteDigitos(v); return !short.TryParse(d, out short n) || n < 1 || n > 999 ? "DDD: 1 a 999" : null; })"
                                   Disabled="@(_readOnly || !Edicao && !CidadeOk)" HelperText="@(Edicao || CidadeOk ? null : "Informe a cidade primeiro.")" />
@@ -166,7 +167,7 @@
         _dto.EstadoId = _estados.ObterOuAdicionar(estado, e => e.Id).Id;
     }
 
-    private void OnDddAlterado(string? v) { if (string.IsNullOrEmpty(v)) { _dddTexto = ""; _dto.Ddd = 0; return; } var d = DocumentoHelper.SomenteDigitos(v); _dddTexto = d; _dto.Ddd = short.TryParse(d, out short n) ? n : (short)0; }
+    private void OnDddAlterado(string? v) { _dddTexto = v ?? ""; _dto.Ddd = short.TryParse(DocumentoHelper.SomenteDigitos(v), out short n) ? n : (short)0; }
 
     private async Task<PaisListDto?> NovoPais()
     {

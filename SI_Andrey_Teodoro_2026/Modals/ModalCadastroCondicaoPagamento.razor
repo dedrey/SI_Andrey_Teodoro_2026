@@ -78,7 +78,7 @@
                                     <MudTextField Value="@context.DiasVencimento.ToString()"
                                                   ValueChanged="@((string v) => { context.DiasVencimento = int.TryParse(v, out int d) && d >= 0 ? d : 0; Alterou(2); })"
                                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                                  Immediate="true" Style="max-width:120px;" Placeholder="0 = no ato" Disabled="@(Bloqueado(2) || _emUso)" />
+                                                  InputMode="InputMode.numeric" MaxLength="4" Style="max-width:120px;" Placeholder="0 = no ato" Disabled="@(Bloqueado(2) || _emUso)" />
                                 </MudTd>
                                 <MudTd Style="color:#888;font-size:0.85rem;">
                                     @if (context.DiasVencimento == 0)

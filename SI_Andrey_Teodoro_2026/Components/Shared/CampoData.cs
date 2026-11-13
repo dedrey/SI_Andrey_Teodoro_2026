@@ -7,15 +7,19 @@ namespace SI_Andrey_Teodoro_2026.Components.Shared;
 public class CampoData : MudDatePicker
 {
     private const string Formato = "dd/MM/yyyy";
+    private const string MensagemInvalida = "Data inválida.";
     public static readonly DateTime DataMinima = new(2000, 1, 1);
     private static readonly CultureInfo CulturaBr = new("pt-BR");
+    private static readonly string[] FormatosAceitos = [Formato, "d/M/yyyy", "ddMMyyyy"];
+
+    private readonly Func<DateTime?, IEnumerable<string>> _validacao;
+    private object? _validacaoExterna;
 
     public CampoData()
     {
         Culture = CulturaBr;
         DateFormat = Formato;
         Converter = new ConversorData();
-        Mask = new DateMask(Formato);
         Editable = true;
         Placeholder = "dd/mm/aaaa";
         RequiredError = "Obrigatório";
@@ -23,9 +27,11 @@ public class CampoData : MudDatePicker
         Margin = Margin.Dense;
         MinDate = DataMinima;
         ShowToolbar = false;
+        _validacao = Validar;
+        Validation = _validacao;
     }
 
-    private bool TextoIncompleto => !string.IsNullOrEmpty(Text) && Text.Length < Formato.Length;
+    private bool TextoInvalido => !string.IsNullOrWhiteSpace(Text) && !TentarLer(Text, out _);
 
     public override Task SetParametersAsync(ParameterView parameters)
     {
@@ -46,41 +52,53 @@ public class CampoData : MudDatePicker
         return base.SetParametersAsync(parameters);
     }
 
-    protected override async Task StringValueChangedAsync(string? value)
+    protected override void OnParametersSet()
     {
-        if (!TextoIncompleto)
+        base.OnParametersSet();
+        if (!ReferenceEquals(Validation, _validacao))
         {
-            await base.StringValueChangedAsync(value);
-            return;
+            _validacaoExterna = Validation;
+            Validation = _validacao;
         }
-        Touched = true;
-        if (ValidationErrors.Count > 0)
-            await ResetValidationAsync();
-        if (_value.HasValue)
-        {
-            _value = null;
-            await DateChanged.InvokeAsync(null);
-        }
+        UserAttributes.TryAdd(nameof(MudTextField<string>.InputMode), InputMode.numeric);
+        UserAttributes.TryAdd(nameof(MudTextField<string>.MaxLength), Formato.Length);
     }
 
-    protected override Task ValidateValue()
+    protected override async Task StringValueChangedAsync(string? value)
     {
-        if (TextoIncompleto)
-            ConvertGet(Text);
-        return base.ValidateValue();
+        await base.StringValueChangedAsync(value);
+        if (!_value.HasValue)
+            return;
+        var formatado = _value.Value.ToString(Formato, CulturaBr);
+        if (Text != formatado)
+            await SetTextAsync(formatado, false);
+    }
+
+    private IEnumerable<string> Validar(DateTime? data)
+    {
+        if (TextoInvalido)
+            return [MensagemInvalida];
+        return _validacaoExterna switch
+        {
+            Func<DateTime?, string?> validar => validar(data) is { Length: > 0 } mensagem ? [mensagem] : [],
+            Func<DateTime?, IEnumerable<string>> validar => validar(data),
+            Func<DateTime?, bool> validar => validar(data) ? [] : [MensagemInvalida],
+            _ => []
+        };
+    }
+
+    private static bool TentarLer(string? texto, out DateTime data)
+    {
+        data = default;
+        if (string.IsNullOrWhiteSpace(texto))
+            return false;
+        return DateTime.TryParseExact(texto.Trim(), FormatosAceitos, CulturaBr, DateTimeStyles.None, out data) && data >= DataMinima;
     }
 
     private sealed class ConversorData : IReversibleConverter<DateTime?, string?>
     {
         public string? Convert(DateTime? input) => input?.ToString(Formato, CulturaBr);
 
-        public DateTime? ConvertBack(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-                return null;
-            if (DateTime.TryParseExact(input, Formato, CulturaBr, DateTimeStyles.None, out var data) && data >= DataMinima)
-                return data;
-            throw new FormatException("Data inválida.");
-        }
+        public DateTime? ConvertBack(string? input) => TentarLer(input, out var data) ? data : null;
     }
 }
