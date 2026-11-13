@@ -29,7 +29,7 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="ClienteListDto"
+                        <MudAutocomplete MaxItems="null" T="ClienteListDto"
                                          Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
                                          ValueChanged="@((ClienteListDto? c) => OnClienteAlterado(c?.Id))"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -45,7 +45,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="CondicaoPagamentoListDto"
+                        <MudAutocomplete MaxItems="null" T="CondicaoPagamentoListDto"
                                          Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
                                          ValueChanged="@((CondicaoPagamentoListDto? c) => { _dto.CondicaoPagamentoId = c?.Id; _dto.DescontoPercentualAplicado = c?.DescontoPercentual ?? 0; RecalcularTotais(); })"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -111,7 +111,7 @@
                     <RowTemplate>
                         <MudTd>
                             <div class="d-flex align-center gap-1">
-                                <MudAutocomplete T="ProdutoListDto"
+                                <MudAutocomplete MaxItems="null" T="ProdutoListDto"
                                                  Value="_produtosSelecionados.GetValueOrDefault(context)"
                                                  ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
                                                  SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
@@ -125,7 +125,7 @@
                         </MudTd>
                         <MudTd>
                             <div class="d-flex align-center gap-1">
-                                <MudAutocomplete T="ProdutoVariacaoDto"
+                                <MudAutocomplete MaxItems="null" T="ProdutoVariacaoDto"
                                                  Value="@(_variacoesPorItem.TryGetValue(context, out var vs2) ? vs2.FirstOrDefault(v => v.IdOriginal == context.ProdutoVariacaoId) : null)"
                                                  ValueChanged="@((ProdutoVariacaoDto? v) => OnVariacaoAlterada(context, v?.IdOriginal ?? 0))"
                                                  SearchFunc="@((s, ct) => { _variacoesPorItem.TryGetValue(context, out var vlist); var all = vlist ?? new(); return Task.FromResult(string.IsNullOrEmpty(s) ? all.AsEnumerable() : all.Where(v => $"{v.Cor} {v.Tamanho}".Contains(s, StringComparison.OrdinalIgnoreCase))); })"
@@ -477,7 +477,7 @@
 
     private async Task<ClienteListDto?> NovoCliente()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;

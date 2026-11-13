@@ -22,6 +22,7 @@ public class CampoData : MudDatePicker
         Variant = Variant.Outlined;
         Margin = Margin.Dense;
         MinDate = DataMinima;
+        ShowToolbar = false;
     }
 
     private bool TextoIncompleto => !string.IsNullOrEmpty(Text) && Text.Length < Formato.Length;

@@ -21,7 +21,7 @@
             <MudGrid Spacing="2">
                 <MudItem xs="12">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="VendaParaNfeDto"
+                        <MudAutocomplete MaxItems="null" T="VendaParaNfeDto"
                                          Value="_vendaSelecionada"
                                          ValueChanged="@((VendaParaNfeDto? v) => _vendaSelecionada = v)"
                                          SearchFunc="PesquisarVenda"
@@ -38,7 +38,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="EmitenteListDto"
+                        <MudAutocomplete MaxItems="null" T="EmitenteListDto"
                                          Value="_emitenteSelecionado"
                                          ValueChanged="@((EmitenteListDto? e) => _emitenteSelecionado = e)"
                                          SearchFunc="PesquisarEmitente"
@@ -53,7 +53,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="TransportadoraListDto"
+                        <MudAutocomplete MaxItems="null" T="TransportadoraListDto"
                                          Value="_transportadoraSelecionada"
                                          ValueChanged="@((TransportadoraListDto? t) => _transportadoraSelecionada = t)"
                                          SearchFunc="PesquisarTransportadora"

@@ -3,11 +3,15 @@
         <div class="invoice-header">
             <div>
                 <div class="invoice-title">@Nfe.NomeEmitente</div>
-                <div>@DocumentoHelper.FormatarDocumento(Nfe.CnpjEmitente)</div>
+                <div>CNPJ: @DocumentoHelper.FormatarDocumento(Nfe.CnpjEmitente)</div>
+                @if (!string.IsNullOrWhiteSpace(Nfe.InscricaoEstadualEmitente))
+                {
+                    <div>IE: @Nfe.InscricaoEstadualEmitente</div>
+                }
                 <div>@Nfe.EnderecoEmitente</div>
             </div>
             <div style="text-align:right;">
-                <div class="invoice-title">NOTA FISCAL Nº @Nfe.Numero.ToString("D6")</div>
+                <div class="invoice-title" style="white-space:nowrap;">NOTA FISCAL Nº @Nfe.Numero.ToString("D6")</div>
                 <div>Série @Nfe.Serie</div>
                 <div>Emissão: @Nfe.DataEmissao.ToString("dd/MM/yyyy HH:mm")</div>
             </div>
@@ -23,7 +27,7 @@
         {
             <div class="invoice-section">
                 <div class="invoice-section-title">Transportadora</div>
-                <div>@Nfe.NomeTransportadora</div>
+                <div>@Nfe.NomeTransportadora @(string.IsNullOrWhiteSpace(Nfe.CnpjTransportadora) ? "" : $"— CNPJ: {DocumentoHelper.FormatarCnpj(Nfe.CnpjTransportadora)}")</div>
                 @if (!string.IsNullOrWhiteSpace(Nfe.EnderecoTransportadora))
                 {
                     <div>@Nfe.EnderecoTransportadora</div>

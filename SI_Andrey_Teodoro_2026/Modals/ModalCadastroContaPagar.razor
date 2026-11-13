@@ -54,7 +54,7 @@
                 {
                     <MudItem xs="12" sm="8">
                         <div class="d-flex align-center gap-1">
-                            <MudAutocomplete T="FornecedorListDto"
+                            <MudAutocomplete MaxItems="null" T="FornecedorListDto"
                                              Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
                                              ValueChanged="@((FornecedorListDto? f) => _dto.FornecedorId = f?.Id)"
                                              SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -111,6 +111,13 @@
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" ReadOnly="true" Disabled="true" />
                 </MudItem>
             </MudGrid>
+            @if (_dto.Status == "PAGA" && !string.IsNullOrWhiteSpace(_dto.ComprovanteArquivo))
+            {
+                <div class="d-flex align-center gap-1 mt-2">
+                    <MudIcon Icon="@Icons.Material.Filled.AttachFile" Color="Color.Info" Size="Size.Small" />
+                    <MudLink Href="@_dto.ComprovanteArquivo" Target="_blank" Typo="Typo.body2">Ver comprovante de pagamento</MudLink>
+                </div>
+            }
             @if (DeVenda && !_somenteLeitura)
             {
                 <MudText Typo="Typo.caption" Class="d-block mt-2" Style="color:#888;">Valor e favorecido vêm do cancelamento da Venda #@_dto.VendaId. Só o vencimento pode ser alterado.</MudText>
@@ -216,6 +223,7 @@
                 Descricao = DtoEdicao.Descricao,
                 DataVencimento = DtoEdicao.DataVencimento,
                 DataPagamento = DtoEdicao.DataPagamento,
+                ComprovanteArquivo = DtoEdicao.ComprovanteArquivo,
                 ValorOriginal = DtoEdicao.ValorOriginal,
                 ValorSaldo = DtoEdicao.ValorSaldo,
                 Status = DtoEdicao.Status
@@ -237,7 +245,7 @@
 
     private async Task<FornecedorListDto?> NovoFornecedor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;

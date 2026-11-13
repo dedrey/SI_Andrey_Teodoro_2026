@@ -11,6 +11,7 @@ public class Nfe
     public int EmitenteId { get; set; }
     public string? NomeEmitente { get; set; }
     public string? CnpjEmitente { get; set; }
+    public string? InscricaoEstadualEmitente { get; set; }
     public string? EnderecoEmitente { get; set; }
     public string? NumeroEmitente { get; set; }
     public string? ComplementoEmitente { get; set; }
@@ -38,6 +39,7 @@ public class Nfe
 
     public int? TransportadoraId { get; set; }
     public string? NomeTransportadora { get; set; }
+    public string? CnpjTransportadora { get; set; }
     public string? EnderecoTransportadora { get; set; }
     public string? NumeroTransportadora { get; set; }
     public string? ComplementoTransportadora { get; set; }

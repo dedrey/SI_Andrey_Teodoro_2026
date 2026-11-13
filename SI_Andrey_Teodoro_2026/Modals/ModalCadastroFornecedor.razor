@@ -56,7 +56,7 @@
                 <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Place" Titulo="Endereço" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6" md="@(_dto.TipoPessoa == "PJ" ? 6 : 4)">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="CidadeListDto" Label="Cidade"
+                        <MudAutocomplete MaxItems="null" T="CidadeListDto" Label="Cidade"
                                          Value="_cidadeSelecionada"
                                          ValueChanged="OnCidadeAlterada"
                                          SearchFunc="PesquisarCidade"
@@ -112,7 +112,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6" md="4">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="CondicaoPagamentoListDto" Label="Condição de Pagamento"
+                        <MudAutocomplete MaxItems="null" T="CondicaoPagamentoListDto" Label="Condição de Pagamento"
                                          Value="@(_condicoes.FirstOrDefault(c => c.Id == _dto.CondicaoPagamentoId))"
                                          ValueChanged="OnCondicaoAlterada"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _condicoes.AsEnumerable() : _condicoes.Where(c => c.CondicaoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -142,14 +142,14 @@
     <DialogActions>
         @if (_readOnly)
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined">Fechar</MudButton>
             <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
                 Editar
             </MudButton>
         }
         else
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
                        Disabled="@(_salvando || _grupos.Editando.HasValue)" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")

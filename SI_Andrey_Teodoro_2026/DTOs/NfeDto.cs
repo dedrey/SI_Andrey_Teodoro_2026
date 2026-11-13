@@ -11,6 +11,7 @@ public class NfeDto
     public int EmitenteId { get; set; }
     public string? NomeEmitente { get; set; }
     public string? CnpjEmitente { get; set; }
+    public string? InscricaoEstadualEmitente { get; set; }
     public string? EnderecoEmitente { get; set; }
     public string? RegimeTributarioEmitente { get; set; }
 
@@ -24,6 +25,7 @@ public class NfeDto
 
     public int? TransportadoraId { get; set; }
     public string? NomeTransportadora { get; set; }
+    public string? CnpjTransportadora { get; set; }
     public string? EnderecoTransportadora { get; set; }
 
     public string StatusNfe { get; set; } = "EMITIDA";

@@ -103,7 +103,7 @@
 
                 <div class="d-flex flex-wrap align-end gap-3 mb-3 pa-2" style="background:#f8f9fa;border-radius:8px;">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
+                        <MudAutocomplete MaxItems="null" T="ProdutoListDto" Value="_produtoSelecionadoLote" ValueChanged="OnProdutoLoteAlterado"
                                          SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"
                                          Label="Produto" Variant="Variant.Outlined" Margin="Margin.Dense" Style="min-width:220px;"
                                          Clearable="true" ResetValueOnEmptyText="true" CoerceText="false"
@@ -151,7 +151,7 @@
                         <RowTemplate>
                             <MudTd>
                                 <div class="d-flex align-center gap-1">
-                                    <MudAutocomplete T="ProdutoListDto"
+                                    <MudAutocomplete MaxItems="null" T="ProdutoListDto"
                                                      Value="_produtosSelecionados.GetValueOrDefault(context)"
                                                      ValueChanged="@((ProdutoListDto? p) => OnProdutoAlterado(context, p))"
                                                      SearchFunc="PesquisarProduto" ToStringFunc="@(p => p == null ? "" : p.Produto)"

@@ -52,14 +52,14 @@
     <DialogActions>
         @if (_readOnly)
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
-            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined">Fechar</MudButton>
+            <MudButton OnClick="Editar" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
                 Editar
             </MudButton>
         }
         else
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
                        Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")
@@ -108,4 +108,5 @@
         else Snackbar.Add(mensagem, Severity.Error);
     }
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
+    private void Editar() { _readOnly = false; MudDialog.StateHasChanged(); }
 }

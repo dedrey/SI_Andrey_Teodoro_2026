@@ -33,10 +33,10 @@
                     <strong>Compra cancelada:</strong> @_dto.MotivoCancelamento
                 </MudAlert>
             }
-            <div class="cabecalho-compra">
-                <div class="campo-largo">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" md="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="FornecedorListDto"
+                        <MudAutocomplete MaxItems="null" T="FornecedorListDto"
                                          Value="@(_fornecedores.FirstOrDefault(f => f.Id == _dto.FornecedorId))"
                                          ValueChanged="@((FornecedorListDto? f) => OnFornecedorAlterado(f))"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _fornecedores.AsEnumerable() : _fornecedores.Where(f => f.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -49,10 +49,10 @@
                                            OnClick="PesquisarFornecedor" Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
                         </MudTooltip>
                     </div>
-                </div>
-                <div class="campo-largo">
+                </MudItem>
+                <MudItem xs="12" sm="6" md="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="TransportadoraListDto"
+                        <MudAutocomplete MaxItems="null" T="TransportadoraListDto"
                                          Value="@(_transportadoras.FirstOrDefault(t => t.Id == _dto.TransportadoraId))"
                                          ValueChanged="@((TransportadoraListDto? t) => _dto.TransportadoraId = t?.Id)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _transportadoras.AsEnumerable() : _transportadoras.Where(t => t.RazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -65,9 +65,9 @@
                                            OnClick="PesquisarTransportadora" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                         </MudTooltip>
                     </div>
-                </div>
+                </MudItem>
 
-                <div class="campo-modelo">
+                <MudItem xs="12" sm="6" md="3">
                     <MudSelect T="string" @bind-Value="_dto.ModeloNf" Label="Modelo"
                                Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                Required="true" RequiredError="Selecione o modelo"
@@ -77,47 +77,47 @@
                         <MudSelectItem T="string" Value="@("01")">01 - NOTA FISCAL MODELO 1/1A</MudSelectItem>
                         <MudSelectItem T="string" Value="@("04")">04 - NOTA FISCAL DE PRODUTOR</MudSelectItem>
                     </MudSelect>
-                </div>
-                <div class="campo-serie">
+                </MudItem>
+                <MudItem xs="12" sm="6" md="1">
                     <MudNumericField T="int?" @bind-Value="_dto.SerieNf" Label="Série"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                      Validation="@((int? v) => LimiteHelper.Faixa(v, 0, 999))" HideSpinButtons="true"
                                      Required="true" RequiredError="Obrigatório"
                                      Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </div>
-                <div class="campo-numero">
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
                     <MudTextField T="string" @bind-Value="_dto.NumeroNf" Label="Número"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" MaxLength="60"
                                   Required="true" RequiredError="Obrigatório"
                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </div>
-                <div class="campo-chave">
+                </MudItem>
+                <MudItem xs="12" sm="6" md="6">
                     <MudTextField T="string" Value="@_chaveTexto" ValueChanged="OnChaveAlterada" Label="Chave de acesso"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Immediate="true" MaxLength="54"
                                   Required="@(_dto.ModeloNf == "55")" RequiredError="Obrigatório" HelperText="@AvisoChave"
                                   Error="@(ErroChave != null)" ErrorText="@ErroChave"
                                   Disabled="@(SomenteLeitura || CabecalhoBloqueado)" />
-                </div>
+                </MudItem>
 
-                <div class="campo-data">
+                <MudItem xs="12" sm="6" md="3">
                     <CampoData @bind-Date="_dataEmissao" @bind-Date:after="OnDataEmissaoAlterada" @bind-PickerMonth="_mesEmissao" Label="Data de Emissão"
                                Required="true" AutoClose="true" MaxDate="DateTime.Today"
                                Validation="@(new Func<DateTime?, string?>(d => DataHelper.ValidarNaoFutura(d, "data de emissão")))"
                                Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </div>
-                <div class="campo-data">
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
                     <CampoData @bind-Date="_dataChegada" @bind-PickerMonth="_mesChegada" Label="Data de Chegada"
                                Required="true" AutoClose="true" MinDate="_dataEmissao" MaxDate="DateTime.Today"
                                Validation="@(new Func<DateTime?, string?>(d => DataHelper.ValidarNaoFutura(d, "data de chegada") ?? DataHelper.ValidarNaoAnterior(d, _dataEmissao, "data de chegada", "data de emissão")))"
                                Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
-                </div>
-                <div class="campo-condicao">
+                </MudItem>
+                <MudItem xs="12" sm="6" md="6">
                     <MudTextField T="string" Value="@_dto.NomeCondicaoPagamento"
                                   Label="Condição de Pagamento" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                   ReadOnly="true" Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue)"
                                   Error="@(ErroCondicao != null)" ErrorText="@ErroCondicao" />
-                </div>
-            </div>
+                </MudItem>
+            </MudGrid>
             @if (!CabecalhoValido && !SomenteLeitura)
             {
                 <MudText Typo="Typo.caption" Style="color:#888;">Preencha fornecedor, transportadora, dados da nota e datas válidas para adicionar itens.</MudText>
@@ -151,15 +151,15 @@
                     <ColGroup>
                         <col />
                         <col />
-                        <col style="width:90px;" />
-                        <col style="width:130px;" />
                         <col style="width:100px;" />
-                        <col style="width:130px;" />
+                        <col style="width:150px;" />
+                        <col style="width:100px;" />
+                        <col style="width:150px;" />
                         @if (SomenteLeitura)
                         {
-                            <col style="width:110px;" />
+                            <col style="width:130px;" />
                         }
-                        <col style="width:110px;" />
+                        <col style="width:170px;" />
                         @if (!SomenteLeitura)
                         {
                             <col style="width:80px;" />
@@ -820,7 +820,7 @@
 
     private async Task<FornecedorListDto?> NovoFornecedor()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroFornecedor>("Novo Fornecedor", opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;

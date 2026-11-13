@@ -45,7 +45,7 @@
                 <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Place" Titulo="Endereço" AoMudar="StateHasChanged" />
                 <MudItem xs="12" sm="6" md="4">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="CidadeListDto"
+                        <MudAutocomplete MaxItems="null" T="CidadeListDto"
                                          Value="_cidadeSelecionada"
                                          ValueChanged="OnCidadeAlterada"
                                          SearchFunc="PesquisarCidade"
@@ -199,7 +199,7 @@
 
     private async Task<CidadeListDto?> NovaCidade()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCidade>("Nova Cidade", opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;

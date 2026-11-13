@@ -25,10 +25,9 @@
                 <MudItem xs="12" sm="5">
                     <div class="d-flex align-center gap-1">
                         <MudSelect T="int" Value="_dto.PaisId" ValueChanged="OnPaisAlterado"
-                                   Label="@(_paisNaoSelecionado ? "País * — Obrigatório!" : "País *")"
-                                   Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                   Label="País" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
                                    Disabled="@_readOnly"
-                                   Class="@(_paisNaoSelecionado ? "mud-input-error" : "")">
+                                   Required="true" Validation="@((int v) => v <= 0 ? "País obrigatório" : null)">
                             <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                             @foreach (var pais in _paises)
                             {
@@ -40,18 +39,14 @@
                                            OnClick="PesquisarPais" Disabled="@_readOnly" />
                         </MudTooltip>
                     </div>
-                    @if (_paisNaoSelecionado)
-                    {
-                        <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um país</MudText>
-                    }
                 </MudItem>
                 <MudItem xs="12" sm="5">
                     <div class="d-flex align-center gap-1">
                         <MudSelect T="int" @bind-Value="_dto.EstadoId"
-                                   Label="@(_estadoNaoSelecionado ? "Estado * — Obrigatório!" : "Estado *")"
+                                   Label="Estado"
                                    Variant="Variant.Outlined" Margin="Margin.Dense"
                                    Disabled="@(!Edicao && !PaisOk || _readOnly)" HelperText="@(Edicao || PaisOk ? null : "Selecione o país primeiro.")" FullWidth="true"
-                                   Class="@(_estadoNaoSelecionado ? "mud-input-error" : "")">
+                                   Required="true" Validation="@((int v) => v <= 0 ? "Estado obrigatório" : null)">
                             <MudSelectItem T="int" Value="0" Disabled="true">— Selecione —</MudSelectItem>
                             @foreach (var estado in _estados)
                             {
@@ -63,10 +58,6 @@
                                            OnClick="PesquisarEstado" Disabled="@(!Edicao && !PaisOk || _readOnly)" />
                         </MudTooltip>
                     </div>
-                    @if (_estadoNaoSelecionado)
-                    {
-                        <MudText Typo="Typo.caption" Style="color:red;margin-left:14px;">⚠ Selecione um estado</MudText>
-                    }
                 </MudItem>
                 <MudItem xs="8" sm="9" md="10">
                     <MudTextField Value="@_dto.NomeCidade" ValueChanged="@((string v) => _dto.NomeCidade = v)"
@@ -98,14 +89,14 @@
     <DialogActions>
         @if (_readOnly)
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
-            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined">Fechar</MudButton>
+            <MudButton OnClick="Editar" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
                 Editar
             </MudButton>
         }
         else
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
                        Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")
@@ -124,7 +115,7 @@
     private bool _readOnly;
     private CidadeDto _dto = new();
     private MudForm _form = null!;
-    private bool _formValido, _salvando, _paisNaoSelecionado, _estadoNaoSelecionado;
+    private bool _formValido, _salvando;
     private string _dddTexto = "";
     private List<PaisListDto> _paises = new();
     private List<EstadoListDto> _estados = new();
@@ -160,7 +151,7 @@
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
 
-    private async Task OnPaisAlterado(int paisId) { _dto.PaisId = paisId; _dto.EstadoId = 0; _paisNaoSelecionado = false; _estados = (await EstadoService.ObterPorPaisAsync(paisId)).ToList(); }
+    private async Task OnPaisAlterado(int paisId) { _dto.PaisId = paisId; _dto.EstadoId = 0; _estados = (await EstadoService.ObterPorPaisAsync(paisId)).ToList(); }
     private async Task PesquisarPais()
     {
         var pais = await DialogService.PesquisarPaisAsync(PaisService, _dto.PaisId, NovoPais);
@@ -179,7 +170,7 @@
 
     private async Task<PaisListDto?> NovoPais()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroPais>("Novo País", opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;
@@ -201,8 +192,8 @@
     private async Task Salvar()
     {
         await _form.Validate();
-        if (_dto.PaisId == 0) { _paisNaoSelecionado = true; Snackbar.Add("Selecione um País.", Severity.Warning); return; }
-        if (_dto.EstadoId == 0) { _estadoNaoSelecionado = true; Snackbar.Add("Selecione um Estado.", Severity.Warning); return; }
+        if (_dto.PaisId == 0) { Snackbar.Add("Selecione um País.", Severity.Warning); return; }
+        if (_dto.EstadoId == 0) { Snackbar.Add("Selecione um Estado.", Severity.Warning); return; }
         if (!_formValido) return;
         _salvando = true;
         var (sucesso, mensagem, id) = await CidadeService.SalvarAsync(_dto);
@@ -216,4 +207,5 @@
     private bool CidadeOk => EstadoOk && TextoHelper.ValidarApenasLetras(_dto.NomeCidade) == null;
     private object DadosEditaveis() => new { _dto, _dddTexto };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
+    private void Editar() { _readOnly = false; MudDialog.StateHasChanged(); }
 }

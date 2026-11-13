@@ -38,12 +38,12 @@
                 </MudItem>
                 <MudItem xs="12" sm="5" md="5">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="CategoriaListDto"
+                        <MudAutocomplete MaxItems="null" T="CategoriaListDto"
                                          Value="@(_categorias.FirstOrDefault(c => c.Id == _dto.CategoriaId))"
                                          ValueChanged="@((CategoriaListDto? c) => _dto.CategoriaId = c?.Id ?? 0)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _categorias.AsEnumerable() : _categorias.Where(c => c.NomeCategoria.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(c => c?.NomeCategoria ?? "")"
-                                         Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Categoria obrigatória"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
                                          Disabled="@(Bloqueado(1) || !Edicao && !NomeOk)" HelperText="@(Edicao || NomeOk ? null : "Informe o nome do produto primeiro.")" />
                         <MudTooltip Text="Pesquisar categoria">
@@ -54,12 +54,12 @@
                 </MudItem>
                 <MudItem xs="12" sm="5" md="4">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="MarcaListDto"
+                        <MudAutocomplete MaxItems="null" T="MarcaListDto"
                                          Value="@(_marcas.FirstOrDefault(m => m.Id == _dto.MarcaId))"
                                          ValueChanged="@((MarcaListDto? m) => _dto.MarcaId = m?.Id ?? 0)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _marcas.AsEnumerable() : _marcas.Where(m => m.NomeMarca.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(m => m?.NomeMarca ?? "")"
-                                         Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Label="Marca" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Marca obrigatória"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
                                          Disabled="@(Bloqueado(1) || !Edicao && !CategoriaOk)" HelperText="@(Edicao || CategoriaOk ? null : "Selecione a categoria primeiro.")" />
                         <MudTooltip Text="Pesquisar marca">
@@ -70,12 +70,12 @@
                 </MudItem>
                 <MudItem xs="12" sm="5" md="3">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="UnidadeMedidaListDto"
+                        <MudAutocomplete MaxItems="null" T="UnidadeMedidaListDto"
                                          Value="@(_unidades.FirstOrDefault(u => u.Id == _dto.UnidadeMedidaId))"
                                          ValueChanged="@((UnidadeMedidaListDto? u) => _dto.UnidadeMedidaId = u?.Id ?? 0)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _unidades.AsEnumerable() : _unidades.Where(u => u.Sigla.Contains(s, StringComparison.OrdinalIgnoreCase) || u.Descricao.Contains(s, StringComparison.OrdinalIgnoreCase))))"
                                          ToStringFunc="@(u => u == null ? "" : $"{u.Sigla} — {u.Descricao}")"
-                                         Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                         Label="Unidade" Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Unidade obrigatória"
                                          ResetValueOnEmptyText="true" CoerceText="false" Placeholder="Pesquisar..."
                                          Disabled="@(Bloqueado(1) || !Edicao && !MarcaOk)" HelperText="@(Edicao || MarcaOk ? null : "Selecione a marca primeiro.")" />
                         <MudTooltip Text="Pesquisar unidade de medida">

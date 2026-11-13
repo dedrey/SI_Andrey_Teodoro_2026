@@ -24,12 +24,12 @@
                 </MudItem>
                 <MudItem xs="12" sm="4" md="7">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="TransportadoraListDto" Label="Transportadora"
+                        <MudAutocomplete MaxItems="null" T="TransportadoraListDto" Label="Transportadora"
                                          Value="_transportadoraSelecionada"
                                          ValueChanged="@((TransportadoraListDto? t) => { _transportadoraSelecionada = t; _dto.TransportadoraId = t?.Id ?? 0; })"
                                          SearchFunc="PesquisarTransportadora"
                                          ToStringFunc="@(t => t == null ? "" : (string.IsNullOrWhiteSpace(t.NomeFantasia) ? t.RazaoSocial : $"{t.RazaoSocial} ({t.NomeFantasia})"))"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Obrigatório"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Transportadora obrigatória"
                                          Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@_readOnly" />
                         <MudTooltip Text="Pesquisar transportadora">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
@@ -46,11 +46,11 @@
                 </MudItem>
                 <MudItem xs="6" sm="3" md="2">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="string" Label="UF"
+                        <MudAutocomplete MaxItems="null" T="string" Label="UF"
                                          Value="@_dto.Uf" ValueChanged="@((string? v) => _dto.Uf = v ?? "")"
                                          SearchFunc="PesquisarUf"
                                          ToStringFunc="@(u => u ?? "")"
-                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="Obrigatório"
+                                         Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" Required="true" RequiredError="UF obrigatória"
                                          Clearable="true" ResetValueOnEmptyText="true" CoerceText="false" Disabled="@(_readOnly || !Edicao && !PlacaOk)" HelperText="@AjudaUf" />
                         <MudTooltip Text="Pesquisar estado">
                             <MudIconButton Icon="@Icons.Material.Filled.Search" Color="Color.Primary" Size="Size.Small"
@@ -74,14 +74,14 @@
     <DialogActions>
         @if (_readOnly)
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
-            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined">Fechar</MudButton>
+            <MudButton OnClick="Editar" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
                 Editar
             </MudButton>
         }
         else
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
                        Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")
@@ -180,4 +180,5 @@
     private string? AjudaUf => Edicao || PlacaOk ? null : TransportadoraOk ? "Informe uma placa válida primeiro." : "Selecione a transportadora primeiro.";
     private object DadosEditaveis() => new { _dto, _placaTexto, Transportadora = _transportadoraSelecionada?.Id };
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, DadosEditaveis());
+    private void Editar() { _readOnly = false; MudDialog.StateHasChanged(); }
 }

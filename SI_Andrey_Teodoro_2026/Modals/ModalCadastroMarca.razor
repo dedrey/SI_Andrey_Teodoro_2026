@@ -44,14 +44,14 @@
     <DialogActions>
         @if (_readOnly)
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text">Fechar</MudButton>
-            <MudButton OnClick="@(() => _readOnly = false)" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined">Fechar</MudButton>
+            <MudButton OnClick="Editar" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Edit">
                 Editar
             </MudButton>
         }
         else
         {
-            <MudButton OnClick="Cancelar" Variant="Variant.Text" Disabled="_salvando">Cancelar</MudButton>
+            <MudButton OnClick="Cancelar" Variant="Variant.Outlined" Disabled="_salvando">Cancelar</MudButton>
             <MudButton OnClick="Salvar" Color="Color.Primary" Variant="Variant.Filled"
                        Disabled="_salvando" StartIcon="@Icons.Material.Filled.Save">
                 @(_salvando ? "Salvando..." : "Salvar")
@@ -99,5 +99,6 @@
         else Snackbar.Add(mensagem, Severity.Error);
     }
     private Task Cancelar() => DialogService.FecharComConfirmacaoAsync(MudDialog, _readOnly, _snapshot, _dto);
+    private void Editar() { _readOnly = false; MudDialog.StateHasChanged(); }
     private string? ValidarNome(string? v) { if (string.IsNullOrWhiteSpace(v)) return "Obrigatório"; if (v.Trim().Length < 2) return "Mínimo 2 caracteres"; if (!System.Text.RegularExpressions.Regex.IsMatch(v.Trim(), @"^[a-zA-ZÀ-ÿ0-9\s\&\-\.\'\/]+$")) return "Caracteres inválidos"; return null; }
 }

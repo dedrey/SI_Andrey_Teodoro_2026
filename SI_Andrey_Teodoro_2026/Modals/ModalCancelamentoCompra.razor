@@ -57,6 +57,7 @@
         _cancelando = false;
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(true));
+        else MudDialog.Cancel();
     }
 
     private Task Fechar() => DialogService.FecharComConfirmacaoAsync(MudDialog, false, _snapshot, _motivo);

@@ -7,7 +7,7 @@
     <TitleContent>
         <div class="d-flex align-center">
             <MudIcon Icon="@Icons.Material.Filled.RequestQuote" Color="Color.Primary" Class="mr-2" />
-            <MudText Typo="Typo.h6">@(_somenteLeitura ? "Visualizar Conta a Receber" : _dto.IdOriginal != 0 ? "Editar Conta a Receber" : "Nova Conta a Receber")</MudText>
+            <MudText Typo="Typo.h6">@(_somenteLeitura ? "Visualizar Conta a Receber" : DtoEdicao != null ? "Editar Conta a Receber" : "Nova Conta a Receber")</MudText>
         </div>
     </TitleContent>
     <DialogContent>
@@ -129,7 +129,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="9" md="6">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="ClienteListDto"
+                        <MudAutocomplete MaxItems="null" T="ClienteListDto"
                                          Value="@(_clientes.FirstOrDefault(c => c.Id == _dto.ClienteId))"
                                          ValueChanged="@((ClienteListDto? c) => _dto.ClienteId = c?.Id ?? 0)"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _clientes.Take(50) : _clientes.Where(c => c.NomeRazaoSocial.Contains(s, StringComparison.OrdinalIgnoreCase))))"
@@ -256,7 +256,7 @@
 
     private async Task<ClienteListDto?> NovoCliente()
     {
-        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var opts = new DialogOptions { CloseOnEscapeKey = false, BackdropClick = false, MaxWidth = MaxWidth.Large, FullWidth = true };
         var dialog = await DialogService.ShowAsync<ModalCadastroCliente>("Novo Cliente", opts);
         var result = await dialog.Result;
         if (result is not { Canceled: false } || result.Data is not int id) return null;

@@ -144,18 +144,7 @@ input.mud-input-slot, textarea.mud-input-slot {
     margin-bottom: 0;
 }
 
-/* ===== Compras: cabeçalho do modal (largura por conteúdo) ===== */
-.cabecalho-compra {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 12px;
+body .mud-dialog-container.mud-dialog-center {
     align-items: flex-start;
+    padding-top: 32px;
 }
-
-.cabecalho-compra > .campo-largo { flex: 1 1 320px; min-width: 0; }
-.cabecalho-compra > .campo-modelo { flex: 0 0 240px; }
-.cabecalho-compra > .campo-serie { flex: 0 0 80px; }
-.cabecalho-compra > .campo-numero { flex: 0 0 120px; }
-.cabecalho-compra > .campo-chave { flex: 1 1 480px; min-width: 0; }
-.cabecalho-compra > .campo-data { flex: 0 0 165px; }
-.cabecalho-compra > .campo-condicao { flex: 1 1 260px; min-width: 0; }

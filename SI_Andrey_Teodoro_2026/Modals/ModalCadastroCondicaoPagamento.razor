@@ -27,7 +27,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="4" md="3">
                     <div class="d-flex align-center gap-1">
-                        <MudAutocomplete T="MetodoPagamentoListDto"
+                        <MudAutocomplete MaxItems="null" T="MetodoPagamentoListDto"
                                          Value="@(_metodos.FirstOrDefault(m => m.Id == _dto.MetodoPagamentoId))"
                                          ValueChanged="OnMetodoAlterado"
                                          SearchFunc="@((s, ct) => Task.FromResult(string.IsNullOrEmpty(s) ? _metodos.AsEnumerable() : _metodos.Where(m => m.MetodoPagamento.Contains(s, StringComparison.OrdinalIgnoreCase) || m.Codigo.Contains(s, StringComparison.OrdinalIgnoreCase))))"
