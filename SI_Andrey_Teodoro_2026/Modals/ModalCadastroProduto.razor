@@ -130,9 +130,9 @@
             @if (!_readOnly && _dto.Variacoes.Count(v => !v.Removida) > 1)
             {
                 <div class="d-flex align-center gap-3 mb-3">
-                    <MudNumericField T="decimal" Value="_replicarVenda" ValueChanged="@((decimal v) => _replicarVenda = Math.Max(v, 0))"
+                    <MudNumericField T="decimal" Value="_replicarVenda" ValueChanged="@((decimal v) => _replicarVenda = v)"
                                      Label="Valor de venda" HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                     Min="0" Format="N2" Culture="@_culturaBr"
+                                     Validation="@((decimal v) => LimiteHelper.NaoNegativo(v))" Format="N2" Culture="@_culturaBr"
                                      Adornment="Adornment.Start" AdornmentText="R$" Style="max-width:200px;" Disabled="@Bloqueado(2)" />
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReplicarValorVenda"
                                Style="height:40px;" Disabled="@Bloqueado(2)">
@@ -205,9 +205,9 @@
                         <MudTd Style="font-weight:600;">@context.Cor</MudTd>
                         <MudTd><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.Tamanho</MudChip></MudTd>
                         <MudTd>
-                            <MudNumericField T="decimal" Value="context.Preco" ValueChanged="@((decimal v) => context.Preco = Math.Max(v, 0))"
+                            <MudNumericField T="decimal" Value="context.Preco" ValueChanged="@((decimal v) => context.Preco = v)"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                             Min="0" Format="N2" Culture="@_culturaBr"
+                                             Validation="@((decimal v) => LimiteHelper.NaoNegativo(v))" Format="N2" Culture="@_culturaBr"
                                              FullWidth="true" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Bloqueado(2)"
                                           Style="@(abaixoCusto && !fastFashion ? "border-color:red;" : "")" />
                             @if (abaixoCusto)

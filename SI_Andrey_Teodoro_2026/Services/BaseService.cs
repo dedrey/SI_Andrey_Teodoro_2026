@@ -1,5 +1,5 @@
 ﻿using SI_Andrey_Teodoro_2026.DTOs;
-using SI_Andrey_Teodoro_2026.Repositories;
+using SI_Andrey_Teodoro_2026.Helpers;
 
 namespace SI_Andrey_Teodoro_2026.Services;
 
@@ -9,9 +9,7 @@ public abstract class BaseService<TDto, TListDto>
     protected virtual bool Feminino => false;
 
     protected (bool sucesso, string mensagem) Erro(Exception ex)
-        => ex is IdDuplicadoException
-            ? (false, ex.Message)
-            : (false, $"Erro ao salvar {NomeEntidade.ToLower()}: {ex.Message}");
+        => (false, ErroBancoHelper.Mensagem(ex, $"salvar {(Feminino ? "a" : "o")} {NomeEntidade.ToLower()}"));
 
     protected static async Task<string?> ValidarIdAsync(int id, int idOriginal, Func<int, Task<bool>> existeId)
     {
@@ -25,7 +23,7 @@ public abstract class BaseService<TDto, TListDto>
     }
 
     protected (bool sucesso, string mensagem) ErroStatus(Exception ex)
-        => (false, $"Erro ao alterar status: {ex.Message}");
+        => (false, ErroBancoHelper.Mensagem(ex, "alterar o status"));
 
     protected (bool sucesso, string mensagem) SucessoStatus(bool ativar)
         => (true, $"{NomeEntidade} {(ativar ? "ativad" : "desativad")}{(Feminino ? "a" : "o")} com sucesso!");

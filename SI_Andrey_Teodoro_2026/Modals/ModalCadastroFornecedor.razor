@@ -73,7 +73,7 @@
                 <MudItem xs="12" sm="4" md="@(_dto.TipoPessoa == "PJ" ? 10 : 6)">
                     <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => { _dto.Endereco = v; Alterou(2); })"
                                   Label="Endereço" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="100" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="2" md="2">
                     <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => { _dto.Numero = v; Alterou(2); })"
@@ -83,7 +83,7 @@
                 <MudItem xs="12" sm="3" md="5">
                     <MudTextField Value="@_dto.Bairro" ValueChanged="@((string v) => { _dto.Bairro = v; Alterou(2); })"
                                   Label="Bairro" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="60" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="3" md="5">
                     <MudTextField Value="@_dto.Complemento" ValueChanged="@((string v) => { _dto.Complemento = v; Alterou(2); })"
@@ -106,7 +106,7 @@
                 <MudItem xs="12" sm="6" md="5">
                     <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => { _dto.Email = v; Alterou(3); })" Label="E-mail"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarEmail(v))"
                                   InputType="InputType.Email" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
@@ -280,7 +280,11 @@
         var (sucesso, mensagem, id) = await FornecedorService.SalvarAsync(_dto);
         _salvando = false;
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
-        else Snackbar.Add(mensagem, Severity.Error);
+        else { Snackbar.Add(mensagem, Severity.Error); ReabrirSeDuplicado(mensagem); }
+    }
+    private void ReabrirSeDuplicado(string mensagem)
+    {
+        if (!Edicao && mensagem.StartsWith("Já existe")) _grupos.Editar(1);
     }
     private bool Edicao => _dto.IdOriginal > 0;
     private string? AjudaTravado => Edicao && !_readOnly ? "Não pode ser alterado após o cadastro." : null;

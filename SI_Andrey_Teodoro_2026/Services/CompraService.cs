@@ -167,6 +167,8 @@ public class CompraService : BaseService<CompraDto, CompraListDto>, ICompraServi
                 return (false, "Informe o número da nota fiscal.", 0);
             dto.NumeroNf = dto.NumeroNf.TrimStart('0');
             if (dto.NumeroNf.Length == 0) dto.NumeroNf = "0";
+            if (TextoHelper.ValidarTamanhos((dto.NumeroNf, 60, "Número da nota")) is string erroTamanho)
+                return (false, erroTamanho, 0);
 
             if (dto.ModeloNf == "55" && dto.ChaveAcesso == null)
                 return (false, "Informe a chave de acesso (obrigatória para o modelo 55).", 0);

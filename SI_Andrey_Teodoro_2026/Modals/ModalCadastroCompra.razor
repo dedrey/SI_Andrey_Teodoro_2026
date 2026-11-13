@@ -81,13 +81,13 @@
                 <div class="campo-serie">
                     <MudNumericField T="int?" @bind-Value="_dto.SerieNf" Label="Série"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Min="0" Max="999" HideSpinButtons="true"
+                                     Validation="@((int? v) => LimiteHelper.Faixa(v, 0, 999))" HideSpinButtons="true"
                                      Required="true" RequiredError="Obrigatório"
                                      Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </div>
                 <div class="campo-numero">
                     <MudTextField T="string" @bind-Value="_dto.NumeroNf" Label="Número"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true" MaxLength="60"
                                   Required="true" RequiredError="Obrigatório"
                                   Disabled="@(SomenteLeitura || !_dto.FornecedorId.HasValue || CabecalhoBloqueado)" />
                 </div>
@@ -196,7 +196,8 @@
                             <MudNumericField T="decimal" Value="context.ValorUnitario" ValueChanged="@((decimal v) => OnValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                              Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                             Min="0" Format="N4" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)" />
+                                             Format="N4" Culture="@_culturaBr" FullWidth="true" Disabled="@LinhaBloqueada(context)"
+                                             Error="@(context.ValorUnitario < 0)" ErrorText="@LimiteHelper.Negativo" />
                         </MudTd>
                         <MudTd>
                             <MudNumericField T="decimal" Value="context.DescontoPercentual" ValueChanged="@((decimal v) => OnDescontoPercentualAlterado(context, v))"
@@ -348,21 +349,21 @@
                                     <MudNumericField T="decimal" Value="_dto.ValorFrete" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorFrete = ValorHelper.Moeda(v)))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                                     Validation="@((decimal v) => LimiteHelper.NaoNegativo(v))" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.body2">Seguro</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
                                     <MudNumericField T="decimal" Value="_dto.ValorSeguro" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorSeguro = ValorHelper.Moeda(v)))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                                     Validation="@((decimal v) => LimiteHelper.NaoNegativo(v))" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.body2">Outros Acréscimos</MudText>
                                 <div @onfocusin="OnAcrescimoFocado">
                                     <MudNumericField T="decimal" Value="_dto.ValorOutrosAcrescimos" ValueChanged="@((decimal v) => OnAcrescimoAlterado(() => _dto.ValorOutrosAcrescimos = ValorHelper.Moeda(v)))"
                                                      HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                      Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
+                                                     Validation="@((decimal v) => LimiteHelper.NaoNegativo(v))" Format="N2" Culture="@_culturaBr" FullWidth="true" Disabled="@AcrescimosBloqueados" />
                                 </div>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:700;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;">Total da Nota</MudText>
                                 <MudText Typo="Typo.subtitle1" Style="font-weight:700;color:#1a237e;border-top:1px solid #e0e0e0;height:100%;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap;">R$ @_dto.ValorTotal.ToString("N2")</MudText>
@@ -421,13 +422,13 @@
                 Task.Run(async () => _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList())
             );
         }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "carregar os dados"), Severity.Error); }
         await _fornecedores.IncluirSeAusenteAsync(_dto.FornecedorId, f => f.Id, async id => await FornecedorService.ObterPorIdAsync(id) is { } f ? new FornecedorListDto { Id = f.Id, RazaoSocial = f.RazaoSocial, NomeFantasia = f.NomeFantasia, TipoPessoa = f.TipoPessoa, CpfCnpj = f.CpfCnpj, CondicaoPagamentoId = f.CondicaoPagamentoId, NomeCondicaoPagamento = f.NomeCondicaoPagamento } : null);
         await _transportadoras.IncluirSeAusenteAsync(_dto.TransportadoraId, t => t.Id, async id => await TransportadoraService.ObterPorIdAsync(id) is { } t ? new TransportadoraListDto { Id = t.Id, RazaoSocial = t.RazaoSocial, NomeFantasia = t.NomeFantasia, Cnpj = t.Cnpj } : null);
         if (SomenteLeitura && _dto.Id > 0)
             _contasPagar = await CompraService.ObterContasPagarAsync(_dto.Id);
         try { _ordemTamanhos = (await TamanhoService.ObterTodosAtivosAsync()).GroupBy(t => t.Nome).ToDictionary(g => g.Key, g => g.First().Ordem); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar tamanhos: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "carregar os tamanhos"), Severity.Error); }
         foreach (var item in _dto.Itens)
         {
             _produtosSelecionados[item] = _produtos.FirstOrDefault(p => item.ProdutoId > 0 ? p.Id == item.ProdutoId : p.Produto == item.NomeProduto);
@@ -583,6 +584,7 @@
         var desc = $"{item.NomeProduto} {item.Cor}/{item.Tamanho}";
         if (item.Quantidade < 1) return $"{desc}: a quantidade deve ser de pelo menos 1.";
         if (item.Quantidade > CompraItemDto.QuantidadeMaxima) return $"{desc}: a quantidade máxima é {CompraItemDto.QuantidadeMaxima:N0}.";
+        if (item.ValorUnitario < 0) return $"{desc}: o custo unitário não pode ser negativo.";
         if (item.ValorUnitario <= 0) return $"{desc}: informe o custo unitário.";
         if (PercentualInvalido(item)) return $"{desc}: o desconto % deve ficar entre 0% e 100%.";
         if (DescontoInvalido(item)) return $"{desc}: o desconto unitário não pode ser negativo nem maior que o valor unitário.";
@@ -764,7 +766,7 @@
     }
     private void OnValorAlterado(CompraItemDto item, decimal valor)
     {
-        item.ValorUnitario = ValorHelper.Unit(Math.Max(valor, 0));
+        item.ValorUnitario = ValorHelper.Unit(valor);
         SincronizarDesconto(item);
         RecalcularTotais();
     }
@@ -868,6 +870,8 @@
             return;
         }
         if (!_dto.FornecedorId.HasValue) { Snackbar.Add("Selecione um fornecedor.", Severity.Warning); return; }
+        if (LimiteHelper.Faixa(_dto.SerieNf, 0, 999) != null) { Snackbar.Add("A série da nota deve ser de 0 a 999.", Severity.Warning); return; }
+        if (_dto.ValorFrete < 0 || _dto.ValorSeguro < 0 || _dto.ValorOutrosAcrescimos < 0) { Snackbar.Add("Frete, seguro e outros acréscimos não podem ser negativos.", Severity.Warning); return; }
         if (!_dto.TransportadoraId.HasValue) { Snackbar.Add("Selecione uma transportadora.", Severity.Warning); return; }
         if (_dto.Itens.Count == 0) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
         if (!_dataEmissao.HasValue) { Snackbar.Add("Informe a data de emissão.", Severity.Warning); return; }

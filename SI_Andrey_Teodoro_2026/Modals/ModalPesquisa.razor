@@ -121,7 +121,7 @@
         catch (Exception ex)
         {
             if (consulta != _consultaAtual) return _ultimaTabela;
-            Snackbar.Add($"Erro ao pesquisar: {ex.Message}", Severity.Error);
+            Snackbar.Add(ErroBancoHelper.Mensagem(ex, "pesquisar"), Severity.Error);
             if (ObterId == null) _selecionado = null;
             _itensPagina = new();
             _ultimaTabela = new TableData<TItem> { Items = new List<TItem>(), TotalItems = 0 };
@@ -208,7 +208,7 @@
         _abrindoNovo = true;
         TItem? item = null;
         try { item = await Novo(); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao cadastrar: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "cadastrar"), Severity.Error); }
         if (item != null && !MultiSelecao) { MudDialog.Close(DialogResult.Ok(item)); return; }
         _abrindoNovo = false;
         if (item != null && ObterId != null)

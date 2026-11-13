@@ -39,7 +39,7 @@
                 </MudItem>
                 <MudItem xs="12" sm="6" md="3">
                     <MudTextField Value="@_dto.InscricaoEstadual" ValueChanged="@((string v) => { _dto.InscricaoEstadual = v; Alterou(1); })" Label="Inscrição Estadual"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="30" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !RazaoOk)" HelperText="@AjudaRestante" />
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="20" FullWidth="true" Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !RazaoOk)" HelperText="@AjudaRestante" />
                 </MudItem>
 
                 <TituloSecao Grupos="_grupos" Grupo="2" Icone="@Icons.Material.Filled.Place" Titulo="Endereço" AoMudar="StateHasChanged" />
@@ -97,7 +97,7 @@
                 <MudItem xs="12" sm="6" md="9">
                     <MudTextField Value="@_dto.Email" ValueChanged="@((string v) => { _dto.Email = v; Alterou(3); })" Label="E-mail"
                                   Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="100" FullWidth="true" Immediate="true"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => ValidarEmail(v))"
                                   InputType="InputType.Email" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
@@ -217,6 +217,11 @@
         _salvando = false;
         Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
         if (sucesso) MudDialog.Close(DialogResult.Ok(id));
+        else ReabrirSeDuplicado(mensagem);
+    }
+    private void ReabrirSeDuplicado(string mensagem)
+    {
+        if (!Edicao && mensagem.StartsWith("Já existe")) _grupos.Editar(1);
     }
 
     private bool Edicao => _dto.IdOriginal > 0;

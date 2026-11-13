@@ -251,7 +251,11 @@
         var (sucesso, mensagem, id) = await EmitenteService.SalvarAsync(_dto);
         _salvando = false;
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
-        else Snackbar.Add(mensagem, Severity.Error);
+        else { Snackbar.Add(mensagem, Severity.Error); ReabrirSeDuplicado(mensagem); }
+    }
+    private void ReabrirSeDuplicado(string mensagem)
+    {
+        if (!Edicao && mensagem.StartsWith("Já existe")) _grupos.Editar(1);
     }
     private bool Edicao => _dto.IdOriginal > 0;
     private string? AjudaTravado => Edicao && !_readOnly ? "Não pode ser alterado após o cadastro." : null;

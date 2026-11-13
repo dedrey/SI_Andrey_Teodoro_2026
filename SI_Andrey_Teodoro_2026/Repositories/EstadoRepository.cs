@@ -116,4 +116,13 @@ public class EstadoRepository : BaseRepository, IEstadoRepository
             : "SELECT COUNT(*) FROM estados WHERE uf = @uf AND pais_id = @paisId";
         return await conn.ExecuteScalarAsync<int>(sql, new { uf, paisId, idOriginalIgnorar }) > 0;
     }
+
+    public async Task<bool> ExisteNomeNoPaisAsync(string nome, int paisId, int? idOriginalIgnorar = null)
+    {
+        using var conn = _factory.CreateConnection();
+        var sql = idOriginalIgnorar.HasValue
+            ? "SELECT COUNT(*) FROM estados WHERE estado = @nome AND pais_id = @paisId AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM estados WHERE estado = @nome AND pais_id = @paisId";
+        return await conn.ExecuteScalarAsync<int>(sql, new { nome, paisId, idOriginalIgnorar }) > 0;
+    }
 }

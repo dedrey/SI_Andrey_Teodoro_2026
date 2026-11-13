@@ -23,7 +23,7 @@
                 <MudItem xs="12" sm="6" md="7">
                     <MudTextField Value="@_dto.NomePais" ValueChanged="@((string v) => _dto.NomePais = v)"
                                   Label="País" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" RequiredError="Obrigatório" MaxLength="60" FullWidth="true" Immediate="true"
+                                  Required="true" RequiredError="Obrigatório" MaxLength="50" FullWidth="true" Immediate="true"
                                   Validation="@((string v) => TextoHelper.ValidarApenasLetras(v, "País obrigatório"))" Disabled="@_readOnly" />
                 </MudItem>
                 <MudItem xs="12" sm="4" md="3">

@@ -159,10 +159,10 @@
                         <MudTd>
                             <MudNumericField T="decimal" Value="context.ValorUnitario" ValueChanged="@((decimal v) => OnValorAlterado(context, v))"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                             Min="0" Format="N2" Culture="@_culturaBr"
+                                             Format="N2" Culture="@_culturaBr"
                                              Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Leitura"
-                                          Error="@AbaixoDoCusto(context)"
-                                          ErrorText="@(AbaixoDoCusto(context) ? $"⚠ Abaixo do custo (R$ {CustoDoItem(context):N2})" : "")" />
+                                          Error="@(context.ValorUnitario < 0 || AbaixoDoCusto(context))"
+                                          ErrorText="@(context.ValorUnitario < 0 ? LimiteHelper.Negativo : AbaixoDoCusto(context) ? $"⚠ Abaixo do custo (R$ {CustoDoItem(context):N2})" : "")" />
                             @if (AbaixoDoCusto(context) && GetAlertaFastFashion(context) == "aviso")
                             {
                                 <MudText Style="font-size:0.7rem;color:#f59e0b;font-weight:600;">
@@ -196,7 +196,7 @@
                             <MudText Typo="Typo.body2">Desconto (%)</MudText>
                             <MudNumericField T="decimal" Value="_dto.DescontoPercentualAplicado" ValueChanged="OnDescontoPercentualAlterado"
                                              HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                             Min="0" Max="100" Format="N2" Style="width:110px;" Disabled="@Leitura" />
+                                             Validation="@((decimal v) => LimiteHelper.Percentual(v))" Format="N2" Style="width:110px;" Disabled="@Leitura" />
                         </div>
                         @if (_dto.ValorDesconto != 0)
                         {
@@ -285,7 +285,7 @@
                 Task.Run(async () => _produtos = (await ProdutoService.ObterTodosAtivosAsync()).ToList())
             );
         }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "carregar os dados"), Severity.Error); }
         await _clientes.IncluirSeAusenteAsync(_dto.ClienteId, c => c.Id, async id => await ClienteService.ObterPorIdAsync(id) is { } c ? new ClienteListDto { Id = c.Id, NomeRazaoSocial = c.NomeRazaoSocial, ApelidoNomeFantasia = c.ApelidoNomeFantasia, TipoPessoa = c.TipoPessoa, CpfCnpj = c.CpfCnpj, Estrangeiro = c.Estrangeiro, DocumentoEstrangeiro = c.DocumentoEstrangeiro, LimiteCredito = c.LimiteCredito } : null);
         await _condicoes.IncluirSeAusenteAsync(_dto.CondicaoPagamentoId, c => c.Id, async id => await CondicaoPagamentoService.ObterPorIdAsync(id) is { } c ? new CondicaoPagamentoListDto { Id = c.Id, CondicaoPagamento = c.CondicaoPagamento, MetodoPagamentoId = c.MetodoPagamentoId, NumeroParcelas = c.NumeroParcelas, EntradaMinimaPercentual = c.EntradaMinimaPercentual, DescontoPercentual = c.DescontoPercentual, AcrescimoPercentual = c.AcrescimoPercentual, MultaPercentual = c.MultaPercentual, TaxaJurosPercentual = c.TaxaJurosPercentual } : null);
         foreach (var item in _dto.Itens)
@@ -410,7 +410,7 @@
     }
     private void OnValorAlterado(VendaItemDto item, decimal valor)
     {
-        item.ValorUnitario = Math.Max(valor, 0);
+        item.ValorUnitario = valor;
         RecalcularTotais();
     }
     private string? ErroQuantidade(VendaItemDto item)
@@ -427,7 +427,7 @@
     }
     private void OnDescontoPercentualAlterado(decimal v)
     {
-        _dto.DescontoPercentualAplicado = Math.Clamp(v, 0, 100);
+        _dto.DescontoPercentualAplicado = v;
         RecalcularTotais();
     }
     private void RecalcularTotais()
@@ -514,8 +514,10 @@
     {
         if (!CabecalhoValido) return "Selecione o cliente e a condição de pagamento.";
         if (_dto.Itens.Count == 0) return "Adicione pelo menos um item.";
+        if (LimiteHelper.Percentual(_dto.DescontoPercentualAplicado) is string erroDesconto) return $"Desconto (%): {erroDesconto}";
         foreach (var item in _dto.Itens)
         {
+            if (item.ValorUnitario < 0) return $"{item.NomeProduto} {item.Cor}/{item.Tamanho}: o preço de venda não pode ser negativo.";
             if (GetAlertaFastFashion(item) == "bloquear")
             {
                 _custoPorItem.TryGetValue(item, out var custo);

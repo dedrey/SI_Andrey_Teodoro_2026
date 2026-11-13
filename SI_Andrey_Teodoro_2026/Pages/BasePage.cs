@@ -39,7 +39,7 @@ public abstract class BaseListagemPage<TListDto> : ComponentBase
         catch (Exception ex)
         {
             if (consulta != _consultaAtual) return;
-            Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error);
+            Snackbar.Add(Helpers.ErroBancoHelper.Mensagem(ex, "carregar os dados"), Severity.Error);
             _resultado = new();
         }
         finally

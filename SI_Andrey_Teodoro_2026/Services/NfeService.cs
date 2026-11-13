@@ -71,7 +71,7 @@ public class NfeService : INfeService
 
             return (true, $"Nota Fiscal nº {numero} gerada com sucesso!", novoId);
         }
-        catch (Exception ex) { return (false, $"Erro ao gerar Nota Fiscal: {ex.Message}", 0); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "gerar a nota fiscal"), 0); }
     }
 
     private async Task BaixarEntradaAutomaticamenteAsync(int vendaId)
@@ -101,7 +101,7 @@ public class NfeService : INfeService
             await _repo.AlterarStatusAsync(id, "CANCELADA");
             return (true, "Nota Fiscal cancelada.");
         }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "cancelar a nota fiscal")); }
     }
     private static List<NfeProdutoDto> DistribuirAjusteProporcional(List<VendaItemParaNfeDto> itensOrigem, decimal valorTotalFinal)
     {

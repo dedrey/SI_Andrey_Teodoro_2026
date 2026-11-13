@@ -100,7 +100,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Erro ao salvar o comprovante: {ex.Message}", Severity.Error);
+            Snackbar.Add(ErroBancoHelper.Mensagem(ex, "salvar o comprovante"), Severity.Error);
         }
         finally
         {

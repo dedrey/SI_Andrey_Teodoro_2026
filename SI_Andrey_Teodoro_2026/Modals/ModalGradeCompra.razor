@@ -116,7 +116,7 @@
     protected override async Task OnInitializedAsync()
     {
         try { _ordemTamanhos = (await TamanhoService.ObterTodosAtivosAsync()).ToDictionary(t => t.Id, t => t.Ordem); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar tamanhos: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "carregar os tamanhos"), Severity.Error); }
         foreach (var produto in ProdutosIniciais) await AdicionarProduto(produto);
         _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
     }
@@ -137,7 +137,7 @@
                 .ThenBy(v => v.Tamanho)
                 .ToList() ?? new();
         }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar tamanhos: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "carregar os tamanhos"), Severity.Error); }
         finally { _carregando = false; }
 
         var grade = new Grade

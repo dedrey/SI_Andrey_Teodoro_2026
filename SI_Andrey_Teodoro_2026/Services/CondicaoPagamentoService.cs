@@ -72,8 +72,10 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
                 return (false, "Multa deve ser entre 0% e 100%.", 0);
             if (dto.TaxaJurosPercentual is < 0 or > 100)
                 return (false, "Taxa de juros deve ser entre 0% e 100%.", 0);
-            if (dto.Parcelas.Count > 0 && dto.Parcelas.Count != dto.NumeroParcelas)
+            if (dto.Parcelas.Count != dto.NumeroParcelas)
                 return (false, "O número de parcelas configuradas não bate com o campo 'Nº parcelas'.", 0);
+            if (!dto.Parcelas.Select(p => p.NumeroParcela).OrderBy(n => n).SequenceEqual(Enumerable.Range(1, dto.NumeroParcelas)))
+                return (false, $"As parcelas devem ser numeradas de 1 a {dto.NumeroParcelas}, sem repetição.", 0);
             if (dto.Parcelas.Any(p => p.DiasVencimento < 0))
                 return (false, "Dias de vencimento não pode ser negativo.", 0);
             if (dto.Parcelas.Count > 1)
@@ -99,8 +101,8 @@ public class CondicaoPagamentoService : BaseService<CondicaoPagamentoDto, Condic
             }
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
-            if (await _repo.ExisteNomeAsync(dto.CondicaoPagamento, dto.MetodoPagamentoId, ignorar))
-                return (false, $"Já existe uma condição de pagamento com o nome '{dto.CondicaoPagamento}' para esse método de pagamento.", 0);
+            if (await _repo.ExisteNomeAsync(dto.CondicaoPagamento, ignorar))
+                return (false, $"Já existe uma condição de pagamento com o nome '{dto.CondicaoPagamento}'.", 0);
 
             if (dto.IdOriginal == 0)
             {

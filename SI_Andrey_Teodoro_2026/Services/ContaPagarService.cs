@@ -106,7 +106,7 @@ public class ContaPagarService : IContaPagarService
         }
         catch (Exception ex)
         {
-            return (false, $"Erro: {ex.Message}", 0);
+            return (false, Helpers.ErroBancoHelper.Mensagem(ex, "salvar a conta a pagar"), 0);
         }
     }
 
@@ -124,7 +124,7 @@ public class ContaPagarService : IContaPagarService
             await _repo.AtualizarStatusAsync(id, "PAGA", dataPagamento, comprovanteArquivo);
             return (true, "Conta marcada como paga!");
         }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "registrar o pagamento")); }
     }
 
     public async Task<(bool sucesso, string mensagem)> CancelarAsync(int id)
@@ -139,7 +139,7 @@ public class ContaPagarService : IContaPagarService
             await _repo.AtualizarStatusAsync(id, "CANCELADA");
             return (true, "Conta cancelada.");
         }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "cancelar a conta a pagar")); }
     }
 
     private static string MensagemNaoAlteravel(string status) =>

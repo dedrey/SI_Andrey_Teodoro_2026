@@ -47,7 +47,7 @@
                     <MudNumericField T="int" Value="_dto.NumeroParcelas"
                                      ValueChanged="OnNumeroParcelas"
                                      Label="Nº de parcelas" Variant="Variant.Outlined"
-                                     Margin="Margin.Dense" Min="1" Max="999" FullWidth="true"
+                                     Margin="Margin.Dense" Validation="@((int v) => LimiteHelper.Faixa(v, 1, 999))" FullWidth="true"
                                      Immediate="true" Disabled="@(Bloqueado(1) || !Edicao && !MetodoOk || _emUso)"
                                      HelperText="@(_emUso && !_readOnly ? MsgEmUso : Edicao || MetodoOk ? null : NomeOk ? "Selecione o método de pagamento primeiro." : "Informe o nome da condição primeiro.")" />
                 </MudItem>
@@ -108,11 +108,11 @@
                         <MudText Typo="Typo.caption" Style="color:#888;">@ajudaPercentuais</MudText>
                     </MudItem>
                 }
-                <MudItem xs="6" sm="4" md="3"><MudNumericField T="decimal" Value="_dto.EntradaMinimaPercentual" ValueChanged="@((decimal v) => { _dto.EntradaMinimaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.DescontoPercentual" ValueChanged="@((decimal v) => { _dto.DescontoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4" md="3"><MudNumericField T="decimal" Value="_dto.AcrescimoPercentual" ValueChanged="@((decimal v) => { _dto.AcrescimoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.MultaPercentual" ValueChanged="@((decimal v) => { _dto.MultaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
-                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.TaxaJurosPercentual" ValueChanged="@((decimal v) => { _dto.TaxaJurosPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="100" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="3"><MudNumericField T="decimal" Value="_dto.EntradaMinimaPercentual" ValueChanged="@((decimal v) => { _dto.EntradaMinimaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Entrada mín. (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@((decimal v) => LimiteHelper.Percentual(v))" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.DescontoPercentual" ValueChanged="@((decimal v) => { _dto.DescontoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Desconto (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@((decimal v) => LimiteHelper.Percentual(v))" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="3"><MudNumericField T="decimal" Value="_dto.AcrescimoPercentual" ValueChanged="@((decimal v) => { _dto.AcrescimoPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Acréscimo (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@((decimal v) => LimiteHelper.Percentual(v))" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.MultaPercentual" ValueChanged="@((decimal v) => { _dto.MultaPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Multa (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@((decimal v) => LimiteHelper.Percentual(v))" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
+                <MudItem xs="6" sm="4" md="2"><MudNumericField T="decimal" Value="_dto.TaxaJurosPercentual" ValueChanged="@((decimal v) => { _dto.TaxaJurosPercentual = v; Alterou(3); })" HideSpinButtons="true" Label="Juros (%)" Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@((decimal v) => LimiteHelper.Percentual(v))" Format="N2" FullWidth="true" Disabled="@Bloqueado(3)" /></MudItem>
             </MudGrid>
         </MudForm>
         @if (_dto.AtualizadoEm.HasValue)
@@ -173,7 +173,7 @@
     {
         1 when !NomeOk => "Informe o nome da condição.",
         1 when !MetodoOk => "Selecione o método de pagamento.",
-        1 when _dto.NumeroParcelas < 1 => "Informe o número de parcelas.",
+        1 when _dto.NumeroParcelas is < 1 or > 999 => "O nº de parcelas deve ser de 1 a 999.",
         2 when _dto.Parcelas.Count != _dto.NumeroParcelas => "Clique em 'Gerar' para definir os prazos das parcelas.",
         2 when !ValidarParcelasCrescentes(out var erro) => erro,
         3 when new[] { _dto.EntradaMinimaPercentual, _dto.DescontoPercentual, _dto.AcrescimoPercentual, _dto.MultaPercentual, _dto.TaxaJurosPercentual }.Any(p => p < 0 || p > 100)
@@ -248,7 +248,7 @@
 
     private void GerarParcelas()
     {
-        _dto.Parcelas = Enumerable.Range(1, _dto.NumeroParcelas)
+        _dto.Parcelas = Enumerable.Range(1, Math.Clamp(_dto.NumeroParcelas, 0, 999))
             .Select(n => new CondicaoPagamentoParcelaDto
             {
                 NumeroParcela = n,
@@ -259,23 +259,27 @@
 
     private async Task Salvar()
     {
-        await _form.Validate();
-        if (!_formValido) return;
-        if (_dto.Parcelas.Count != _dto.NumeroParcelas)
-        {
-            Snackbar.Add("Clique em 'Gerar' para definir os prazos das parcelas.", Severity.Warning);
-            return;
-        }
-        if (!ValidarParcelasCrescentes(out var erroParcelas))
-        {
-            Snackbar.Add(erroParcelas, Severity.Warning);
-            return;
-        }
+        if (_salvando) return;
         _salvando = true;
-        var (sucesso, mensagem, id) = await CondicaoPagamentoService.SalvarAsync(_dto);
-        _salvando = false;
-        Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
-        if (sucesso) MudDialog.Close(DialogResult.Ok(id));
+        try
+        {
+            await _form.Validate();
+            if (!_formValido) return;
+            if (_dto.Parcelas.Count != _dto.NumeroParcelas)
+            {
+                Snackbar.Add("Clique em 'Gerar' para definir os prazos das parcelas.", Severity.Warning);
+                return;
+            }
+            if (!ValidarParcelasCrescentes(out var erroParcelas))
+            {
+                Snackbar.Add(erroParcelas, Severity.Warning);
+                return;
+            }
+            var (sucesso, mensagem, id) = await CondicaoPagamentoService.SalvarAsync(_dto);
+            Snackbar.Add(mensagem, sucesso ? Severity.Success : Severity.Error);
+            if (sucesso) MudDialog.Close(DialogResult.Ok(id));
+        }
+        finally { _salvando = false; }
     }
 
     private async Task PesquisarMetodo()

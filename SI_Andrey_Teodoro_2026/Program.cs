@@ -75,6 +75,8 @@ builder.Services.AddScoped<INfeService, NfeService>();
 
 var app = builder.Build();
 
+SI_Andrey_Teodoro_2026.Helpers.ErroBancoHelper.Logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ErroBanco");
+
 if (!app.Environment.IsDevelopment()) { app.UseExceptionHandler("/Error"); app.UseHsts(); }
 app.UseHttpsRedirection();
 app.UseStaticFiles();

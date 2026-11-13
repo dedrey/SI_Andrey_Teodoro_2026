@@ -203,11 +203,12 @@
                                 }
                             </MudTd>
                             <MudTd>
-                                <MudNumericField T="decimal?" Value="@(context.ValorUnitario > 0 ? context.ValorUnitario : null)"
-                                                 ValueChanged="@((decimal? v) => context.ValorUnitario = Math.Max(v ?? 0, 0))"
+                                <MudNumericField T="decimal?" Value="@(context.ValorUnitario != 0 ? context.ValorUnitario : null)"
+                                                 ValueChanged="@((decimal? v) => context.ValorUnitario = v ?? 0)"
                                                  HideSpinButtons="true" Variant="Variant.Outlined" Margin="Margin.Dense"
                                                  Adornment="Adornment.Start" AdornmentText="R$" Class="input-direita mt-0"
-                                                 Min="0" Format="N2" Culture="@_culturaBr" Placeholder="Opcional" />
+                                                 Format="N2" Culture="@_culturaBr" Placeholder="Opcional"
+                                                 Error="@(context.ValorUnitario < 0)" ErrorText="@LimiteHelper.Negativo" />
                             </MudTd>
                             <MudTd Style="text-align:right;font-weight:600;">
                                 R$ @((context.Quantidade * context.ValorUnitario).ToString("N2"))
@@ -282,7 +283,7 @@
                 _todosProdutos = (await ProdutoService.ObterTodosAtivosAsync()).ToList();
             _snapshot = DialogServiceExtensions.Snapshot(DadosEditaveis());
         }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(ErroBancoHelper.Mensagem(ex, "carregar os dados"), Severity.Error); }
     }
 
     private static string DescricaoTipo(string tipo) => tipo switch
@@ -451,6 +452,7 @@
     {
         if (!TipoEscolhido) { Snackbar.Add("Selecione o tipo da movimentação.", Severity.Warning); return; }
         if (!_dto.Itens.Any(i => !i.Removido)) { Snackbar.Add("Adicione pelo menos um item.", Severity.Warning); return; }
+        if (_dto.Itens.Any(i => !i.Removido && i.ValorUnitario < 0)) { Snackbar.Add("O valor unitário não pode ser negativo.", Severity.Warning); return; }
         _salvando = true;
         var (sucesso, mensagem, _) = await MovimentacaoService.SalvarAsync(_dto);
         _salvando = false;

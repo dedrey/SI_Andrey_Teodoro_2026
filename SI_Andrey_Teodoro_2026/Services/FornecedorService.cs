@@ -77,6 +77,8 @@ public class FornecedorService : BaseService<FornecedorDto, FornecedorListDto>, 
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);
+            if (TextoHelper.ValidarTamanhos((dto.Endereco, 50, "Endereço"), (dto.Bairro, 50, "Bairro"), (dto.Email, 50, "E-mail")) is string erroTamanho)
+                return (false, erroTamanho, 0);
 
             if (!dto.CondicaoPagamentoId.HasValue)
                 return (false, "Selecione a condição de pagamento.", 0);

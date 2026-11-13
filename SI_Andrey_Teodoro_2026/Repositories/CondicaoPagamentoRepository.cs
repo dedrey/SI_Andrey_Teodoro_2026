@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using System.Data;
+using Dapper;
 using SI_Andrey_Teodoro_2026.Data;
 using SI_Andrey_Teodoro_2026.DTOs;
 using SI_Andrey_Teodoro_2026.Models;
@@ -117,28 +118,38 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
             @"SELECT id, numero_parcela AS NumeroParcela, dias_vencimento AS DiasVencimento
               FROM condicoes_pagamentos_parcelas
               WHERE condicao_pagamento_id = @condicaoId
-              ORDER BY numero_parcela", new { condicaoId });
+              ORDER BY numero_parcela, id", new { condicaoId });
         return result.ToList();
     }
 
-    private async Task SalvarParcelasAsync(int condicaoId, List<CondicaoPagamentoParcelaDto> parcelas,
-        Dapper.SqlMapper.GridReader? _ = null)
+    private static async Task SalvarParcelasAsync(IDbConnection conn, IDbTransaction tx, int condicaoId,
+        List<CondicaoPagamentoParcelaDto> parcelas)
     {
-        using var conn = _factory.CreateConnection();
+        await conn.ExecuteAsync(
+            "SELECT id FROM condicoes_pagamentos WHERE id = @condicaoId FOR UPDATE",
+            new { condicaoId }, tx);
         await conn.ExecuteAsync(
             "DELETE FROM condicoes_pagamentos_parcelas WHERE condicao_pagamento_id = @condicaoId",
-            new { condicaoId });
+            new { condicaoId }, tx);
+        var numero = 1;
         foreach (var p in parcelas.OrderBy(x => x.NumeroParcela))
             await conn.ExecuteAsync(
                 @"INSERT INTO condicoes_pagamentos_parcelas
                     (condicao_pagamento_id, numero_parcela, dias_vencimento)
-                  VALUES (@condicaoId, @NumeroParcela, @DiasVencimento)",
-                new { condicaoId, p.NumeroParcela, p.DiasVencimento });
+                  VALUES (@condicaoId, @numero, @DiasVencimento)",
+                new { condicaoId, numero = numero++, p.DiasVencimento }, tx);
+    }
+
+    private static IDbConnection Abrir(IDbConnection conn)
+    {
+        if (conn.State != ConnectionState.Open) conn.Open();
+        return conn;
     }
 
     public async Task<int> InserirAsync(CondicaoPagamentoDto dto)
     {
-        using var conn = _factory.CreateConnection();
+        using var conn = Abrir(_factory.CreateConnection());
+        using var tx = conn.BeginTransaction();
         await InserirComIdAsync(() => conn.ExecuteAsync(
             @"INSERT INTO condicoes_pagamentos
                 (id, condicao_pagamento, metodo_pagamento_id, numero_parcelas,
@@ -160,15 +171,16 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                 dto.MultaPercentual,
                 dto.TaxaJurosPercentual,
                 dto.Ativo
-            }));
-        if (dto.Parcelas.Count > 0)
-            await SalvarParcelasAsync(dto.Id, dto.Parcelas);
+            }, tx));
+        await SalvarParcelasAsync(conn, tx, dto.Id, dto.Parcelas);
+        tx.Commit();
         return dto.Id;
     }
 
     public async Task AtualizarAsync(CondicaoPagamentoDto dto)
     {
-        using var conn = _factory.CreateConnection();
+        using var conn = Abrir(_factory.CreateConnection());
+        using var tx = conn.BeginTransaction();
         await conn.ExecuteAsync(
             @"UPDATE condicoes_pagamentos
               SET condicao_pagamento        = @CondicaoPagamento,
@@ -180,21 +192,20 @@ public class CondicaoPagamentoRepository : BaseRepository, ICondicaoPagamentoRep
                   multa_percentual          = @MultaPercentual,
                   taxa_juros_percentual     = @TaxaJurosPercentual,
                   atualizado_em             = NOW()
-              WHERE id = @IdOriginal", dto);
-        await SalvarParcelasAsync(dto.IdOriginal, dto.Parcelas);
+              WHERE id = @IdOriginal", dto, tx);
+        await SalvarParcelasAsync(conn, tx, dto.IdOriginal, dto.Parcelas);
+        tx.Commit();
     }
 
     public Task AlterarStatusAsync(int id, bool ativo) => AlterarStatusBaseAsync(id, ativo);
 
-    public async Task<bool> ExisteNomeAsync(string nome, int metodoPagamentoId, int? idOriginalIgnorar = null)
+    public async Task<bool> ExisteNomeAsync(string nome, int? idOriginalIgnorar = null)
     {
         using var conn = _factory.CreateConnection();
         var sql = idOriginalIgnorar.HasValue
-            ? @"SELECT COUNT(*) FROM condicoes_pagamentos
-                WHERE condicao_pagamento = @nome AND metodo_pagamento_id = @metodoPagamentoId AND id <> @idOriginalIgnorar"
-            : @"SELECT COUNT(*) FROM condicoes_pagamentos
-                WHERE condicao_pagamento = @nome AND metodo_pagamento_id = @metodoPagamentoId";
-        return await conn.ExecuteScalarAsync<int>(sql, new { nome, metodoPagamentoId, idOriginalIgnorar }) > 0;
+            ? "SELECT COUNT(*) FROM condicoes_pagamentos WHERE condicao_pagamento = @nome AND id <> @idOriginalIgnorar"
+            : "SELECT COUNT(*) FROM condicoes_pagamentos WHERE condicao_pagamento = @nome";
+        return await conn.ExecuteScalarAsync<int>(sql, new { nome, idOriginalIgnorar }) > 0;
     }
 
     public async Task<bool> EmUsoAsync(int id)

@@ -87,6 +87,10 @@ public class ClienteService : BaseService<ClienteDto, ClienteListDto>, IClienteS
 
             if (!dto.CidadeId.HasValue)
                 return (false, "Cidade é obrigatória.", 0);
+            if (TextoHelper.ValidarTamanhos((dto.Endereco, 50, "Endereço")) is string erroTamanho)
+                return (false, erroTamanho, 0);
+            if (dto.LimiteCredito < 0)
+                return (false, "O limite de crédito não pode ser negativo.", 0);
 
             if (dto.TipoPessoa == "PJ" && string.IsNullOrWhiteSpace(dto.Celular))
                 return (false, "Celular é obrigatório para Pessoa Jurídica.", 0);

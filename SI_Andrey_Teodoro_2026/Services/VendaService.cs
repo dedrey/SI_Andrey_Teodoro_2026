@@ -299,7 +299,7 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
             tx.Commit();
             return (true, "Venda finalizada com sucesso! Estoque baixado e contas a receber geradas.");
         }
-        catch (Exception ex) { return (false, $"Erro ao finalizar venda: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "finalizar a venda")); }
     }
 
     public async Task<(string statusVenda, string nomeCliente, decimal totalRecebido)?> ObterResumoCancelamentoAsync(int vendaId)
@@ -367,6 +367,6 @@ public class VendaService : BaseService<VendaDto, VendaListDto>, IVendaService
                 ? $"Venda cancelada com sucesso! Estorno de R$ {totalEstornado:N2} gerado em Contas a Pagar."
                 : "Venda cancelada com sucesso!");
         }
-        catch (Exception ex) { return (false, $"Erro ao cancelar venda: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "cancelar a venda")); }
     }
 }

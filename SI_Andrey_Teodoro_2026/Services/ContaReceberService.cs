@@ -72,7 +72,7 @@ public class ContaReceberService : IContaReceberService
         }
         catch (Exception ex)
         {
-            return (false, $"Erro: {ex.Message}", 0);
+            return (false, Helpers.ErroBancoHelper.Mensagem(ex, "salvar a conta a receber"), 0);
         }
     }
 
@@ -113,7 +113,7 @@ public class ContaReceberService : IContaReceberService
 
             return (true, mensagem);
         }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "registrar o recebimento")); }
     }
 
     public async Task<(bool sucesso, string mensagem)> CancelarAsync(int id)
@@ -126,7 +126,7 @@ public class ContaReceberService : IContaReceberService
             await _repo.AtualizarStatusAsync(id, "CANCELADA");
             return (true, "Conta cancelada.");
         }
-        catch (Exception ex) { return (false, $"Erro: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "cancelar a conta a receber")); }
     }
 
     public async Task<(bool sucesso, string mensagem)> AnexarComprovanteAsync(int baixaId, string comprovanteArquivo)
@@ -136,7 +136,7 @@ public class ContaReceberService : IContaReceberService
             await _repo.AtualizarComprovanteBaixaAsync(baixaId, comprovanteArquivo);
             return (true, "Comprovante anexado com sucesso!");
         }
-        catch (Exception ex) { return (false, $"Erro ao anexar comprovante: {ex.Message}"); }
+        catch (Exception ex) { return (false, Helpers.ErroBancoHelper.Mensagem(ex, "anexar o comprovante")); }
     }
 
     public Task<List<ContaReceberResumoVendaDto>> ObterContasDaVendaAsync(int vendaId)

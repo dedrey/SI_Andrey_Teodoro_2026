@@ -55,6 +55,8 @@ public class PaisService : BaseService<PaisDto, PaisListDto>, IPaisService
             dto.Ddi = dto.Ddi.Trim();
             dto.Moeda = dto.Moeda.Trim().ToUpperInvariant();
             dto.SimboleMoeda = dto.SimboleMoeda.Trim().ToUpperInvariant();
+            if (Helpers.TextoHelper.ValidarTamanhos((dto.NomePais, 50, "País")) is string erroTamanho)
+                return (false, erroTamanho, 0);
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
 

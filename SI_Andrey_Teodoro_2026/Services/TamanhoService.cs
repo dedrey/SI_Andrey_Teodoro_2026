@@ -29,6 +29,8 @@ public class TamanhoService : BaseService<TamanhoDto, TamanhoListDto>, ITamanhoS
             dto.Nome = dto.Nome.Trim().ToUpperInvariant();
             if (string.IsNullOrWhiteSpace(dto.Nome))
                 return (false, "Nome do tamanho é obrigatório.", 0);
+            if (dto.Ordem is < 0 or > 999)
+                return (false, "A ordem deve ser de 0 a 999.", 0);
 
             int? ignorar = dto.IdOriginal > 0 ? dto.IdOriginal : null;
             if (await _repo.ExisteNomeAsync(dto.Nome, ignorar))

@@ -62,6 +62,8 @@ public class EstadoService : BaseService<EstadoDto, EstadoListDto>, IEstadoServi
 
             if (await _repo.ExisteUfNoPaisAsync(dto.Uf, dto.PaisId, ignorar))
                 return (false, $"Já existe um estado com a UF '{dto.Uf}' neste país.", 0);
+            if (await _repo.ExisteNomeNoPaisAsync(dto.NomeEstado, dto.PaisId, ignorar))
+                return (false, $"Já existe um estado com o nome '{dto.NomeEstado}' neste país.", 0);
 
             if (dto.IdOriginal == 0)
             {

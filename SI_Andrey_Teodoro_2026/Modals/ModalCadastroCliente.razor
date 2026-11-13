@@ -104,7 +104,7 @@
                 <MudItem xs="12" sm="4" md="6">
                     <MudTextField Value="@_dto.Endereco" ValueChanged="@((string v) => { _dto.Endereco = v; Alterou(2); })"
                                   Label="Endereço" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Obrigatório"
-                                  MaxLength="100" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
+                                  MaxLength="50" FullWidth="true" Immediate="true" Disabled="@Bloqueado(2)" HelperText="@AjudaGrupo(2)" />
                 </MudItem>
                 <MudItem xs="12" sm="2" md="2">
                     <MudTextField Value="@_dto.Numero" ValueChanged="@((string v) => { _dto.Numero = v; Alterou(2); })"
@@ -169,7 +169,7 @@
                 <MudItem xs="12" sm="4">
                     <MudNumericField T="decimal" Value="_dto.LimiteCredito" ValueChanged="@((decimal v) => { _dto.LimiteCredito = v; Alterou(3); })" Label="Limite de Crédito"
                                      Variant="Variant.Outlined" Margin="Margin.Dense" FullWidth="true"
-                                     Format="N2" Culture="@_culturaBr" Min="0" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
+                                     Format="N2" Culture="@_culturaBr" Validation="@((decimal v) => LimiteHelper.NaoNegativo(v))" Adornment="Adornment.Start" AdornmentText="R$" Disabled="@Bloqueado(3)" HelperText="@AjudaGrupo(3)" />
                 </MudItem>
             </MudGrid>
         </MudForm>
@@ -325,7 +325,11 @@
         var (sucesso, mensagem, id) = await ClienteService.SalvarAsync(_dto);
         _salvando = false;
         if (sucesso) { Snackbar.Add(mensagem, Severity.Success); MudDialog.Close(DialogResult.Ok(id)); }
-        else Snackbar.Add(mensagem, Severity.Error);
+        else { Snackbar.Add(mensagem, Severity.Error); ReabrirSeDuplicado(mensagem); }
+    }
+    private void ReabrirSeDuplicado(string mensagem)
+    {
+        if (!Edicao && mensagem.StartsWith("Já existe")) _grupos.Editar(1);
     }
     private bool Edicao => _dto.IdOriginal > 0;
     private bool DocTravado => Edicao && _docSalvo;

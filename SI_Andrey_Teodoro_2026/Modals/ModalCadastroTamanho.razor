@@ -26,7 +26,7 @@
                 </MudItem>
                 <MudItem xs="3">
                     <MudNumericField @bind-Value="_dto.Ordem" Label="Ordem"
-                                     Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Max="999"
+                                     Variant="Variant.Outlined" Margin="Margin.Dense" Validation="@((int v) => LimiteHelper.Faixa(v, 0, 999))"
                                      HelperText="Menor = primeiro" FullWidth="true" />
                 </MudItem>
             </MudGrid>

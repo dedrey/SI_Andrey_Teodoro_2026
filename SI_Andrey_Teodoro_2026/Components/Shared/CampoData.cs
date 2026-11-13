@@ -7,6 +7,7 @@ namespace SI_Andrey_Teodoro_2026.Components.Shared;
 public class CampoData : MudDatePicker
 {
     private const string Formato = "dd/MM/yyyy";
+    public static readonly DateTime DataMinima = new(2000, 1, 1);
     private static readonly CultureInfo CulturaBr = new("pt-BR");
 
     public CampoData()
@@ -20,6 +21,7 @@ public class CampoData : MudDatePicker
         RequiredError = "Obrigatório";
         Variant = Variant.Outlined;
         Margin = Margin.Dense;
+        MinDate = DataMinima;
     }
 
     private bool TextoIncompleto => !string.IsNullOrEmpty(Text) && Text.Length < Formato.Length;
@@ -75,7 +77,7 @@ public class CampoData : MudDatePicker
         {
             if (string.IsNullOrWhiteSpace(input))
                 return null;
-            if (DateTime.TryParseExact(input, Formato, CulturaBr, DateTimeStyles.None, out var data))
+            if (DateTime.TryParseExact(input, Formato, CulturaBr, DateTimeStyles.None, out var data) && data >= DataMinima)
                 return data;
             throw new FormatException("Data inválida.");
         }

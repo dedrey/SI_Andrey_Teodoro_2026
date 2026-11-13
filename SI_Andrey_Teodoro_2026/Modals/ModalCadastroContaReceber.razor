@@ -151,10 +151,10 @@
                                Required="true" ReadOnly="@_somenteLeitura" />
                 </MudItem>
                 <MudItem xs="12" sm="6" md="3">
-                    <MudNumericField T="decimal" Value="_dto.ValorOriginal" ValueChanged="@((decimal v) => _dto.ValorOriginal = Math.Max(v, 0))"
+                    <MudNumericField T="decimal" Value="_dto.ValorOriginal" ValueChanged="@((decimal v) => _dto.ValorOriginal = v)"
                                      Label="Valor Original" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true"
-                                     Required="true" RequiredError="Obrigatório" Validation="@(new Func<decimal, string?>(v => v > 0 ? null : "Obrigatório"))"
-                                     Min="0" Format="N2" Culture="@_culturaBr" FullWidth="true"
+                                     Required="true" RequiredError="Obrigatório" Validation="@((decimal v) => LimiteHelper.Positivo(v))"
+                                     Format="N2" Culture="@_culturaBr" FullWidth="true"
                                      Adornment="Adornment.Start" AdornmentText="R$"
                                   ReadOnly="@(_somenteLeitura || (_dto.IdOriginal != 0 && _dto.ValorRecebido > 0))"
                                   HelperText="@(_dto.IdOriginal != 0 && _dto.ValorRecebido > 0 ? "Não editável após recebimentos" : null)" />

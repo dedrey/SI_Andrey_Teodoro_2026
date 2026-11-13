@@ -78,6 +78,8 @@ public class TransportadoraService : BaseService<TransportadoraDto, Transportado
             dto.Email = dto.Email.Trim().ToUpperInvariant();
             if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, @"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$"))
                 return (false, "E-mail inválido.", 0);
+            if (TextoHelper.ValidarTamanhos((dto.InscricaoEstadual, 20, "Inscrição Estadual"), (dto.Email, 50, "E-mail")) is string erroTamanho)
+                return (false, erroTamanho, 0);
 
             var cnpjLimpo = DocumentoHelper.SomenteDigitos(dto.Cnpj);
 

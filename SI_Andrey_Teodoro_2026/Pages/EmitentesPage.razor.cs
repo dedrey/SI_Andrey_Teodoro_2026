@@ -14,7 +14,7 @@ public partial class EmitentesPage : BasePage<EmitenteListDto, EmitenteDto>
     protected override async Task OnInitializedAsync()
     {
         try { await CarregarDados(); }
-        catch (Exception ex) { Snackbar.Add($"Erro ao carregar: {ex.Message}", Severity.Error); }
+        catch (Exception ex) { Snackbar.Add(Helpers.ErroBancoHelper.Mensagem(ex, "carregar os dados"), Severity.Error); }
     }
     protected override Task<PaginacaoDto<EmitenteListDto>> BuscarDados(FiltroConsultaDto filtro) => EmitenteService.ObterTodosAsync(filtro);
     private async Task AbrirModalCadastro()
